@@ -1,0 +1,1164 @@
+<!doctype html>
+<html lang="en" data-theme="classic-obsidian">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AuraTracker // Premium Attendance & Routine Dashboard</title>
+ 
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Sora:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+ 
+    <!-- Custom stylesheet -->
+    <link rel="stylesheet" href="style.css" />
+ 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Chart.js for premium graphics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  </head>
+  <body>
+    <!-- Background Gradient Blobs -->
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+ 
+    <!-- 1. Full Screen Authentication Overlay -->
+    <div id="auth-screen" class="auth-screen">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <div class="logo-icon">
+            <i data-lucide="hexagon"></i>
+          </div>
+          <h2 class="brand-name">Aura<span class="brand-thin">Tracker</span></h2>
+          <p>Premium Attendance & Routine Manager by ManTools'</p>
+        </div>
+
+        <!-- Forms Toggle Header -->
+        <div class="auth-toggle">
+          <button class="btn-auth-toggle active" id="btn-toggle-login">
+            Login
+          </button>
+          <button class="btn-auth-toggle" id="btn-toggle-signup">
+            Register
+          </button>
+        </div>
+
+        <!-- Login Form -->
+        <form id="login-form" class="auth-form">
+          <div class="form-group">
+            <label for="login-username">Username</label>
+            <input
+              type="text"
+              id="login-username"
+              placeholder="Enter your username"
+              required
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label for="login-password">Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="login-password"
+                placeholder="••••••••"
+                required
+                autocomplete="current-password"
+              />
+              <button type="button" class="btn-toggle-password" data-target="login-password">
+                <i data-lucide="eye" class="icon-show"></i>
+                <i data-lucide="eye-off" class="icon-hide"></i>
+              </button>
+            </div>
+          </div>
+          <div class="auth-error-msg hidden" id="login-error">
+            Invalid credentials.
+          </div>
+          <button type="submit" class="btn btn-primary auth-submit-btn">
+            Login to Dashboard
+          </button>
+        </form>
+
+        <!-- Sign Up Form (Hidden by default) -->
+        <form id="signup-form" class="auth-form hidden">
+          <div class="form-group">
+            <label for="signup-username">Username</label>
+            <input
+              type="text"
+              id="signup-username"
+              placeholder="Choose a username"
+              required
+              autocomplete="username"
+            />
+          </div>
+          <div class="form-group">
+            <label for="signup-email">Email Address</label>
+            <input
+              type="email"
+              id="signup-email"
+              placeholder="you@example.com"
+              required
+              autocomplete="email"
+            />
+          </div>
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="signup-password"
+                placeholder="••••••••"
+                minlength="4"
+                required
+                autocomplete="new-password"
+              />
+              <button type="button" class="btn-toggle-password" data-target="signup-password">
+                <i data-lucide="eye" class="icon-show"></i>
+                <i data-lucide="eye-off" class="icon-hide"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Avatar presets selector -->
+          <div class="form-group">
+            <label>Choose an Avatar Profile Style</label>
+            <div class="avatar-presets" id="avatar-presets-grid">
+              <button
+                type="button"
+                class="btn-avatar-preset active"
+                data-avatar="avatar-1"
+                style="background: linear-gradient(135deg, #6366f1, #a855f7)"
+              ></button>
+              <button
+                type="button"
+                class="btn-avatar-preset"
+                data-avatar="avatar-2"
+                style="background: linear-gradient(135deg, #3b82f6, #06b6d4)"
+              ></button>
+              <button
+                type="button"
+                class="btn-avatar-preset"
+                data-avatar="avatar-3"
+                style="background: linear-gradient(135deg, #10b981, #34d399)"
+              ></button>
+              <button
+                type="button"
+                class="btn-avatar-preset"
+                data-avatar="avatar-4"
+                style="background: linear-gradient(135deg, #f59e0b, #e11d48)"
+              ></button>
+              <button
+                type="button"
+                class="btn-avatar-preset"
+                data-avatar="avatar-5"
+                style="background: linear-gradient(135deg, #ec4899, #8b5cf6)"
+              ></button>
+            </div>
+          </div>
+
+          <div class="auth-error-msg hidden" id="signup-error">
+            Username is already taken.
+          </div>
+          <button type="submit" class="btn btn-primary auth-submit-btn">
+            Create Account
+          </button>
+        </form>
+
+        <!-- Guest Login Action row -->
+        <div class="auth-divider">
+          <span>OR</span>
+        </div>
+
+        <div class="auth-guest-row">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            id="btn-guest-login"
+            style="width: 100%"
+          >
+            <i data-lucide="shield-alert"></i> Explore as Guest
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. Main Dashboard Container (Blurred if unauthorized) -->
+    <div class="app-container hidden" id="dashboard-container">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="logo-icon">
+            <i data-lucide="hexagon"></i>
+          </div>
+          <div class="brand-text">
+            <h1 class="brand-name">Aura<span class="brand-thin">Tracker</span></h1>
+            <span>DASHBOARD</span>
+          </div>
+        </div>
+
+        <nav class="nav-menu">
+          <button class="nav-item active" data-tab="overview">
+            <i data-lucide="layout-dashboard"></i>
+            <span>Overview</span>
+          </button>
+          <button class="nav-item" data-tab="attendance">
+            <i data-lucide="calendar-check"></i>
+            <span>Attendance</span>
+          </button>
+          <button class="nav-item" data-tab="routine">
+            <i data-lucide="clock"></i>
+            <span>Weekly Routine</span>
+          </button>
+          <button class="nav-item" data-tab="todo">
+            <i data-lucide="list-todo"></i>
+            <span>Tasks & To-Dos</span>
+          </button>
+          <button class="nav-item" data-tab="profile">
+            <i data-lucide="user-cog"></i>
+            <span>Profile Settings</span>
+          </button>
+        </nav>
+
+        <!-- Logged-in User Card Footer -->
+        <div class="sidebar-footer">
+          <div class="user-card-widget">
+            <div class="user-avatar-circle" id="sidebar-user-avatar"></div>
+            <div class="user-card-details">
+              <span class="user-card-name" id="sidebar-user-name"
+                >User Name</span
+              >
+              <button
+                class="btn-logout"
+                id="btn-logout"
+                title="Log Out Account"
+              >
+                <i data-lucide="log-out"></i> Log Out
+              </button>
+            </div>
+          </div>
+
+          <div class="date-widget" style="margin-top: 14px">
+            <div class="time" id="live-time">12:00:00 PM</div>
+            <div class="date" id="live-date">Thursday, June 18</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="main-content">
+        <!-- Header bar -->
+        <header class="top-header">
+          <div class="welcome-section">
+            <h2>
+              Welcome Back,
+              <span class="username" id="header-user-name">User</span>
+            </h2>
+            <p class="greeting-subtitle">
+              Your Personalized Routines and Logs Portal
+            </p>
+          </div>
+
+          <div class="header-right-controls">
+            <!-- User Avatar Display -->
+            <div class="header-avatar-badge" id="header-avatar-badge">
+              <div
+                class="user-avatar-circle mini"
+                id="header-user-avatar"
+              ></div>
+              <span id="header-user-badge-name">User</span>
+            </div>
+
+            <!-- Theme Swapper Controls -->
+            <div class="theme-picker-container">
+              <label for="theme-selector">
+                <i data-lucide="palette" class="theme-icon"></i>
+                <span>Theme</span>
+              </label>
+              <select id="theme-selector" class="theme-dropdown">
+                <option value="classic-obsidian">Classic Obsidian</option>
+                <option value="cyberpunk-onyx">Cyberpunk Onyx</option>
+                <option value="emerald-deep">Emerald Deep</option>
+                <option value="nebula-cosmic">Nebula Cosmic</option>
+                <option value="sunset-crimson">Sunset Crimson</option>
+                <option value="nordic-frost">Nordic Frost</option>
+                <option value="amber-gold">Amber Gold</option>
+              </select>
+            </div>
+
+            <!-- Font Swapper Controls -->
+            <div class="font-picker-container">
+              <label for="font-selector">
+                <i data-lucide="type" class="font-icon"></i>
+                <span>Font</span>
+              </label>
+              <select id="font-selector" class="font-dropdown">
+                <option value="font-modern">Modern Sans</option>
+                <option value="font-clean">Geometric</option>
+                <option value="font-cyber">Cyber Sora</option>
+                <option value="font-minimalist">Minimalist Pop</option>
+                <option value="font-funky">Trendy Bricolage</option>
+                <option value="font-tech">Tech Mono</option>
+                <option value="font-elegant">Classic Serif</option>
+              </select>
+            </div>
+
+            <!-- Color Scheme Toggle -->
+            <button id="btn-toggle-scheme" class="btn-scheme-toggle" title="Toggle Light/Dark Mode">
+              <i data-lucide="sun" class="scheme-icon sun-icon"></i>
+              <i data-lucide="moon" class="scheme-icon moon-icon"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Guest Warning Banner (Active only in Guest sessions) -->
+        <div class="guest-warning-banner hidden" id="guest-warning-banner">
+          <div class="banner-content">
+            <i data-lucide="alert-triangle" class="banner-alert-icon"></i>
+            <span
+              ><strong>Guest Mode Active!</strong> Your modifications are
+              temporarily saved.
+              <button
+                class="btn btn-secondary btn-icon-small"
+                id="btn-banner-register"
+                style="margin-left: 8px; padding: 4px 10px; font-size: 11px"
+              >
+                Register Account & Save Data
+              </button></span
+            >
+          </div>
+        </div>
+
+        <!-- Dashboard Grid View -->
+        <div class="dashboard-grid">
+          <!-- Overview Section -->
+          <section class="dashboard-card card-overview" id="card-overview">
+            <div class="card-header">
+              <div class="header-title">
+                <i data-lucide="layout-dashboard"></i>
+                <h3>Executive Summary</h3>
+              </div>
+            </div>
+
+            <!-- Stats Overview Cards Grid -->
+            <div class="overview-stats-grid">
+              <div class="overview-stat-tile" id="overview-tile-attendance" style="cursor: pointer;">
+                <div class="tile-icon"><i data-lucide="check-circle-2"></i></div>
+                <div class="tile-details">
+                  <span class="tile-label">Average Attendance</span>
+                  <strong class="tile-value" id="overview-avg-attendance">0%</strong>
+                </div>
+              </div>
+              <div class="overview-stat-tile" id="overview-tile-streak" style="cursor: pointer;">
+                <div class="tile-icon"><i data-lucide="flame" style="color: #f59e0b"></i></div>
+                <div class="tile-details">
+                  <span class="tile-label">Max Streak</span>
+                  <strong class="tile-value" id="overview-max-streak">0 Days</strong>
+                </div>
+              </div>
+              <div class="overview-stat-tile" id="overview-tile-tasks" style="cursor: pointer;">
+                <div class="tile-icon"><i data-lucide="list-todo"></i></div>
+                <div class="tile-details">
+                  <span class="tile-label">Active Tasks</span>
+                  <strong class="tile-value" id="overview-active-tasks">0 / 0</strong>
+                </div>
+              </div>
+              <div class="overview-stat-tile" id="overview-tile-routine" style="cursor: pointer;">
+                <div class="tile-icon"><i data-lucide="clock"></i></div>
+                <div class="tile-details">
+                  <span class="tile-label">Scheduled Events</span>
+                  <strong class="tile-value" id="overview-routine-count">0 slots</strong>
+                </div>
+              </div>
+            </div>
+
+            <div class="overview-charts-grid">
+              <!-- Chart 1: Attendance Trend (Line Chart) -->
+              <div class="overview-chart-card" style="grid-column: span 2;">
+                <h4>Attendance Trend (Last 30 Days)</h4>
+                <div class="chart-canvas-container" style="position: relative; height: 260px; width: 100%;">
+                  <canvas id="overview-trend-chart"></canvas>
+                  <div id="overview-trend-empty" class="chart-empty-placeholder hidden">
+                    No attendance logs recorded yet. Log attendance to see trends.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chart 2: Subject Attendance Performance -->
+              <div class="overview-chart-card">
+                <h4>Class Performance Breakdown</h4>
+                <div class="chart-canvas-container" style="position: relative; height: 220px; width: 100%;">
+                  <canvas id="overview-classes-chart"></canvas>
+                  <div id="overview-classes-empty" class="chart-empty-placeholder hidden">
+                    No active classes scheduled. Go to Weekly Routine tab to schedule classes.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chart 3: Task Progress Doughnut -->
+              <div class="overview-chart-card">
+                <h4>Task Progress Velocity</h4>
+                <div class="chart-canvas-container" style="position: relative; height: 220px; width: 100%;">
+                  <canvas id="overview-tasks-chart"></canvas>
+                  <div id="overview-tasks-empty" class="chart-empty-placeholder hidden">
+                    No active tasks. Go to Tasks & To-Dos tab to add tasks.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chart 4: Weekly Attendance Heatmap Grid -->
+              <div class="overview-chart-card" style="grid-column: span 2; margin-top: 12px;">
+                <h4>Visual Attendance Grid (Last 30 Days)</h4>
+                <div class="overview-heatmap-wrapper">
+                  <div class="overview-heatmap-grid" id="overview-attendance-heatmap">
+                    <!-- Populated dynamically as glowing mini activity squares -->
+                  </div>
+                  <div class="heatmap-legend">
+                    <span class="legend-box p"></span> Present
+                    <span class="legend-box a"></span> Absent
+                    <span class="legend-box l"></span> Late
+                    <span class="legend-box e"></span> Excused
+                    <span class="legend-box empty"></span> Inactive / None
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Attendance Section -->
+          <section class="dashboard-card card-attendance hidden">
+            <div class="card-header">
+              <div class="header-title">
+                <i data-lucide="check-circle-2"></i>
+                <h3>Class Attendance</h3>
+              </div>
+            </div>
+
+            <div class="subject-select-wrapper">
+              <label for="subject-selector">Class: </label>
+              <select id="subject-selector" class="subject-dropdown">
+                <!-- Populated dynamically -->
+              </select>
+              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject Entirely" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; height: 38px; border-radius: 8px; font-size: 13.5px; cursor: pointer; flex-shrink: 0; outline: none;">
+                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Delete Subject
+              </button>
+            </div>
+
+            <!-- Metric Stats Grid -->
+            <div class="stats-grid">
+              <div class="stat-card">
+                <div class="stat-label">Attendance Rate</div>
+                <div class="stat-value" id="stat-rate">0%</div>
+                <div class="stat-progress-bar">
+                  <div
+                    class="progress-fill"
+                    id="stat-rate-fill"
+                    style="width: 0%"
+                  ></div>
+                </div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Current Streak</div>
+                <div class="stat-value" id="stat-streak">0 days</div>
+                <div class="stat-subtitle">Consecutive presents</div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-label">Class Schedule</div>
+                <div
+                  class="stat-value"
+                  id="class-occurrences-summary"
+                  style="font-size: 14px; font-weight: 600; margin-top: 8px"
+                >
+                  Mon, Wed
+                </div>
+                <div class="stat-subtitle" id="class-total-logs">
+                  Total Logs: 0
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-counters-row">
+              <span class="summary-p" id="summary-present">P: 0</span>
+              <span class="summary-a" id="summary-absent">A: 0</span>
+              <span class="summary-l" id="summary-late">L: 0</span>
+              <span
+                class="summary-e"
+                id="summary-excused"
+                style="
+                  background: rgba(59, 130, 246, 0.12);
+                  color: var(--excused);
+                  padding: 2px 8px;
+                  border-radius: 6px;
+                  font-size: 13px;
+                  font-weight: 700;
+                "
+                >E: 0</span
+              >
+            </div>
+
+            <!-- Calendar Month View Grid -->
+            <div class="calendar-container">
+              <div class="calendar-header">
+                <button id="prev-month" class="btn btn-icon-small">
+                  <i data-lucide="chevron-left"></i>
+                </button>
+                <span id="calendar-month-year">June 2026</span>
+                <button id="next-month" class="btn btn-icon-small">
+                  <i data-lucide="chevron-right"></i>
+                </button>
+              </div>
+              <div class="calendar-info-badge">
+                <i data-lucide="info"></i>
+                <span>Logging active only on scheduled class days.</span>
+              </div>
+              <div class="calendar-weekdays">
+                <div>Su</div>
+                <div>Mo</div>
+                <div>Tu</div>
+                <div>We</div>
+                <div>Th</div>
+                <div>Fr</div>
+                <div>Sa</div>
+              </div>
+              <div class="calendar-days" id="calendar-days-grid">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </section>
+
+          <!-- Weekly Routine Section -->
+          <section class="dashboard-card card-routine">
+            <div class="card-header">
+              <div class="header-title">
+                <i data-lucide="clock-4"></i>
+                <h3>Weekly Schedule</h3>
+              </div>
+              <div class="routine-controls-group">
+                <div class="view-toggle-buttons">
+                  <button
+                    class="btn btn-view-toggle active"
+                    id="btn-view-daily"
+                    title="Daily View"
+                  >
+                    Daily
+                  </button>
+                  <button
+                    class="btn btn-view-toggle"
+                    id="btn-view-weekly"
+                    title="Full Week View"
+                  >
+                    Weekly Scope
+                  </button>
+                </div>
+                <button class="btn btn-primary btn-icon" id="add-routine-btn">
+                  <i data-lucide="plus"></i>
+                  <span>Add Slot</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Tab view (Active only in Daily View mode) -->
+            <div class="days-tabs-wrapper" id="daily-tabs-wrapper">
+              <div class="days-tabs">
+                <button class="day-tab active" data-day="1">Mon</button>
+                <button class="day-tab" data-day="2">Tue</button>
+                <button class="day-tab" data-day="3">Wed</button>
+                <button class="day-tab" data-day="4">Thu</button>
+                <button class="day-tab" data-day="5">Fri</button>
+                <button class="day-tab" data-day="6">Sat</button>
+                <button class="day-tab" data-day="0">Sun</button>
+              </div>
+            </div>
+
+            <!-- Unified Daily Timeline Container (List View) -->
+            <div
+              class="routine-timeline-container"
+              id="daily-timeline-container"
+            >
+              <div id="routine-items-list" class="routine-items">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <!-- Weekly Scope Grid Container -->
+            <div
+              class="weekly-grid-container hidden"
+              id="weekly-grid-container"
+            >
+              <div class="weekly-grid-columns" id="weekly-grid-columns">
+                <!-- Populated dynamically -->
+              </div>
+            </div>
+
+            <div class="routine-quick-info">
+              <i data-lucide="info"></i>
+              <span id="quick-info-text"
+                >Classes, routines, and tasks are merged. Click any item to
+                delete it.</span
+              >
+            </div>
+          </section>
+
+          <!-- Tasks & Todo List Section -->
+          <section class="dashboard-card card-todo">
+            <div class="card-header">
+              <div class="header-title">
+                <i data-lucide="clipboard-list"></i>
+                <h3>To-Do List</h3>
+              </div>
+              <span class="todo-counter" id="todo-stats">0 / 0</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="todo-progress-container">
+              <div class="todo-progress-bar">
+                <div
+                  class="todo-progress-fill"
+                  id="todo-progress-fill"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <span class="todo-progress-text" id="todo-progress-text"
+                >0% Complete</span
+              >
+            </div>
+
+            <!-- Add Todo Input Form -->
+            <form id="add-todo-form" class="todo-input-form">
+              <input
+                type="text"
+                id="todo-input"
+                placeholder="What needs to be done?"
+                required
+                autocomplete="off"
+              />
+
+              <div class="form-row" style="margin-bottom: 0">
+                <div class="form-group" style="margin-bottom: 0">
+                  <label for="todo-category" style="font-size: 10px"
+                    >Category</label
+                  >
+                  <select id="todo-category" class="todo-select">
+                    <option value="study">Study 📚</option>
+                    <option value="work">Work 💼</option>
+                    <option value="health">Health 🏋️</option>
+                    <option value="personal">Personal 👤</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 0">
+                  <label for="todo-urgency" style="font-size: 10px"
+                    >Priority</label
+                  >
+                  <select id="todo-urgency" class="todo-select">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="todo-options-row">
+                <select id="todo-day" class="todo-select" style="flex-grow: 1">
+                  <option value="">📅 Backlog (No specific day)</option>
+                  <option value="1">📅 Monday</option>
+                  <option value="2">📅 Tuesday</option>
+                  <option value="3">📅 Wednesday</option>
+                  <option value="4">📅 Thursday</option>
+                  <option value="5">📅 Friday</option>
+                  <option value="6">📅 Saturday</option>
+                  <option value="0">📅 Sunday</option>
+                </select>
+
+                <button
+                  type="submit"
+                  class="btn btn-primary"
+                  style="padding: 10px 14px"
+                >
+                  <i data-lucide="plus"></i> Add
+                </button>
+              </div>
+            </form>
+
+            <!-- Filter buttons -->
+            <div class="todo-filters">
+              <button class="btn btn-filter active" data-filter="all">
+                All
+              </button>
+              <button class="btn btn-filter" data-filter="active">
+                Active
+              </button>
+              <button class="btn btn-filter" data-filter="completed">
+                Completed
+              </button>
+            </div>
+
+            <!-- Tasks List -->
+            <div class="todo-list-wrapper">
+              <ul id="todo-items-list" class="todo-items-list">
+                <!-- Populated by JS -->
+              </ul>
+            </div>
+          </section>
+
+          <!-- Profile Settings Card -->
+          <section class="dashboard-card card-profile hidden" id="card-profile">
+            <div class="card-header">
+              <div class="header-title">
+                <i data-lucide="user-cog"></i>
+                <h3>User Profile & Settings</h3>
+              </div>
+            </div>
+
+            <div class="profile-settings-wrapper">
+              <!-- Profile Card Overview -->
+              <div class="profile-header-summary">
+                <div
+                  class="user-avatar-circle large"
+                  id="profile-avatar-display"
+                ></div>
+                <div class="profile-summary-details">
+                  <h4 id="profile-username-label">User Name</h4>
+                  <span id="profile-email-label">user@example.com</span>
+                  <div
+                    class="profile-goal-badge"
+                    id="profile-goal-badge-container"
+                  >
+                    <i data-lucide="award"></i> Attendance Goal:
+                    <strong id="profile-target-goal-text">85%</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 1. REGULAR USER SETTINGS FORM (Hidden if guest) -->
+              <div
+                class="profile-section-block"
+                id="profile-edit-section"
+                style="
+                  grid-column: span 2;
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 24px;
+                "
+              >
+                <!-- Goal Comparison Box -->
+                <div class="profile-comparison-box">
+                  <div class="comparison-header">
+                    <span>Attendance Objective Status</span>
+                    <span id="comparison-status-text">On Track</span>
+                  </div>
+                  <div class="comparison-stats-row">
+                    <div class="comp-stat-bubble">
+                      <div class="label">Actual Combined Rate</div>
+                      <div class="value" id="profile-actual-rate-val">78%</div>
+                    </div>
+                    <div class="comp-stat-bubble">
+                      <div class="label">Target Objective</div>
+                      <div class="value" id="profile-target-rate-val">85%</div>
+                    </div>
+                  </div>
+                  <div
+                    class="todo-progress-bar"
+                    style="height: 10px; margin-top: 10px"
+                  >
+                    <div
+                      class="progress-fill"
+                      id="profile-goal-comparison-fill"
+                      style="width: 0%"
+                    ></div>
+                  </div>
+                </div>
+
+                <!-- Edit Form -->
+                <form id="profile-edit-form" class="profile-edit-form">
+                  <div class="form-group">
+                    <label for="profile-email">Email Address</label>
+                    <input
+                      type="email"
+                      id="profile-email"
+                      required
+                      autocomplete="email"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label for="profile-bio">Personal Motto / Bio</label>
+                    <input
+                      type="text"
+                      id="profile-bio"
+                      placeholder="e.g. Keep pushing, stay consistent!"
+                    />
+                  </div>
+
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="profile-target-rate"
+                        >Target Attendance Goal (%)</label
+                      >
+                      <input
+                        type="number"
+                        id="profile-target-rate"
+                        min="10"
+                        max="100"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Change Avatar Preset</label>
+                      <div
+                        class="avatar-presets edit-presets"
+                        id="edit-avatar-presets-grid"
+                      >
+                        <!-- Preset buttons populated by JS -->
+                      </div>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    class="btn btn-primary"
+                    style="margin-top: 12px; width: 100%"
+                  >
+                    <i data-lucide="check"></i> Save Profile Settings
+                  </button>
+                </form>
+              </div>
+
+              <!-- 2. GUEST CONVERT FORM (Only shown if guest user active) -->
+              <div
+                class="profile-section-block hidden"
+                id="guest-convert-section"
+                style="grid-column: span 2"
+              >
+                <div class="guest-conversion-card">
+                  <div class="conversion-intro">
+                    <i data-lucide="save"></i>
+                    <div>
+                      <h4>Save Your Workspace Permanently!</h4>
+                      <p>
+                        You are currently logged in as a Guest. Register an
+                        account below to save your customized classes, routines,
+                        and to-do lists, migrating all data seamlessly.
+                      </p>
+                    </div>
+                  </div>
+
+                  <form
+                    id="guest-convert-form"
+                    class="profile-edit-form"
+                    style="margin-top: 20px"
+                  >
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="convert-username">Username</label>
+                        <input
+                          type="text"
+                          id="convert-username"
+                          placeholder="Choose a username"
+                          required
+                          autocomplete="username"
+                        />
+                      </div>
+                      <div class="form-group">
+                        <label for="convert-email">Email Address</label>
+                        <input
+                          type="email"
+                          id="convert-email"
+                          placeholder="email@example.com"
+                          required
+                          autocomplete="email"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="convert-password">Password</label>
+                        <div class="password-input-wrapper">
+                          <input
+                            type="password"
+                            id="convert-password"
+                            placeholder="••••••••"
+                            minlength="4"
+                            required
+                            autocomplete="new-password"
+                          />
+                          <button type="button" class="btn-toggle-password" data-target="convert-password">
+                            <i data-lucide="eye" class="icon-show"></i>
+                            <i data-lucide="eye-off" class="icon-hide"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <div class="form-group">
+                        <label>Choose Avatar Profile Style</label>
+                        <div
+                          class="avatar-presets edit-presets"
+                          id="convert-avatar-presets-grid"
+                        >
+                          <button
+                            type="button"
+                            class="btn-avatar-preset active"
+                            data-avatar="avatar-1"
+                            style="
+                              background: linear-gradient(
+                                135deg,
+                                #6366f1,
+                                #a855f7
+                              );
+                            "
+                          ></button>
+                          <button
+                            type="button"
+                            class="btn-avatar-preset"
+                            data-avatar="avatar-2"
+                            style="
+                              background: linear-gradient(
+                                135deg,
+                                #3b82f6,
+                                #06b6d4
+                              );
+                            "
+                          ></button>
+                          <button
+                            type="button"
+                            class="btn-avatar-preset"
+                            data-avatar="avatar-3"
+                            style="
+                              background: linear-gradient(
+                                135deg,
+                                #10b981,
+                                #34d399
+                              );
+                            "
+                          ></button>
+                          <button
+                            type="button"
+                            class="btn-avatar-preset"
+                            data-avatar="avatar-4"
+                            style="
+                              background: linear-gradient(
+                                135deg,
+                                #f59e0b,
+                                #e11d48
+                              );
+                            "
+                          ></button>
+                          <button
+                            type="button"
+                            class="btn-avatar-preset"
+                            data-avatar="avatar-5"
+                            style="
+                              background: linear-gradient(
+                                135deg,
+                                #ec4899,
+                                #8b5cf6
+                              );
+                            "
+                          ></button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="auth-error-msg hidden" id="convert-error">
+                      Username is already taken.
+                    </div>
+                    <button
+                      type="submit"
+                      class="btn btn-primary"
+                      style="
+                        margin-top: 14px;
+                        width: 100%;
+                        font-size: 14px;
+                        padding: 12px;
+                      "
+                    >
+                      <i data-lucide="shield-check"></i> Register Account & Save
+                      My Workspace
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Modals Section -->
+    <!-- Add Routine Slot Modal -->
+    <div id="routine-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Add Schedule Slot</h3>
+          <button class="btn-close-modal"><i data-lucide="x"></i></button>
+        </div>
+        <form id="routine-form">
+          <div class="form-group">
+            <label for="routine-title">Title / Name</label>
+            <input
+              type="text"
+              id="routine-title"
+              placeholder="e.g. Software Engineering, Gym Workout"
+              required
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="routine-type">Slot Type</label>
+              <select id="routine-type" class="form-select">
+                <option value="class">🎓 Class (Tracks Attendance)</option>
+                <option value="routine">🧘 Personal Routine</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="routine-tag">Category Badge</label>
+              <select id="routine-tag" class="form-select">
+                <option value="study">Study 📚</option>
+                <option value="work">Work 💼</option>
+                <option value="health">Exercise/Health 🏋️</option>
+                <option value="leisure">Leisure/Break ☕</option>
+                <option value="sleep">Sleep 💤</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="routine-day">Day of the Week</label>
+              <select id="routine-day" class="form-select">
+                <option value="1">Monday</option>
+                <option value="2">Tuesday</option>
+                <option value="3">Wednesday</option>
+                <option value="4">Thursday</option>
+                <option value="5">Friday</option>
+                <option value="6">Saturday</option>
+                <option value="0">Sunday</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <!-- Spacer -->
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="routine-start">Start Time</label>
+              <input type="time" id="routine-start" required />
+            </div>
+            <div class="form-group">
+              <label for="routine-end">End Time</label>
+              <input type="time" id="routine-end" required />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary btn-close-modal">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary">Add Slot</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Calendar Day Quick-edit Modal -->
+    <div id="day-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>Log Attendance for <span id="modal-date-string">Date</span></h3>
+          <button class="btn-close-modal"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <p class="modal-subtext">
+            Class: <strong id="modal-subject-name">Class Title</strong>
+          </p>
+          <div class="attendance-select-grid">
+            <button
+              class="btn-attendance-option opt-present"
+              data-status="Present"
+            >
+              <i data-lucide="check"></i>
+              <span>Present</span>
+            </button>
+            <button
+              class="btn-attendance-option opt-absent"
+              data-status="Absent"
+            >
+              <i data-lucide="x"></i>
+              <span>Absent</span>
+            </button>
+            <button class="btn-attendance-option opt-late" data-status="Late">
+              <i data-lucide="clock"></i>
+              <span>Late</span>
+            </button>
+            <button
+              class="btn-attendance-option opt-excused"
+              data-status="Excused"
+            >
+              <i data-lucide="minus"></i>
+              <span>Excused</span>
+            </button>
+            <button class="btn-attendance-option opt-clear" data-status="None">
+              <i data-lucide="trash-2"></i>
+              <span>Clear Log</span>
+            </button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary btn-close-modal"
+            style="width: 100%"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Walkthrough Onboarding Guide Overlay -->
+    <div id="walkthrough-overlay" class="walkthrough-overlay hidden">
+      <div class="walkthrough-header">
+        <div class="logo-icon mini">
+          <i data-lucide="hexagon"></i>
+        </div>
+        <h3>Dashboard Tour (<span id="walkthrough-step-num">1</span>/5)</h3>
+      </div>
+      <div class="walkthrough-body">
+        <p id="walkthrough-text"></p>
+      </div>
+      <div class="walkthrough-footer">
+        <button type="button" class="btn btn-secondary btn-icon-small" id="walkthrough-btn-skip">Skip</button>
+        <button type="button" class="btn btn-primary btn-icon-small" id="walkthrough-btn-next">Next <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- Custom Confirmation Modal -->
+    <div id="confirm-modal" class="modal-backdrop hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3 id="confirm-modal-title">Confirm Action</h3>
+          <button id="btn-close-confirm-modal" class="btn-close-modal" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-modal-message" style="margin: 0; line-height: 1.5; font-size: 14.5px; color: var(--text-primary);"></p>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-confirm-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="btn-confirm-ok" class="btn btn-primary">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

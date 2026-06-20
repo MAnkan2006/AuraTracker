@@ -1,0 +1,209 @@
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+require("dotenv").config();
+
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
+
+const app = express();
+
+app.use(cors());
+app.use(express.json());
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Connected");
+  })
+  .catch((err) => {
+    console.log("MongoDB Error:", err);
+  });
+
+app.get("/", (req, res) => {
+  res.send("Backend is running!");
+});
+
+function verifyToken(req, res, next) {
+  const token = req.headers.authorization;
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "No token",
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    req.user = decoded;
+
+    next();
+  } catch (err) {
+    res.status(401).json({
+      success: false,
+      message: "Invalid token",
+    });
+  }
+}
+
+const UserSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    unique: true,
+    required: true,
+  },
+  email: String,
+  avatar: String,
+  bio: String,
+  targetGoal: Number,
+  password: String,
+});
+
+const User = mongoose.model("User", UserSchema);
+app.post("/register", async (req, res) => {
+  try {
+    const { username, email, avatar, password } = req.body;
+
+    const existingUser = await User.findOne({ username });
+
+    if (existingUser) {
+      return res.json({
+        success: false,
+        message: "User already exists",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      username,
+      email,
+      avatar,
+      bio: "Keep pushing, stay consistent!",
+      targetGoal: 85,
+      password: hashedPassword,
+    });
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Registration successful",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const validPassword = await bcrypt.compare(password, user.password);
+
+    if (validPassword) {
+      const token = jwt.sign(
+        {
+          userId: user._id,
+          username: user.username,
+        },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "7d",
+        },
+      );
+
+      return res.json({
+        success: true,
+        token,
+      });
+    }
+
+    res.json({
+      success: false,
+      message: "Invalid credentials",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+app.get("/profile", verifyToken, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    res.json({
+      success: true,
+      username: user.username,
+      email: user.email,
+      avatar: user.avatar,
+      bio: user.bio,
+      targetGoal: user.targetGoal,
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+app.post("/profile", verifyToken, async (req, res) => {
+  try {
+    const { email, avatar, bio, targetGoal } = req.body;
+    const user = await User.findById(req.user.userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (email) user.email = email;
+    if (avatar) user.avatar = avatar;
+    if (bio !== undefined) user.bio = bio;
+    if (targetGoal !== undefined) user.targetGoal = targetGoal;
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
+  }
+});
+
+app.listen(5000, () => {
+  console.log("Server Running");
+});
+
