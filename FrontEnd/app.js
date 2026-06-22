@@ -1,27 +1,26 @@
-
 // --- Sleek Custom Toast Notifications ---
 function showToast(message, type = "info") {
   const container = document.getElementById("toast-container");
   if (!container) return;
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  
+
   let iconName = "info";
   if (type === "success") iconName = "check-circle-2";
   if (type === "error") iconName = "alert-triangle";
-  
+
   toast.innerHTML = `
     <i data-lucide="${iconName}" class="toast-icon"></i>
     <div class="toast-message">${message}</div>
   `;
   container.appendChild(toast);
-  
+
   if (window.lucide && typeof window.lucide.createIcons === "function") {
     window.lucide.createIcons();
   }
-  
+
   setTimeout(() => toast.classList.add("show"), 10);
-  
+
   setTimeout(() => {
     toast.classList.remove("show");
     setTimeout(() => toast.remove(), 400);
@@ -240,7 +239,7 @@ const elements = {
 };
 
 //API URL
-const API_URL = "http://localhost:5000";
+const API_URL = "https://auratacker-backend.onrender.com";
 
 // --- Application Master Users List & Active Session ---
 let appUsers = [];
@@ -506,7 +505,7 @@ function setupAuthHandlers() {
       }
 
       showToast("Registration successful! Logging in...", "success");
-      
+
       // Auto-login background query
       try {
         const loginResponse = await fetch(`${API_URL}/login`, {
@@ -521,21 +520,21 @@ function setupAuthHandlers() {
         });
 
         const loginData = await loginResponse.json();
-        
+
         if (loginResponse.ok && loginData.success) {
           localStorage.setItem("token", loginData.token);
           localStorage.setItem("auratracker_session", username);
           localStorage.setItem("is_first_signup", "true");
-          
+
           // Fetch user profile settings from backend
           const profileResponse = await fetch(`${API_URL}/profile`, {
             headers: {
               Authorization: loginData.token,
             },
           });
-          
+
           const profileData = await profileResponse.json();
-          
+
           sessionUser = {
             username: profileData.username,
             email: profileData.email,
@@ -543,13 +542,13 @@ function setupAuthHandlers() {
             bio: profileData.bio,
             targetGoal: profileData.targetGoal,
           };
-          
+
           setTimeout(() => {
             // Clear signup inputs
             elements.signupUsername.value = "";
             elements.signupEmail.value = "";
             elements.signupPassword.value = "";
-            
+
             loadUserScopedData();
             showDashboard();
           }, 800);
@@ -560,7 +559,7 @@ function setupAuthHandlers() {
             elements.btnToggleLogin.click();
             elements.loginUsername.value = username;
             elements.loginPassword.focus();
-            
+
             elements.signupUsername.value = "";
             elements.signupEmail.value = "";
             elements.signupPassword.value = "";
@@ -659,7 +658,12 @@ function setupAuthHandlers() {
 
   // Logout trigger
   elements.btnLogout.addEventListener("click", async () => {
-    if (await showConfirm("Are you sure you want to log out?", "Logout Confirmation")) {
+    if (
+      await showConfirm(
+        "Are you sure you want to log out?",
+        "Logout Confirmation",
+      )
+    ) {
       sessionUser = null;
       localStorage.removeItem("token");
       localStorage.removeItem("auratracker_session");
@@ -690,10 +694,14 @@ function setupNavigation() {
     });
   }
 
-  const overviewTileAttendance = document.getElementById("overview-tile-attendance");
+  const overviewTileAttendance = document.getElementById(
+    "overview-tile-attendance",
+  );
   if (overviewTileAttendance) {
     overviewTileAttendance.addEventListener("click", () => {
-      const attendanceTabItem = document.querySelector('.nav-item[data-tab="attendance"]');
+      const attendanceTabItem = document.querySelector(
+        '.nav-item[data-tab="attendance"]',
+      );
       if (attendanceTabItem) {
         attendanceTabItem.click();
       }
@@ -703,7 +711,9 @@ function setupNavigation() {
   const overviewTileStreak = document.getElementById("overview-tile-streak");
   if (overviewTileStreak) {
     overviewTileStreak.addEventListener("click", () => {
-      const attendanceTabItem = document.querySelector('.nav-item[data-tab="attendance"]');
+      const attendanceTabItem = document.querySelector(
+        '.nav-item[data-tab="attendance"]',
+      );
       if (attendanceTabItem) {
         attendanceTabItem.click();
       }
@@ -713,7 +723,9 @@ function setupNavigation() {
   const overviewTileRoutine = document.getElementById("overview-tile-routine");
   if (overviewTileRoutine) {
     overviewTileRoutine.addEventListener("click", () => {
-      const routineTabItem = document.querySelector('.nav-item[data-tab="routine"]');
+      const routineTabItem = document.querySelector(
+        '.nav-item[data-tab="routine"]',
+      );
       if (routineTabItem) {
         routineTabItem.click();
       }
@@ -723,7 +735,8 @@ function setupNavigation() {
 
 function showTab(tabName) {
   // Hide all sections first
-  if (elements.sections.overview) elements.sections.overview.classList.add("hidden");
+  if (elements.sections.overview)
+    elements.sections.overview.classList.add("hidden");
   elements.sections.attendance.classList.add("hidden");
   elements.sections.routine.classList.add("hidden");
   elements.sections.todo.classList.add("hidden");
@@ -955,7 +968,8 @@ function setupProfileEditHandlers() {
       const regData = await regResponse.json();
 
       if (!regResponse.ok || !regData.success) {
-        elements.convertError.textContent = regData.message || "Failed to register account.";
+        elements.convertError.textContent =
+          regData.message || "Failed to register account.";
         elements.convertError.classList.remove("hidden");
         return;
       }
@@ -975,7 +989,8 @@ function setupProfileEditHandlers() {
       const loginData = await loginResponse.json();
 
       if (!loginResponse.ok || !loginData.success) {
-        elements.convertError.textContent = "Registered successfully, but automatic login failed. Please reload and log in manually.";
+        elements.convertError.textContent =
+          "Registered successfully, but automatic login failed. Please reload and log in manually.";
         elements.convertError.classList.remove("hidden");
         return;
       }
@@ -997,7 +1012,10 @@ function setupProfileEditHandlers() {
       const guestDataStr = localStorage.getItem(guestDataKey);
 
       if (guestDataStr) {
-        localStorage.setItem(`auratracker_user_${newUsername}_data`, guestDataStr);
+        localStorage.setItem(
+          `auratracker_user_${newUsername}_data`,
+          guestDataStr,
+        );
         localStorage.removeItem(guestDataKey);
       }
 
@@ -1013,7 +1031,10 @@ function setupProfileEditHandlers() {
       loadUserScopedData();
       showDashboard();
 
-      showToast(`Account "${newUsername}" registered! All schedule routines and tasks have been migrated successfully.`, "success");
+      showToast(
+        `Account "${newUsername}" registered! All schedule routines and tasks have been migrated successfully.`,
+        "success",
+      );
     } catch (err) {
       console.error(err);
       elements.convertError.textContent = "Server connection error.";
@@ -1271,7 +1292,7 @@ function setupAttendanceHandlers() {
     if (await showConfirm(message, "Delete Subject Entirely")) {
       // 1. Delete all classes with this title
       state.routine = state.routine.filter(
-        (r) => !(r.type === "class" && r.title === subjectName)
+        (r) => !(r.type === "class" && r.title === subjectName),
       );
 
       // 2. Delete attendance records for this subject
@@ -1290,7 +1311,7 @@ function setupAttendanceHandlers() {
       }
 
       showToast(`Subject "${subjectName}" deleted successfully.`, "success");
-      
+
       // Auto-refresh the page to cleanly re-initialize all complex modules and charts
       setTimeout(() => {
         window.location.reload();
@@ -1510,7 +1531,12 @@ function renderRoutineTimeline() {
 
       itemDiv.addEventListener("click", async () => {
         const typeLabel = item.type === "class" ? "class slot" : "routine slot";
-        if (await showConfirm(`Remove the ${typeLabel} "${item.title}"?`, "Remove Slot")) {
+        if (
+          await showConfirm(
+            `Remove the ${typeLabel} "${item.title}"?`,
+            "Remove Slot",
+          )
+        ) {
           state.routine = state.routine.filter((r) => r.id !== item.refId);
           saveUserScopedData();
           renderRoutineTimeline();
@@ -1629,7 +1655,9 @@ function renderWeeklyScopeGrid() {
                     `;
 
           card.addEventListener("click", async () => {
-            if (await showConfirm(`Remove task "${item.title}"?`, "Remove Task")) {
+            if (
+              await showConfirm(`Remove task "${item.title}"?`, "Remove Task")
+            ) {
               state.todos = state.todos.filter((t) => t.id !== item.refId);
             } else {
               item.rawItem.completed = !item.rawItem.completed;
@@ -1652,7 +1680,12 @@ function renderWeeklyScopeGrid() {
           card.addEventListener("click", async () => {
             const typeLabel =
               item.type === "class" ? "class slot" : "routine slot";
-            if (await showConfirm(`Delete the ${typeLabel} "${item.title}"?`, "Delete Slot")) {
+            if (
+              await showConfirm(
+                `Delete the ${typeLabel} "${item.title}"?`,
+                "Delete Slot",
+              )
+            ) {
               state.routine = state.routine.filter((r) => r.id !== item.refId);
               saveUserScopedData();
               renderWeeklyScopeGrid();
@@ -1725,7 +1758,10 @@ function setupRoutineHandlers() {
 
     if (title && start && end) {
       if (start >= end) {
-        showToast("Validation Error: Start time must be before end time!", "error");
+        showToast(
+          "Validation Error: Start time must be before end time!",
+          "error",
+        );
         return;
       }
 
@@ -1986,7 +2022,7 @@ function setupTheme() {
     state.selectedTheme = e.target.value;
     document.documentElement.setAttribute("data-theme", state.selectedTheme);
     saveUserScopedData();
-    
+
     // Redraw charts if Overview tab is active to apply new theme colors
     const activeTab = document.querySelector(".nav-item.active");
     if (activeTab && activeTab.getAttribute("data-tab") === "overview") {
@@ -2111,7 +2147,10 @@ document.addEventListener("DOMContentLoaded", () => {
         renderOverviewTab();
       }
 
-      showToast(`Switched to ${state.colorScheme === "dark" ? "Dark" : "Light"} Mode.`, "info");
+      showToast(
+        `Switched to ${state.colorScheme === "dark" ? "Dark" : "Light"} Mode.`,
+        "info",
+      );
     });
   }
 
@@ -2133,10 +2172,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const targetId = btn.getAttribute("data-target");
       const input = document.getElementById(targetId);
       if (!input) return;
-      
+
       const isPassword = input.getAttribute("type") === "password";
       input.setAttribute("type", isPassword ? "text" : "password");
-      
+
       if (isPassword) {
         btn.classList.add("showing");
       } else {
@@ -2173,7 +2212,7 @@ document.addEventListener("DOMContentLoaded", () => {
       state.selectedFont = e.target.value;
       document.documentElement.setAttribute("data-font", state.selectedFont);
       saveUserScopedData();
-      
+
       // Redraw charts if Overview tab is active to apply correct fonts/layouts
       const activeTab = document.querySelector(".nav-item.active");
       if (activeTab && activeTab.getAttribute("data-tab") === "overview") {
@@ -2189,12 +2228,11 @@ document.addEventListener("DOMContentLoaded", () => {
   if (wkSkip) wkSkip.addEventListener("click", endWalkthrough);
 });
 
-
 // --- Overview Insights Tab Calculations & Renders ---
 function calculateMaxStreak() {
   const classNames = getUniqueClassNames();
   if (classNames.length === 0) return 0;
-  
+
   let max = 0;
   classNames.forEach((className) => {
     const logs = state.attendance[className] || {};
@@ -2205,7 +2243,7 @@ function calculateMaxStreak() {
 }
 
 function getActiveTasksCount() {
-  const completed = state.todos.filter(t => t.completed).length;
+  const completed = state.todos.filter((t) => t.completed).length;
   const total = state.todos.length;
   return { completed, total, active: total - completed };
 }
@@ -2213,46 +2251,63 @@ function getActiveTasksCount() {
 // --- Chart.js Theme Adaptability Helpers ---
 function getChartThemeColors() {
   const rootStyle = getComputedStyle(document.documentElement);
-  const accent = rootStyle.getPropertyValue('--accent').trim() || '#6366f1';
-  const accentHover = rootStyle.getPropertyValue('--accent-hover').trim() || '#4f46e5';
-  const accentGlow = rootStyle.getPropertyValue('--accent-glow').trim() || 'rgba(99, 102, 241, 0.2)';
-  const textPrimary = rootStyle.getPropertyValue('--text-primary').trim() || '#ffffff';
-  const textSecondary = rootStyle.getPropertyValue('--text-secondary').trim() || '#a3a3c2';
-  const cardBorder = rootStyle.getPropertyValue('--card-border').trim() || 'rgba(255, 255, 255, 0.08)';
-  
-  return { accent, accentHover, accentGlow, textPrimary, textSecondary, cardBorder };
+  const accent = rootStyle.getPropertyValue("--accent").trim() || "#6366f1";
+  const accentHover =
+    rootStyle.getPropertyValue("--accent-hover").trim() || "#4f46e5";
+  const accentGlow =
+    rootStyle.getPropertyValue("--accent-glow").trim() ||
+    "rgba(99, 102, 241, 0.2)";
+  const textPrimary =
+    rootStyle.getPropertyValue("--text-primary").trim() || "#ffffff";
+  const textSecondary =
+    rootStyle.getPropertyValue("--text-secondary").trim() || "#a3a3c2";
+  const cardBorder =
+    rootStyle.getPropertyValue("--card-border").trim() ||
+    "rgba(255, 255, 255, 0.08)";
+
+  return {
+    accent,
+    accentHover,
+    accentGlow,
+    textPrimary,
+    textSecondary,
+    cardBorder,
+  };
 }
 
 function getAttendanceTrendData() {
   const dates = [];
   const rates = [];
   const classNames = getUniqueClassNames();
-  
+
   if (classNames.length === 0) {
     return { labels: [], data: [] };
   }
-  
+
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dates.push(d);
   }
-  
+
   dates.forEach((targetDate) => {
     let presents = 0;
     let absents = 0;
     let lates = 0;
-    
+
     const targetTime = new Date(targetDate);
     targetTime.setHours(23, 59, 59, 999);
-    
+
     classNames.forEach((className) => {
       const logs = state.attendance[className] || {};
       const scheduledWeekdays = getClassScheduledWeekdays(className);
-      
+
       Object.keys(logs).forEach((dateKey) => {
         const logDate = new Date(dateKey);
-        if (logDate.getTime() <= targetTime.getTime() && scheduledWeekdays.has(logDate.getDay())) {
+        if (
+          logDate.getTime() <= targetTime.getTime() &&
+          scheduledWeekdays.has(logDate.getDay())
+        ) {
           const status = logs[dateKey];
           if (status === "Present") presents++;
           else if (status === "Absent") absents++;
@@ -2260,13 +2315,18 @@ function getAttendanceTrendData() {
         }
       });
     });
-    
+
     const denominator = presents + absents + lates;
-    const rate = denominator > 0 ? Math.round(((presents + lates) / denominator) * 100) : 0;
+    const rate =
+      denominator > 0
+        ? Math.round(((presents + lates) / denominator) * 100)
+        : 0;
     rates.push(rate);
   });
-  
-  const labels = dates.map(d => d.toLocaleDateString("en-US", { month: "short", day: "numeric" }));
+
+  const labels = dates.map((d) =>
+    d.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+  );
   return { labels, data: rates };
 }
 
@@ -2274,56 +2334,58 @@ function renderOverviewTrendChart() {
   const canvas = document.getElementById("overview-trend-chart");
   const emptyEl = document.getElementById("overview-trend-empty");
   if (!canvas) return;
-  
+
   window.overviewCharts = window.overviewCharts || {};
   if (window.overviewCharts.trend) {
     window.overviewCharts.trend.destroy();
     window.overviewCharts.trend = null;
   }
-  
+
   const { labels, data } = getAttendanceTrendData();
-  
+
   let hasLogs = false;
   const classNames = getUniqueClassNames();
-  classNames.forEach(c => {
+  classNames.forEach((c) => {
     if (Object.keys(state.attendance[c] || {}).length > 0) hasLogs = true;
   });
-  
+
   if (labels.length === 0 || !hasLogs) {
     canvas.style.display = "none";
     if (emptyEl) emptyEl.classList.remove("hidden");
     return;
   }
-  
+
   canvas.style.display = "block";
   if (emptyEl) emptyEl.classList.add("hidden");
-  
+
   const colors = getChartThemeColors();
   const ctx = canvas.getContext("2d");
-  
+
   const gradient = ctx.createLinearGradient(0, 0, 0, 240);
   gradient.addColorStop(0, colors.accentGlow);
   gradient.addColorStop(1, "rgba(0, 0, 0, 0)");
-  
+
   window.overviewCharts.trend = new Chart(ctx, {
     type: "line",
     data: {
       labels: labels,
-      datasets: [{
-        label: "Attendance Rate",
-        data: data,
-        borderColor: colors.accent,
-        borderWidth: 3,
-        pointBackgroundColor: colors.accent,
-        pointBorderColor: "#fff",
-        pointBorderWidth: 0,
-        pointRadius: 0,
-        pointHoverRadius: 6,
-        pointHoverBorderWidth: 2,
-        tension: 0.35,
-        fill: true,
-        backgroundColor: gradient
-      }]
+      datasets: [
+        {
+          label: "Attendance Rate",
+          data: data,
+          borderColor: colors.accent,
+          borderWidth: 3,
+          pointBackgroundColor: colors.accent,
+          pointBorderColor: "#fff",
+          pointBorderWidth: 0,
+          pointRadius: 0,
+          pointHoverRadius: 6,
+          pointHoverBorderWidth: 2,
+          tension: 0.35,
+          fill: true,
+          backgroundColor: gradient,
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -2332,26 +2394,26 @@ function renderOverviewTrendChart() {
         x: {
           grid: {
             color: colors.cardBorder,
-            drawBorder: false
+            drawBorder: false,
           },
           ticks: {
             color: colors.textSecondary,
-            font: { family: "inherit", size: 10 }
-          }
+            font: { family: "inherit", size: 10 },
+          },
         },
         y: {
           min: 0,
           max: 100,
           grid: {
             color: colors.cardBorder,
-            drawBorder: false
+            drawBorder: false,
           },
           ticks: {
             color: colors.textSecondary,
             font: { family: "inherit", size: 10 },
-            callback: (value) => value + "%"
-          }
-        }
+            callback: (value) => value + "%",
+          },
+        },
       },
       plugins: {
         legend: { display: false },
@@ -2364,11 +2426,11 @@ function renderOverviewTrendChart() {
           padding: 10,
           cornerRadius: 8,
           callbacks: {
-            label: (context) => `Attendance: ${context.parsed.y}%`
-          }
-        }
-      }
-    }
+            label: (context) => `Attendance: ${context.parsed.y}%`,
+          },
+        },
+      },
+    },
   });
 }
 
@@ -2376,35 +2438,35 @@ function renderOverviewClassBarsChart() {
   const canvas = document.getElementById("overview-classes-chart");
   const emptyEl = document.getElementById("overview-classes-empty");
   if (!canvas) return;
-  
+
   window.overviewCharts = window.overviewCharts || {};
   if (window.overviewCharts.classes) {
     window.overviewCharts.classes.destroy();
     window.overviewCharts.classes = null;
   }
-  
+
   const classNames = getUniqueClassNames();
-  
+
   if (classNames.length === 0) {
     canvas.style.display = "none";
     if (emptyEl) emptyEl.classList.remove("hidden");
     return;
   }
-  
+
   canvas.style.display = "block";
   if (emptyEl) emptyEl.classList.add("hidden");
-  
+
   const labels = [];
   const rates = [];
-  
+
   classNames.forEach((className) => {
     const logs = state.attendance[className] || {};
     const scheduledWeekdays = getClassScheduledWeekdays(className);
-    
+
     let presents = 0;
     let absents = 0;
     let lates = 0;
-    
+
     Object.keys(logs).forEach((dateKey) => {
       const status = logs[dateKey];
       const logDate = new Date(dateKey);
@@ -2414,29 +2476,34 @@ function renderOverviewClassBarsChart() {
         else if (status === "Late") lates++;
       }
     });
-    
+
     const denominator = presents + absents + lates;
-    const rate = denominator > 0 ? Math.round(((presents + lates) / denominator) * 100) : 0;
-    
+    const rate =
+      denominator > 0
+        ? Math.round(((presents + lates) / denominator) * 100)
+        : 0;
+
     labels.push(className);
     rates.push(rate);
   });
-  
+
   const colors = getChartThemeColors();
   const ctx = canvas.getContext("2d");
-  
+
   window.overviewCharts.classes = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
-      datasets: [{
-        label: "Attendance Rate",
-        data: rates,
-        backgroundColor: colors.accent,
-        hoverBackgroundColor: colors.accentHover,
-        borderRadius: 6,
-        barThickness: 16
-      }]
+      datasets: [
+        {
+          label: "Attendance Rate",
+          data: rates,
+          backgroundColor: colors.accent,
+          hoverBackgroundColor: colors.accentHover,
+          borderRadius: 6,
+          barThickness: 16,
+        },
+      ],
     },
     options: {
       indexAxis: "y",
@@ -2448,21 +2515,21 @@ function renderOverviewClassBarsChart() {
           max: 100,
           grid: {
             color: colors.cardBorder,
-            drawBorder: false
+            drawBorder: false,
           },
           ticks: {
             color: colors.textSecondary,
             font: { family: "inherit", size: 10 },
-            callback: (value) => value + "%"
-          }
+            callback: (value) => value + "%",
+          },
         },
         y: {
           grid: { display: false },
           ticks: {
             color: colors.textPrimary,
-            font: { family: "inherit", size: 11, weight: "600" }
-          }
-        }
+            font: { family: "inherit", size: 11, weight: "600" },
+          },
+        },
       },
       plugins: {
         legend: { display: false },
@@ -2473,11 +2540,11 @@ function renderOverviewClassBarsChart() {
           padding: 10,
           cornerRadius: 8,
           callbacks: {
-            label: (context) => `Attendance Rate: ${context.parsed.x}%`
-          }
-        }
-      }
-    }
+            label: (context) => `Attendance Rate: ${context.parsed.x}%`,
+          },
+        },
+      },
+    },
   });
 }
 
@@ -2485,58 +2552,66 @@ function renderOverviewTaskDonutChart() {
   const canvas = document.getElementById("overview-tasks-chart");
   const emptyEl = document.getElementById("overview-tasks-empty");
   if (!canvas) return;
-  
+
   window.overviewCharts = window.overviewCharts || {};
   if (window.overviewCharts.tasks) {
     window.overviewCharts.tasks.destroy();
     window.overviewCharts.tasks = null;
   }
-  
+
   const { completed, total, active } = getActiveTasksCount();
-  
+
   if (total === 0) {
     canvas.style.display = "none";
     if (emptyEl) emptyEl.classList.remove("hidden");
     return;
   }
-  
+
   canvas.style.display = "block";
   if (emptyEl) emptyEl.classList.add("hidden");
-  
+
   const colors = getChartThemeColors();
   const ctx = canvas.getContext("2d");
-  
+
   const centerTextPlugin = {
     id: "centerText",
     afterDraw(chart) {
-      const { ctx, chartArea: { left, right, top, bottom, width, height } } = chart;
+      const {
+        ctx,
+        chartArea: { left, right, top, bottom, width, height },
+      } = chart;
       ctx.save();
       ctx.fillStyle = colors.textPrimary;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.font = "700 24px var(--font-heading, 'Space Grotesk')";
-      
+
       const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
       ctx.fillText(rate + "%", left + width / 2, top + height / 2 - 6);
-      
+
       ctx.fillStyle = colors.textSecondary;
       ctx.font = "500 11px var(--font-primary, 'Plus Jakarta Sans')";
       ctx.fillText("Completed", left + width / 2, top + height / 2 + 14);
       ctx.restore();
-    }
+    },
   };
-  
+
   window.overviewCharts.tasks = new Chart(ctx, {
     type: "doughnut",
     data: {
       labels: ["Completed", "Pending"],
-      datasets: [{
-        data: [completed, active],
-        backgroundColor: [colors.accent, "rgba(255, 255, 255, 0.04)"],
-        hoverBackgroundColor: [colors.accentHover, "rgba(255, 255, 255, 0.08)"],
-        borderWidth: 1,
-        borderColor: [colors.accent, colors.cardBorder]
-      }]
+      datasets: [
+        {
+          data: [completed, active],
+          backgroundColor: [colors.accent, "rgba(255, 255, 255, 0.04)"],
+          hoverBackgroundColor: [
+            colors.accentHover,
+            "rgba(255, 255, 255, 0.08)",
+          ],
+          borderWidth: 1,
+          borderColor: [colors.accent, colors.cardBorder],
+        },
+      ],
     },
     options: {
       responsive: true,
@@ -2548,46 +2623,46 @@ function renderOverviewTaskDonutChart() {
           labels: {
             color: colors.textSecondary,
             boxWidth: 10,
-            font: { family: "inherit", size: 10 }
-          }
+            font: { family: "inherit", size: 10 },
+          },
         },
         tooltip: {
           backgroundColor: "rgba(18, 20, 30, 0.95)",
           borderColor: colors.cardBorder,
           borderWidth: 1,
           padding: 10,
-          cornerRadius: 8
-        }
-      }
+          cornerRadius: 8,
+        },
+      },
     },
-    plugins: [centerTextPlugin]
+    plugins: [centerTextPlugin],
   });
 }
 
 function renderOverviewHeatmap() {
   const container = document.getElementById("overview-attendance-heatmap");
   if (!container) return;
-  
+
   container.innerHTML = "";
-  
+
   const dates = [];
   for (let i = 29; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
     dates.push(d);
   }
-  
+
   const classNames = getUniqueClassNames();
-  
+
   dates.forEach((date) => {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     const dateKey = `${year}-${month}-${day}`;
-    
+
     let loggedStatus = null;
     let loggedClass = null;
-    
+
     for (let i = 0; i < classNames.length; i++) {
       const className = classNames[i];
       const logs = state.attendance[className] || {};
@@ -2597,28 +2672,34 @@ function renderOverviewHeatmap() {
         break;
       }
     }
-    
+
     const square = document.createElement("div");
     square.className = "heatmap-square";
-    
+
     const weekdayStr = date.toLocaleDateString("en-US", { weekday: "short" });
     const monthStr = date.toLocaleDateString("en-US", { month: "short" });
     const dayNum = date.getDate();
     const dateDisplayStr = `${weekdayStr}, ${monthStr} ${dayNum}`;
-    
+
     if (loggedStatus) {
       let statusChar = "";
       if (loggedStatus === "Present") statusChar = "p";
       else if (loggedStatus === "Absent") statusChar = "a";
       else if (loggedStatus === "Late") statusChar = "l";
       else if (loggedStatus === "Excused") statusChar = "e";
-      
+
       square.classList.add(statusChar);
-      square.setAttribute("data-tooltip", `${dateDisplayStr}: ${loggedStatus} (${loggedClass})`);
+      square.setAttribute(
+        "data-tooltip",
+        `${dateDisplayStr}: ${loggedStatus} (${loggedClass})`,
+      );
     } else {
-      square.setAttribute("data-tooltip", `${dateDisplayStr}: No schedule / No logs`);
+      square.setAttribute(
+        "data-tooltip",
+        `${dateDisplayStr}: No schedule / No logs`,
+      );
     }
-    
+
     container.appendChild(square);
   });
 }
@@ -2628,17 +2709,19 @@ function renderOverviewTab() {
   const maxStreak = calculateMaxStreak();
   const tasks = getActiveTasksCount();
   const routines = state.routine.length;
-  
+
   const avgEl = document.getElementById("overview-avg-attendance");
   const streakEl = document.getElementById("overview-max-streak");
   const tasksEl = document.getElementById("overview-active-tasks");
   const routinesEl = document.getElementById("overview-routine-count");
-  
+
   if (avgEl) avgEl.textContent = `${avg}%`;
-  if (streakEl) streakEl.textContent = `${maxStreak} Day${maxStreak === 1 ? "" : "s"}`;
+  if (streakEl)
+    streakEl.textContent = `${maxStreak} Day${maxStreak === 1 ? "" : "s"}`;
   if (tasksEl) tasksEl.textContent = `${tasks.active} Pending`;
-  if (routinesEl) routinesEl.textContent = `${routines} Event${routines === 1 ? "" : "s"}`;
-  
+  if (routinesEl)
+    routinesEl.textContent = `${routines} Event${routines === 1 ? "" : "s"}`;
+
   renderOverviewTrendChart();
   renderOverviewClassBarsChart();
   renderOverviewTaskDonutChart();
@@ -2651,28 +2734,28 @@ const walkthroughSteps = [
   {
     tab: "overview",
     elementId: "card-overview",
-    text: "Welcome to AuraTracker! This is your <strong>Executive Summary Dashboard</strong>. Track overall attendance, streaks, pending tasks, and view interactive charts detailing daily performance."
+    text: "Welcome to AuraTracker! This is your <strong>Executive Summary Dashboard</strong>. Track overall attendance, streaks, pending tasks, and view interactive charts detailing daily performance.",
   },
   {
     tab: "attendance",
     elementSelector: ".card-attendance",
-    text: "The <strong>Attendance Tab</strong> lets you register specific classes and log daily attendance statuses (Present, Absent, Late, Excused) directly on an interactive calendar."
+    text: "The <strong>Attendance Tab</strong> lets you register specific classes and log daily attendance statuses (Present, Absent, Late, Excused) directly on an interactive calendar.",
   },
   {
     tab: "routine",
     elementSelector: ".card-routine",
-    text: "Under the <strong>Weekly Routine Tab</strong>, outline your class schedule, workout routines, and study blocks. Toggle between timeline and weekly scope grid views."
+    text: "Under the <strong>Weekly Routine Tab</strong>, outline your class schedule, workout routines, and study blocks. Toggle between timeline and weekly scope grid views.",
   },
   {
     tab: "todo",
     elementSelector: ".card-todo",
-    text: "Use the <strong>Tasks & To-Dos Tab</strong> to maintain prioritized task lists. Assign tasks to specific days and categorize them by work, study, or habits."
+    text: "Use the <strong>Tasks & To-Dos Tab</strong> to maintain prioritized task lists. Assign tasks to specific days and categorize them by work, study, or habits.",
   },
   {
     tab: "header",
     elementSelector: ".top-header",
-    text: "Customize your environment instantly! Toggle between <strong>4 glassmorphic themes</strong> and <strong>4 typography font layouts</strong> in the top header selector dropdowns."
-  }
+    text: "Customize your environment instantly! Toggle between <strong>4 glassmorphic themes</strong> and <strong>4 typography font layouts</strong> in the top header selector dropdowns.",
+  },
 ];
 
 function startWalkthrough() {
@@ -2687,20 +2770,22 @@ function startWalkthrough() {
 function showWalkthroughStep(step) {
   const stepConfig = walkthroughSteps[step - 1];
   if (!stepConfig) return;
-  
+
   // Clear any existing highlights
   document.querySelectorAll(".walkthrough-highlight").forEach((el) => {
     el.classList.remove("walkthrough-highlight");
   });
-  
+
   // Automate tab navigation
   if (stepConfig.tab !== "header") {
-    const tabBtn = document.querySelector(`.nav-item[data-tab="${stepConfig.tab}"]`);
+    const tabBtn = document.querySelector(
+      `.nav-item[data-tab="${stepConfig.tab}"]`,
+    );
     if (tabBtn && !tabBtn.classList.contains("active")) {
       tabBtn.click();
     }
   }
-  
+
   // Find element to highlight
   let targetEl = null;
   if (stepConfig.elementId) {
@@ -2708,20 +2793,20 @@ function showWalkthroughStep(step) {
   } else if (stepConfig.elementSelector) {
     targetEl = document.querySelector(stepConfig.elementSelector);
   }
-  
+
   if (targetEl) {
     targetEl.classList.add("walkthrough-highlight");
     targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
   }
-  
+
   // Update guide panel
   const stepNumEl = document.getElementById("walkthrough-step-num");
   const textEl = document.getElementById("walkthrough-text");
   const nextBtn = document.getElementById("walkthrough-btn-next");
-  
+
   if (stepNumEl) stepNumEl.textContent = step;
   if (textEl) textEl.innerHTML = stepConfig.text;
-  
+
   if (nextBtn) {
     if (step === walkthroughSteps.length) {
       nextBtn.innerHTML = 'Finish <i data-lucide="check"></i>';
@@ -2747,12 +2832,12 @@ function endWalkthrough() {
   document.querySelectorAll(".walkthrough-highlight").forEach((el) => {
     el.classList.remove("walkthrough-highlight");
   });
-  
+
   const overlay = document.getElementById("walkthrough-overlay");
   if (overlay) {
     overlay.classList.add("hidden");
   }
-  
+
   localStorage.removeItem("is_first_signup");
   showToast("Onboarding complete! Your dashboard is ready.", "success");
 }
