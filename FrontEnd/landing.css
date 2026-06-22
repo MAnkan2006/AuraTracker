@@ -2094,3 +2094,23 @@ body {
         padding: 24px;
     }
 }
+
+@media (max-width: 480px) {
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+    .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .hero-ctas {
+        flex-direction: column;
+    }
+    .tour-visual-mockup, .mock-card-widget {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    .tour-section {
+        padding: 60px 16px 40px;
+    }
+}
