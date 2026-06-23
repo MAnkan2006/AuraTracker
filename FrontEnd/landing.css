@@ -320,8 +320,7 @@
 
 html {
   scroll-behavior: smooth;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  overflow-x: clip;
 }
 
 body {
@@ -334,9 +333,24 @@ body {
   );
   color: var(--text-primary);
   min-height: 100vh;
-  overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.6;
   position: relative;
+}
+
+section[id] {
+  scroll-margin-top: 90px;
+}
+
+.blob-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* --- Background Blobs --- */
@@ -698,7 +712,7 @@ body {
     0 20px 50px rgba(0, 0, 0, 0.5),
     0 0 30px var(--card-border-glow);
   border-radius: 16px;
-  overflow: hidden;
+  overflow: clip;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
 }
@@ -1365,7 +1379,7 @@ body {
   border-radius: 16px;
   padding: 48px 32px;
   position: relative;
-  overflow: hidden;
+  overflow: clip;
   text-align: left;
 }
 
@@ -1936,7 +1950,7 @@ body {
   width: 100%;
   max-width: 340px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
+  overflow: clip;
 }
 
 .mock-widget-header {
