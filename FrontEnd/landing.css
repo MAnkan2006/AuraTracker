@@ -207,9 +207,7 @@
 
 /* Nav links */
 [data-scheme="light"] .nav-links {
-  background: rgba(255, 255, 255, 0.96);
-  border-color: rgba(15, 23, 42, 0.08);
-  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+  background: rgb(248, 250, 252) !important;
 }
 
 [data-scheme="light"] .nav-links a {
@@ -323,6 +321,7 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 body {
