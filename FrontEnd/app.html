@@ -133,31 +133,26 @@
                 type="button"
                 class="btn-avatar-preset active"
                 data-avatar="avatar-1"
-                style="background: linear-gradient(135deg, #6366f1, #a855f7)"
               ></button>
               <button
                 type="button"
                 class="btn-avatar-preset"
                 data-avatar="avatar-2"
-                style="background: linear-gradient(135deg, #3b82f6, #06b6d4)"
               ></button>
               <button
                 type="button"
                 class="btn-avatar-preset"
                 data-avatar="avatar-3"
-                style="background: linear-gradient(135deg, #10b981, #34d399)"
               ></button>
               <button
                 type="button"
                 class="btn-avatar-preset"
                 data-avatar="avatar-4"
-                style="background: linear-gradient(135deg, #f59e0b, #e11d48)"
               ></button>
               <button
                 type="button"
                 class="btn-avatar-preset"
                 data-avatar="avatar-5"
-                style="background: linear-gradient(135deg, #ec4899, #8b5cf6)"
               ></button>
             </div>
           </div>
@@ -180,7 +175,7 @@
             type="button"
             class="btn btn-secondary"
             id="btn-guest-login"
-            style="width: 100%"
+           
           >
             <i data-lucide="shield-alert"></i> Explore as Guest
           </button>
@@ -243,7 +238,7 @@
             </div>
           </div>
 
-          <div class="date-widget" style="margin-top: 14px">
+          <div class="date-widget">
             <div class="time" id="live-time">12:00:00 PM</div>
             <div class="date" id="live-date">Thursday, June 18</div>
           </div>
@@ -326,7 +321,6 @@
               <button
                 class="btn btn-secondary btn-icon-small"
                 id="btn-banner-register"
-                style="margin-left: 8px; padding: 4px 10px; font-size: 11px"
               >
                 Register Account & Save Data
               </button></span
@@ -347,28 +341,28 @@
 
             <!-- Stats Overview Cards Grid -->
             <div class="overview-stats-grid">
-              <div class="overview-stat-tile" id="overview-tile-attendance" style="cursor: pointer;">
+              <div class="overview-stat-tile" id="overview-tile-attendance">
                 <div class="tile-icon"><i data-lucide="check-circle-2"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Average Attendance</span>
                   <strong class="tile-value" id="overview-avg-attendance">0%</strong>
                 </div>
               </div>
-              <div class="overview-stat-tile" id="overview-tile-streak" style="cursor: pointer;">
-                <div class="tile-icon"><i data-lucide="flame" style="color: #f59e0b"></i></div>
+              <div class="overview-stat-tile" id="overview-tile-streak">
+                <div class="tile-icon"><i data-lucide="flame"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Max Streak</span>
                   <strong class="tile-value" id="overview-max-streak">0 Days</strong>
                 </div>
               </div>
-              <div class="overview-stat-tile" id="overview-tile-tasks" style="cursor: pointer;">
+              <div class="overview-stat-tile" id="overview-tile-tasks">
                 <div class="tile-icon"><i data-lucide="list-todo"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Active Tasks</span>
                   <strong class="tile-value" id="overview-active-tasks">0 / 0</strong>
                 </div>
               </div>
-              <div class="overview-stat-tile" id="overview-tile-routine" style="cursor: pointer;">
+              <div class="overview-stat-tile" id="overview-tile-routine">
                 <div class="tile-icon"><i data-lucide="clock"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Scheduled Events</span>
@@ -379,9 +373,9 @@
 
             <div class="overview-charts-grid">
               <!-- Chart 1: Attendance Trend (Line Chart) -->
-              <div class="overview-chart-card" style="grid-column: span 2;">
+              <div class="overview-chart-card span-2">
                 <h4>Attendance Trend (Last 30 Days)</h4>
-                <div class="chart-canvas-container" style="position: relative; height: 260px; width: 100%;">
+                <div class="chart-canvas-container height-260">
                   <canvas id="overview-trend-chart"></canvas>
                   <div id="overview-trend-empty" class="chart-empty-placeholder hidden">
                     No attendance logs recorded yet. Log attendance to see trends.
@@ -392,7 +386,7 @@
               <!-- Chart 2: Subject Attendance Performance -->
               <div class="overview-chart-card">
                 <h4>Class Performance Breakdown</h4>
-                <div class="chart-canvas-container" style="position: relative; height: 220px; width: 100%;">
+                <div class="chart-canvas-container height-220">
                   <canvas id="overview-classes-chart"></canvas>
                   <div id="overview-classes-empty" class="chart-empty-placeholder hidden">
                     No active classes scheduled. Go to Weekly Routine tab to schedule classes.
@@ -403,7 +397,7 @@
               <!-- Chart 3: Task Progress Doughnut -->
               <div class="overview-chart-card">
                 <h4>Task Progress Velocity</h4>
-                <div class="chart-canvas-container" style="position: relative; height: 220px; width: 100%;">
+                <div class="chart-canvas-container height-220">
                   <canvas id="overview-tasks-chart"></canvas>
                   <div id="overview-tasks-empty" class="chart-empty-placeholder hidden">
                     No active tasks. Go to Tasks & To-Dos tab to add tasks.
@@ -412,7 +406,7 @@
               </div>
 
               <!-- Chart 4: Weekly Attendance Heatmap Grid -->
-              <div class="overview-chart-card" style="grid-column: span 2; margin-top: 12px;">
+              <div class="overview-chart-card span-2-margin">
                 <h4>Visual Attendance Grid (Last 30 Days)</h4>
                 <div class="overview-heatmap-wrapper">
                   <div class="overview-heatmap-grid" id="overview-attendance-heatmap">
@@ -444,8 +438,8 @@
               <select id="subject-selector" class="subject-dropdown">
                 <!-- Populated dynamically -->
               </select>
-              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject Entirely" style="display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; height: 38px; border-radius: 8px; font-size: 13.5px; cursor: pointer; flex-shrink: 0; outline: none;">
-                <i data-lucide="trash-2" style="width: 16px; height: 16px;"></i> Delete Subject
+              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject Entirely">
+                <i data-lucide="trash-2"></i> Delete Subject
               </button>
             </div>
 
@@ -458,7 +452,7 @@
                   <div
                     class="progress-fill"
                     id="stat-rate-fill"
-                    style="width: 0%"
+                   
                   ></div>
                 </div>
               </div>
@@ -472,7 +466,7 @@
                 <div
                   class="stat-value"
                   id="class-occurrences-summary"
-                  style="font-size: 14px; font-weight: 600; margin-top: 8px"
+                 
                 >
                   Mon, Wed
                 </div>
@@ -489,14 +483,7 @@
               <span
                 class="summary-e"
                 id="summary-excused"
-                style="
-                  background: rgba(59, 130, 246, 0.12);
-                  color: var(--excused);
-                  padding: 2px 8px;
-                  border-radius: 6px;
-                  font-size: 13px;
-                  font-weight: 700;
-                "
+               
                 >E: 0</span
               >
             </div>
@@ -620,7 +607,7 @@
                 <div
                   class="todo-progress-fill"
                   id="todo-progress-fill"
-                  style="width: 0%"
+                 
                 ></div>
               </div>
               <span class="todo-progress-text" id="todo-progress-text"
@@ -638,9 +625,9 @@
                 autocomplete="off"
               />
 
-              <div class="form-row" style="margin-bottom: 0">
-                <div class="form-group" style="margin-bottom: 0">
-                  <label for="todo-category" style="font-size: 10px"
+              <div class="form-row" class="no-margin">
+                <div class="form-group" class="no-margin">
+                  <label for="todo-category" class="small-label"
                     >Category</label
                   >
                   <select id="todo-category" class="todo-select">
@@ -650,8 +637,8 @@
                     <option value="personal">Personal 👤</option>
                   </select>
                 </div>
-                <div class="form-group" style="margin-bottom: 0">
-                  <label for="todo-urgency" style="font-size: 10px"
+                <div class="form-group" class="no-margin">
+                  <label for="todo-urgency" class="small-label"
                     >Priority</label
                   >
                   <select id="todo-urgency" class="todo-select">
@@ -663,7 +650,7 @@
               </div>
 
               <div class="todo-options-row">
-                <select id="todo-day" class="todo-select" style="flex-grow: 1">
+                <select id="todo-day" class="todo-select">
                   <option value="">📅 Backlog (No specific day)</option>
                   <option value="1">📅 Monday</option>
                   <option value="2">📅 Tuesday</option>
@@ -677,7 +664,7 @@
                 <button
                   type="submit"
                   class="btn btn-primary"
-                  style="padding: 10px 14px"
+                 
                 >
                   <i data-lucide="plus"></i> Add
                 </button>
@@ -738,12 +725,7 @@
               <div
                 class="profile-section-block"
                 id="profile-edit-section"
-                style="
-                  grid-column: span 2;
-                  display: grid;
-                  grid-template-columns: 1fr 1fr;
-                  gap: 24px;
-                "
+               
               >
                 <!-- Goal Comparison Box -->
                 <div class="profile-comparison-box">
@@ -763,12 +745,12 @@
                   </div>
                   <div
                     class="todo-progress-bar"
-                    style="height: 10px; margin-top: 10px"
+                   
                   >
                     <div
                       class="progress-fill"
                       id="profile-goal-comparison-fill"
-                      style="width: 0%"
+                     
                     ></div>
                   </div>
                 </div>
@@ -820,7 +802,7 @@
                   <button
                     type="submit"
                     class="btn btn-primary"
-                    style="margin-top: 12px; width: 100%"
+                   
                   >
                     <i data-lucide="check"></i> Save Profile Settings
                   </button>
@@ -831,7 +813,7 @@
               <div
                 class="profile-section-block hidden"
                 id="guest-convert-section"
-                style="grid-column: span 2"
+               
               >
                 <div class="guest-conversion-card">
                   <div class="conversion-intro">
@@ -849,7 +831,7 @@
                   <form
                     id="guest-convert-form"
                     class="profile-edit-form"
-                    style="margin-top: 20px"
+                   
                   >
                     <div class="form-row">
                       <div class="form-group">
@@ -902,61 +884,26 @@
                             type="button"
                             class="btn-avatar-preset active"
                             data-avatar="avatar-1"
-                            style="
-                              background: linear-gradient(
-                                135deg,
-                                #6366f1,
-                                #a855f7
-                              );
-                            "
                           ></button>
                           <button
                             type="button"
                             class="btn-avatar-preset"
                             data-avatar="avatar-2"
-                            style="
-                              background: linear-gradient(
-                                135deg,
-                                #3b82f6,
-                                #06b6d4
-                              );
-                            "
                           ></button>
                           <button
                             type="button"
                             class="btn-avatar-preset"
                             data-avatar="avatar-3"
-                            style="
-                              background: linear-gradient(
-                                135deg,
-                                #10b981,
-                                #34d399
-                              );
-                            "
                           ></button>
                           <button
                             type="button"
                             class="btn-avatar-preset"
                             data-avatar="avatar-4"
-                            style="
-                              background: linear-gradient(
-                                135deg,
-                                #f59e0b,
-                                #e11d48
-                              );
-                            "
                           ></button>
                           <button
                             type="button"
                             class="btn-avatar-preset"
                             data-avatar="avatar-5"
-                            style="
-                              background: linear-gradient(
-                                135deg,
-                                #ec4899,
-                                #8b5cf6
-                              );
-                            "
                           ></button>
                         </div>
                       </div>
@@ -968,12 +915,7 @@
                     <button
                       type="submit"
                       class="btn btn-primary"
-                      style="
-                        margin-top: 14px;
-                        width: 100%;
-                        font-size: 14px;
-                        padding: 12px;
-                      "
+                     
                     >
                       <i data-lucide="shield-check"></i> Register Account & Save
                       My Workspace
@@ -1112,7 +1054,7 @@
           <button
             type="button"
             class="btn btn-secondary btn-close-modal"
-            style="width: 100%"
+           
           >
             Close
           </button>
@@ -1147,7 +1089,7 @@
           </button>
         </div>
         <div class="modal-body">
-          <p id="confirm-modal-message" style="margin: 0; line-height: 1.5; font-size: 14.5px; color: var(--text-primary);"></p>
+          <p id="confirm-modal-message"></p>
         </div>
         <div class="modal-footer">
           <button id="btn-confirm-cancel" class="btn btn-secondary">Cancel</button>
