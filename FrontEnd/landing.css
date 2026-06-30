@@ -532,10 +532,69 @@ section[id] {
   gap: 12px;
 }
 
-.nav-links {
+/* Desktop-only nav links (inside header, normal flow) */
+.nav-desktop {
   display: flex;
   align-items: center;
   gap: 32px;
+}
+
+.nav-desktop a {
+  text-decoration: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s ease;
+  position: relative;
+  padding: 4px 0;
+}
+
+.nav-desktop a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.3s ease;
+}
+
+.nav-desktop a:hover::after {
+  transform: scaleX(1);
+  transform-origin: left;
+}
+
+.nav-desktop a:hover {
+  color: var(--text-primary);
+}
+
+.nav-desktop a.nav-cta {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover, #4f46e5));
+  color: #fff;
+  padding: 8px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+  transition: all 0.2s ease;
+}
+
+.nav-desktop a.nav-cta::after {
+  display: none;
+}
+
+.nav-desktop a.nav-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+  color: #fff;
+}
+
+/* Mobile nav modal — always hidden on desktop */
+.nav-links {
+  display: none;
 }
 
 .nav-card {
@@ -1605,6 +1664,12 @@ section[id] {
 }
 
 @media (max-width: 768px) {
+  /* Hide desktop nav links */
+  .nav-desktop {
+    display: none;
+  }
+
+  /* Show mobile nav modal — full-screen overlay */
   .nav-links {
     display: flex;
     position: fixed;
@@ -1612,9 +1677,9 @@ section[id] {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(5, 5, 10, 0.7) !important;
-    backdrop-filter: blur(6px) !important;
-    -webkit-backdrop-filter: blur(6px) !important;
+    background: rgba(5, 5, 10, 0.7);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     align-items: flex-start;
     justify-content: center;
     padding: 24px 0;

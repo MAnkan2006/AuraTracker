@@ -39,6 +39,15 @@
           <span class="company-badge">By ManTools'</span>
         </a>
 
+        <!-- Desktop Nav Links — shown only on ≥768px -->
+        <nav class="nav-desktop" aria-label="Main navigation">
+          <a href="#features">Features</a>
+          <a href="#tour">Capabilities</a>
+          <a href="#demo">Themes Demo</a>
+          <a href="#pricing">Pricing</a>
+          <a href="./app.html" class="nav-cta">Login / Signup</a>
+        </nav>
+
         <!-- Nav Right: Theme Toggle + Hamburger -->
         <div class="nav-right">
           <button
@@ -63,8 +72,8 @@
       </div>
     </header>
 
-    <!-- Mobile Nav Modal (outside header to avoid backdrop-filter stacking context) -->
-    <nav class="nav-links" id="nav-links" aria-label="Mobile navigation">
+    <!-- Mobile Nav Modal — lives outside header to escape backdrop-filter stacking context -->
+    <nav class="nav-links" id="nav-links" aria-label="Mobile navigation" aria-hidden="true">
       <div class="nav-card" id="nav-card">
         <a href="#features" class="nav-item">Features</a>
         <div class="nav-divider"></div>
@@ -77,6 +86,7 @@
         <a href="./app.html" class="nav-cta">Login / Signup</a>
       </div>
     </nav>
+
 
     <!-- Hero Section -->
     <section class="hero-section">
