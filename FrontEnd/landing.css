@@ -405,16 +405,16 @@ section[id] {
 
 /* --- Navbar --- */
 .navbar {
-  position: fixed;
+  position: sticky;
   top: 0;
   left: 0;
   right: 0;
-  background: rgba(8, 9, 13, 0.6);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--card-border);
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 1000;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nav-container {
@@ -1589,22 +1589,30 @@ section[id] {
 
 @media (max-width: 768px) {
   .nav-links {
-    display: none;
+    display: flex;
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
-    background: rgba(8, 9, 13, 0.95);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background: rgba(8, 9, 13, 0.9);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     flex-direction: column;
-    padding: 24px;
+    padding: 0 24px;
     gap: 20px;
     border-bottom: 1px solid var(--card-border);
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    pointer-events: none;
+    transition: max-height 0.25s ease-out, opacity 0.25s ease-out, padding 0.25s ease-out;
   }
 
   .nav-links.open {
-    display: flex;
+    max-height: 400px;
+    opacity: 1;
+    padding: 24px;
+    pointer-events: auto;
   }
 
   .mobile-toggle {
@@ -2285,5 +2293,353 @@ section[id] {
   }
   .nav-container {
     padding: 12px 16px;
+  }
+}
+
+/* ==========================================================================
+   AuraTracker UI Improvements (Sticky Navbar, Mobile Acc, Desktop 2x2, etc.)
+   ========================================================================== */
+
+/* --- Sticky Navbar scrolled elevation state --- */
+.navbar.scrolled {
+  background: rgba(8, 9, 13, 0.85) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-scheme="light"] .navbar.scrolled {
+  background: rgba(248, 250, 252, 0.95) !important;
+  border-bottom-color: rgba(15, 23, 42, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* --- Mobile Breakpoint Overrides (max-width: 640px) --- */
+@media (max-width: 640px) {
+  /* 1. Hero CTA Buttons */
+  .hero-ctas {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .hero-ctas .btn {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  /* 3. Hero Stats mobile modifications */
+  .preview-card-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .preview-calendar-box {
+    display: none !important;
+  }
+
+  /* 5. Theme Selector mobile grid */
+  .theme-picker-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+  .theme-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    text-align: center !important;
+    margin-bottom: 0 !important;
+  }
+}
+
+/* --- Mobile Breakpoint Overrides (max-width: 768px) --- */
+@media (max-width: 768px) {
+  /* 4. Capabilities Accordion Mobile Styles */
+  .tour-tabs.accordion-mode {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+    padding: 16px !important;
+    gap: 12px !important;
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 16px !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-tab {
+    width: 100% !important;
+    text-align: left !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    flex: none !important;
+    white-space: nowrap !important;
+    background: rgba(255, 255, 255, 0.01) !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  }
+  
+  .tour-tabs.accordion-mode .tour-tab.active {
+    background: var(--accent) !important;
+    box-shadow: 0 4px 12px var(--accent-glow) !important;
+    color: #fff !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-tab::after {
+    content: '' !important;
+    display: inline-block !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-right: 2px solid var(--text-secondary) !important;
+    border-bottom: 2px solid var(--text-secondary) !important;
+    transform: rotate(45deg) !important;
+    margin-left: auto !important;
+    transition: transform 0.2s ease, border-color 0.2s ease !important;
+    flex-shrink: 0 !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-tab.active::after {
+    transform: rotate(-135deg) !important;
+    border-color: #fff !important;
+  }
+
+  /* Accordion Pane styling when nested */
+  .tour-tabs.accordion-mode .tour-pane {
+    display: none;
+    width: 100% !important;
+    margin-top: 4px !important;
+    margin-bottom: 8px !important;
+    background: var(--card-bg) !important;
+    border: 1px solid var(--card-border) !important;
+    border-radius: 12px !important;
+    padding: 16px 20px !important;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-pane.active {
+    display: block !important;
+    animation: fade-slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-pane-grid {
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;
+  }
+
+  .tour-tabs.accordion-mode .tour-visual-mockup {
+    margin-top: 12px !important;
+  }
+
+  /* Hide the standalone desktop content pane container */
+  .tour-content {
+    display: none !important;
+  }
+}
+
+/* --- Desktop Breakpoint Overrides (min-width: 1024px) --- */
+@media (min-width: 1024px) {
+  /* 6. Hero 2-column layout */
+  .hero-container {
+    max-width: 1200px !important;
+    width: 100% !important;
+  }
+  .hero-grid-wrapper {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 60px !important;
+    width: 100% !important;
+    text-align: left !important;
+  }
+  .hero-text-content {
+    flex: 1.2 !important;
+  }
+  .hero-badge {
+    align-self: flex-start !important;
+  }
+  .hero-title {
+    font-size: 56px !important;
+    text-align: left !important;
+  }
+  .hero-subtitle {
+    text-align: left !important;
+    margin-left: 0 !important;
+    max-width: 600px !important;
+  }
+  .hero-ctas {
+    justify-content: flex-start !important;
+  }
+  .hero-preview-sidebar-container {
+    flex: 1.2 !important;
+    max-width: 620px !important;
+    min-width: 460px !important;
+  }
+  .app-preview-frame {
+    max-width: 100% !important;
+  }
+
+  /* 7. Features 2x2 Grid */
+  .features-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 24px !important;
+  }
+  .feature-card {
+    padding: 28px 24px !important;
+    height: 100% !important;
+  }
+
+  /* 8. Latency Comparison Side-by-side vertical columns */
+  .analytics-card .chart-container {
+    flex-direction: row !important;
+    align-items: flex-end !important;
+    justify-content: space-around !important;
+    height: 240px !important;
+    padding: 24px 0 !important;
+  }
+
+  .analytics-card .bar-chart-row {
+    flex-direction: column !important;
+    align-items: center !important;
+    height: 100% !important;
+    width: 30% !important;
+    justify-content: flex-end !important;
+    gap: 12px !important;
+  }
+
+  .analytics-card .bar-label {
+    order: 3 !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    color: var(--text-secondary) !important;
+    margin-top: 8px !important;
+  }
+
+  .analytics-card .bar-wrapper {
+    order: 2 !important;
+    flex-direction: column-reverse !important;
+    align-items: center !important;
+    height: 160px !important;
+    width: 100% !important;
+    gap: 10px !important;
+    justify-content: flex-start !important;
+  }
+
+  .analytics-card .bar-fill {
+    width: 28px !important;
+    border-radius: 8px !important;
+    transition: height 1s ease !important;
+  }
+
+  /* Heights relative to value */
+  .analytics-card .local-bar {
+    height: 16px !important; /* ~10% scale */
+    background: #10b981 !important; /* green */
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4) !important;
+    animation: slide-up-bar 1s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .analytics-card .self-hosted-bar {
+    height: 52px !important; /* ~30% scale */
+    background: #f59e0b !important; /* amber */
+    box-shadow: 0 0 15px rgba(245, 158, 11, 0.4) !important;
+    animation: slide-up-bar 1.3s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .analytics-card .cloud-bar {
+    height: 140px !important; /* ~90% scale */
+    background: #ef4444 !important; /* red */
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.4) !important;
+    animation: slide-up-bar 1.6s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  }
+
+  .analytics-card .bar-value {
+    order: 1 !important;
+    min-width: unset !important;
+    text-align: center !important;
+    font-size: 14px !important;
+  }
+}
+
+@keyframes slide-up-bar {
+  from {
+    height: 0 !important;
+  }
+}
+
+/* --- 10. Bottom CTA Section --- */
+.cta-bottom {
+  padding: 60px 24px !important;
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  width: 100% !important;
+  background: transparent !important; /* override section bg */
+}
+
+.cta-content {
+  position: relative !important;
+  overflow: hidden !important;
+  border-radius: 16px !important;
+  background: linear-gradient(135deg, #1e1040 0%, #0f0a25 50%, #0a1628 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 80px 24px !important;
+  text-align: center !important;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+.cta-content::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 320px !important;
+  height: 320px !important;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%) !important;
+  pointer-events: none !important;
+  z-index: 1 !important;
+}
+
+.cta-content h2,
+.cta-content p,
+.cta-content .btn {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+.cta-content h2 {
+  font-size: 42px !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  margin-bottom: 16px !important;
+}
+
+.cta-content p {
+  color: var(--text-secondary) !important;
+  font-size: 16px !important;
+  margin-bottom: 32px !important;
+}
+
+.cta-content .btn-primary {
+  background: linear-gradient(135deg, var(--accent) 0%, #7c3aed 100%) !important;
+  box-shadow: 0 0 20px rgba(124, 58, 237, 0.4) !important;
+  border: none !important;
+  padding: 16px 36px !important;
+  font-size: 16px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.cta-content .btn-primary:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 30px rgba(124, 58, 237, 0.7) !important;
+}
+
+@media (max-width: 768px) {
+  .cta-bottom {
+    padding: 40px 16px !important;
+  }
+  .cta-content {
+    padding: 48px 24px !important;
+  }
+  .cta-content h2 {
+    font-size: 30px !important;
   }
 }

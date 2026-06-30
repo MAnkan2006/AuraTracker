@@ -19,6 +19,20 @@ document.addEventListener("DOMContentLoaded", () => {
     window.lucide.createIcons();
   }
 
+  // Scroll Listener for Navbar Lift
+  const navbar = document.querySelector(".navbar");
+  if (navbar) {
+    const handleScroll = () => {
+      if (window.scrollY > 10) {
+        navbar.classList.add("scrolled");
+      } else {
+        navbar.classList.remove("scrolled");
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    handleScroll();
+  }
+
   // Mobile Menu Toggle
   const mobileToggle = document.getElementById("mobile-toggle");
   const navLinks = document.getElementById("nav-links");
@@ -108,25 +122,84 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Capabilities Tour Navigation
+  // Capabilities Tour Navigation & Accordion (Mobile Responsive)
+  const tourTabsContainer = document.querySelector(".tour-tabs");
+  const tourContentContainer = document.querySelector(".tour-content");
   const tourTabs = document.querySelectorAll(".tour-tab");
   const tourPanes = document.querySelectorAll(".tour-pane");
-  
+
+  function handleTourResponsive() {
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      if (tourTabsContainer && !tourTabsContainer.classList.contains("accordion-mode")) {
+        tourTabsContainer.classList.add("accordion-mode");
+        tourTabs.forEach((tab) => {
+          const targetId = tab.getAttribute("data-tour-tab");
+          const pane = document.getElementById(targetId);
+          if (pane) {
+            tab.parentNode.insertBefore(pane, tab.nextSibling);
+          }
+        });
+      }
+    } else {
+      if (tourTabsContainer && tourTabsContainer.classList.contains("accordion-mode")) {
+        tourTabsContainer.classList.remove("accordion-mode");
+        tourPanes.forEach((pane) => {
+          if (tourContentContainer) {
+            tourContentContainer.appendChild(pane);
+          }
+        });
+        
+        // Ensure at least one tab is active on desktop restore
+        const activeTab = Array.from(tourTabs).find(t => t.classList.contains("active")) || tourTabs[0];
+        if (activeTab) {
+          tourTabs.forEach(t => t.classList.remove("active"));
+          tourPanes.forEach(p => p.classList.remove("active"));
+          activeTab.classList.add("active");
+          const targetPane = document.getElementById(activeTab.getAttribute("data-tour-tab"));
+          if (targetPane) targetPane.classList.add("active");
+        }
+      }
+    }
+  }
+
   if (tourTabs.length > 0 && tourPanes.length > 0) {
     tourTabs.forEach((tab) => {
       tab.addEventListener("click", () => {
-        // Toggle active button
-        tourTabs.forEach((t) => t.classList.remove("active"));
-        tab.classList.add("active");
-        
-        // Toggle active view pane
-        tourPanes.forEach((p) => p.classList.remove("active"));
-        const targetId = tab.getAttribute("data-tour-tab");
-        const targetPane = document.getElementById(targetId);
-        if (targetPane) {
-          targetPane.classList.add("active");
+        const isMobile = window.innerWidth < 768;
+        const isActive = tab.classList.contains("active");
+
+        if (isMobile) {
+          if (isActive) {
+            // Toggle closed
+            tab.classList.remove("active");
+            const targetId = tab.getAttribute("data-tour-tab");
+            const targetPane = document.getElementById(targetId);
+            if (targetPane) targetPane.classList.remove("active");
+          } else {
+            // Close others, open this
+            tourTabs.forEach((t) => t.classList.remove("active"));
+            tourPanes.forEach((p) => p.classList.remove("active"));
+            tab.classList.add("active");
+            const targetId = tab.getAttribute("data-tour-tab");
+            const targetPane = document.getElementById(targetId);
+            if (targetPane) targetPane.classList.add("active");
+          }
+        } else {
+          // Desktop behavior
+          tourTabs.forEach((t) => t.classList.remove("active"));
+          tab.classList.add("active");
+          tourPanes.forEach((p) => p.classList.remove("active"));
+          const targetId = tab.getAttribute("data-tour-tab");
+          const targetPane = document.getElementById(targetId);
+          if (targetPane) {
+            targetPane.classList.add("active");
+          }
         }
       });
     });
+
+    window.addEventListener("resize", handleTourResponsive);
+    handleTourResponsive(); // Run on initialization
   }
 });
