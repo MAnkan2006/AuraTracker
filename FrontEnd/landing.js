@@ -4,14 +4,16 @@ document.addEventListener("DOMContentLoaded", () => {
   document.documentElement.setAttribute("data-scheme", savedScheme);
 
   // Color Scheme Switch Listener
+  function toggleScheme() {
+    const currentScheme = document.documentElement.getAttribute("data-scheme") || "dark";
+    const newScheme = currentScheme === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-scheme", newScheme);
+    localStorage.setItem("auratracker_scheme", newScheme);
+  }
+
   const btnToggleScheme = document.getElementById("btn-toggle-scheme");
   if (btnToggleScheme) {
-    btnToggleScheme.addEventListener("click", () => {
-      const currentScheme = document.documentElement.getAttribute("data-scheme") || "dark";
-      const newScheme = currentScheme === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-scheme", newScheme);
-      localStorage.setItem("auratracker_scheme", newScheme);
-    });
+    btnToggleScheme.addEventListener("click", toggleScheme);
   }
 
   // Initialize Lucide Icons
@@ -33,21 +35,111 @@ document.addEventListener("DOMContentLoaded", () => {
     handleScroll();
   }
 
-  // Mobile Menu Toggle
+  // Mobile Menu Toggle & Modal Overlay Behavior
   const mobileToggle = document.getElementById("mobile-toggle");
   const navLinks = document.getElementById("nav-links");
+  const navCard = document.getElementById("nav-card");
+
+  function closeMenu() {
+    if (navLinks && navLinks.classList.contains("open")) {
+      navLinks.classList.remove("open");
+      document.body.style.overflow = "";
+      if (mobileToggle) {
+        mobileToggle.setAttribute("aria-expanded", "false");
+        const icon = mobileToggle.querySelector("i");
+        if (icon) {
+          icon.setAttribute("data-lucide", "menu");
+          if (window.lucide && typeof window.lucide.createIcons === "function") {
+            window.lucide.createIcons();
+          }
+        }
+      }
+    }
+  }
+
+  function openMenu() {
+    if (navLinks) {
+      navLinks.classList.add("open");
+      document.body.style.overflow = "hidden";
+      if (mobileToggle) {
+        mobileToggle.setAttribute("aria-expanded", "true");
+        const icon = mobileToggle.querySelector("i");
+        if (icon) {
+          icon.setAttribute("data-lucide", "x");
+          if (window.lucide && typeof window.lucide.createIcons === "function") {
+            window.lucide.createIcons();
+          }
+        }
+      }
+      // Focus on the first element in card
+      const focusables = getFocusableElements();
+      if (focusables.length > 0) {
+        focusables[0].focus();
+      }
+    }
+  }
+
+  function getFocusableElements() {
+    if (!navCard) return [];
+    return Array.from(navCard.querySelectorAll('a, button, input, select, textarea, [tabindex="0"]'))
+      .filter(el => !el.hasAttribute('disabled') && el.getAttribute('tabindex') !== '-1');
+  }
 
   if (mobileToggle && navLinks) {
     mobileToggle.addEventListener("click", () => {
-      navLinks.classList.toggle("open");
+      const isOpen = navLinks.classList.contains("open");
+      if (isOpen) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    });
+
+    // Close menu when clicking on backdrop
+    navLinks.addEventListener("click", (e) => {
+      if (e.target === navLinks) {
+        closeMenu();
+      }
+    });
+
+    // Close menu and mark active link on item clicks
+    const navItems = navCard.querySelectorAll(".nav-item");
+    navItems.forEach((item) => {
+      item.addEventListener("click", () => {
+        navItems.forEach((i) => i.classList.remove("active"));
+        item.classList.add("active");
+        closeMenu();
+      });
+    });
+
+    // Close menu on Escape key press
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeMenu();
+      }
+    });
+
+    // Key listener for Tab inside modal to trap focus
+    window.addEventListener("keydown", (e) => {
+      if (!navLinks.classList.contains("open")) return;
       
-      // Update toggle icon
-      const icon = mobileToggle.querySelector("i");
-      if (icon) {
-        const isOpen = navLinks.classList.contains("open");
-        icon.setAttribute("data-lucide", isOpen ? "x" : "menu");
-        if (window.lucide && typeof window.lucide.createIcons === "function") {
-          window.lucide.createIcons();
+      if (e.key === "Tab") {
+        const focusables = getFocusableElements();
+        if (focusables.length === 0) return;
+        
+        const firstEl = focusables[0];
+        const lastEl = focusables[focusables.length - 1];
+        
+        if (e.shiftKey) {
+          if (document.activeElement === firstEl) {
+            lastEl.focus();
+            e.preventDefault();
+          }
+        } else {
+          if (document.activeElement === lastEl) {
+            firstEl.focus();
+            e.preventDefault();
+          }
         }
       }
     });

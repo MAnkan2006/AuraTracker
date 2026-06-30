@@ -39,8 +39,9 @@
           <p>Premium Attendance & Routine Manager by ManTools'</p>
         </div>
 
-        <!-- Forms Toggle Header -->
-        <div class="auth-toggle">
+        <!-- Forms Toggle Header — segmented pill control -->
+        <div class="auth-toggle" id="auth-toggle">
+          <div class="auth-toggle-indicator" aria-hidden="true"></div>
           <button class="btn-auth-toggle active" id="btn-toggle-login">
             Login
           </button>
@@ -249,65 +250,82 @@
       <main class="main-content">
         <!-- Header bar -->
         <header class="top-header">
-          <div class="welcome-section">
-            <h2>
-              Welcome Back,
-              <span class="username" id="header-user-name">User</span>
-            </h2>
-            <p class="greeting-subtitle">
-              Your Personalized Routines and Logs Portal
-            </p>
+          <!-- Left: Greeting + Search -->
+          <div class="nh-left">
+            <div class="nh-greeting">
+              <span class="nh-greeting-label">Welcome back</span>
+              <span class="nh-greeting-name" id="header-user-name">User</span>
+            </div>
+            <div class="nh-search">
+              <i data-lucide="search" class="nh-search-icon"></i>
+              <input
+                type="text"
+                id="nh-search-input"
+                class="nh-search-input"
+                placeholder="Search classes, tasks, routines…"
+                autocomplete="off"
+              />
+              <kbd class="nh-search-kbd">⌘K</kbd>
+            </div>
           </div>
 
-          <div class="header-right-controls">
-            <!-- User Avatar Display -->
-            <div class="header-avatar-badge" id="header-avatar-badge">
-              <div
-                class="user-avatar-circle mini"
-                id="header-user-avatar"
-              ></div>
-              <span id="header-user-badge-name">User</span>
-            </div>
-
-            <!-- Theme Swapper Controls -->
-            <div class="theme-picker-container">
-              <label for="theme-selector">
-                <i data-lucide="palette" class="theme-icon"></i>
-                <span>Theme</span>
-              </label>
-              <select id="theme-selector" class="theme-dropdown">
-                <option value="classic-obsidian">Classic Obsidian</option>
-                <option value="cyberpunk-onyx">Cyberpunk Onyx</option>
-                <option value="emerald-deep">Emerald Deep</option>
-                <option value="nebula-cosmic">Nebula Cosmic</option>
-                <option value="sunset-crimson">Sunset Crimson</option>
-                <option value="nordic-frost">Nordic Frost</option>
-                <option value="amber-gold">Amber Gold</option>
-              </select>
-            </div>
-
-            <!-- Font Swapper Controls -->
-            <div class="font-picker-container">
-              <label for="font-selector">
-                <i data-lucide="type" class="font-icon"></i>
-                <span>Font</span>
-              </label>
-              <select id="font-selector" class="font-dropdown">
-                <option value="font-modern">Modern Sans</option>
-                <option value="font-clean">Geometric</option>
-                <option value="font-cyber">Cyber Sora</option>
-                <option value="font-minimalist">Minimalist Pop</option>
-                <option value="font-funky">Trendy Bricolage</option>
-                <option value="font-tech">Tech Mono</option>
-                <option value="font-elegant">Classic Serif</option>
-              </select>
-            </div>
-
-            <!-- Color Scheme Toggle -->
-            <button id="btn-toggle-scheme" class="btn-scheme-toggle" title="Toggle Light/Dark Mode">
-              <i data-lucide="sun" class="scheme-icon sun-icon"></i>
-              <i data-lucide="moon" class="scheme-icon moon-icon"></i>
+          <!-- Right: Icon cluster + profile -->
+          <div class="nh-right">
+            <!-- Notification bell -->
+            <button class="nh-icon-btn" id="nh-bell-btn" title="Notifications" aria-label="Notifications">
+              <i data-lucide="bell"></i>
+              <span class="nh-notif-dot" id="nh-notif-dot"></span>
             </button>
+
+            <!-- Settings (opens appearance dropdown) -->
+            <div class="nh-settings-wrapper">
+              <button class="nh-icon-btn" id="nh-settings-btn" title="Appearance settings" aria-label="Appearance settings">
+                <i data-lucide="settings-2"></i>
+              </button>
+              <!-- Settings dropdown panel -->
+              <div class="nh-settings-panel hidden" id="nh-settings-panel">
+                <div class="nh-settings-row">
+                  <span class="nh-settings-label"><i data-lucide="palette"></i> Theme</span>
+                  <select id="theme-selector" class="nh-inline-select">
+                    <option value="classic-obsidian">Classic Obsidian</option>
+                    <option value="cyberpunk-onyx">Cyberpunk Onyx</option>
+                    <option value="emerald-deep">Emerald Deep</option>
+                    <option value="nebula-cosmic">Nebula Cosmic</option>
+                    <option value="sunset-crimson">Sunset Crimson</option>
+                    <option value="nordic-frost">Nordic Frost</option>
+                    <option value="amber-gold">Amber Gold</option>
+                  </select>
+                </div>
+                <div class="nh-settings-row">
+                  <span class="nh-settings-label"><i data-lucide="type"></i> Font</span>
+                  <select id="font-selector" class="nh-inline-select">
+                    <option value="font-modern">Modern Sans</option>
+                    <option value="font-clean">Geometric</option>
+                    <option value="font-cyber">Cyber Sora</option>
+                    <option value="font-minimalist">Minimalist Pop</option>
+                    <option value="font-funky">Trendy Bricolage</option>
+                    <option value="font-tech">Tech Mono</option>
+                    <option value="font-elegant">Classic Serif</option>
+                  </select>
+                </div>
+                <div class="nh-settings-row nh-settings-row-last">
+                  <span class="nh-settings-label"><i data-lucide="sun"></i> Appearance</span>
+                  <button class="nh-scheme-pill" id="btn-toggle-scheme" title="Toggle light/dark">
+                    <span class="nh-scheme-pill-thumb"></span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="nh-divider"></div>
+
+            <!-- Compact profile chip -->
+            <div class="nh-profile-chip" id="header-avatar-badge" title="Profile">
+              <div class="user-avatar-circle mini" id="header-user-avatar"></div>
+              <span id="header-user-badge-name">User</span>
+              <i data-lucide="chevron-down" class="nh-profile-chevron"></i>
+            </div>
           </div>
         </header>
 
@@ -438,8 +456,9 @@
               <select id="subject-selector" class="subject-dropdown">
                 <!-- Populated dynamically -->
               </select>
-              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject Entirely">
-                <i data-lucide="trash-2"></i> Delete Subject
+              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject" aria-label="Delete Subject">
+                <i data-lucide="trash-2"></i>
+                <span class="btn-text">Delete Subject</span>
               </button>
             </div>
 

@@ -102,6 +102,7 @@ const elements = {
   signupPassword: document.getElementById("signup-password"),
   btnToggleLogin: document.getElementById("btn-toggle-login"),
   btnToggleSignup: document.getElementById("btn-toggle-signup"),
+  authToggle: document.getElementById("auth-toggle"),
   loginError: document.getElementById("login-error"),
   signupError: document.getElementById("signup-error"),
   avatarPresetsGrid: document.getElementById("avatar-presets-grid"),
@@ -446,10 +447,11 @@ function showDashboard() {
 }
 
 function setupAuthHandlers() {
-  // Form toggle sliders
+  // Form toggle — segmented pill control
   elements.btnToggleLogin.addEventListener("click", () => {
     elements.btnToggleLogin.classList.add("active");
     elements.btnToggleSignup.classList.remove("active");
+    elements.authToggle.classList.remove("register-active"); // slide indicator left
     elements.loginForm.classList.remove("hidden");
     elements.signupForm.classList.add("hidden");
     elements.loginError.classList.add("hidden");
@@ -458,6 +460,7 @@ function setupAuthHandlers() {
   elements.btnToggleSignup.addEventListener("click", () => {
     elements.btnToggleSignup.classList.add("active");
     elements.btnToggleLogin.classList.remove("active");
+    elements.authToggle.classList.add("register-active"); // slide indicator right
     elements.signupForm.classList.remove("hidden");
     elements.loginForm.classList.add("hidden");
     elements.signupError.classList.add("hidden");
@@ -2031,6 +2034,46 @@ function setupTheme() {
   });
 }
 
+// ============================================
+// New Header — settings panel + search shortcut
+// ============================================
+function setupNewHeader() {
+  const settingsBtn = document.getElementById("nh-settings-btn");
+  const settingsPanel = document.getElementById("nh-settings-panel");
+  const searchInput = document.getElementById("nh-search-input");
+
+  // Toggle settings panel open/close
+  if (settingsBtn && settingsPanel) {
+    settingsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      settingsPanel.classList.toggle("hidden");
+    });
+
+    // Close on outside click
+    document.addEventListener("click", (e) => {
+      if (!settingsBtn.contains(e.target) && !settingsPanel.contains(e.target)) {
+        settingsPanel.classList.add("hidden");
+      }
+    });
+
+    // Close on Escape key
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") settingsPanel.classList.add("hidden");
+    });
+  }
+
+  // ⌘K / Ctrl+K focuses the search bar
+  if (searchInput) {
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInput.focus();
+        searchInput.select();
+      }
+    });
+  }
+}
+
 function initCustomSelect(selectElementOrId) {
   const select =
     typeof selectElementOrId === "string"
@@ -2157,6 +2200,7 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthSession();
   runClock();
   setupTheme();
+  setupNewHeader();
   setupNavigation();
 
   setupAuthHandlers();
