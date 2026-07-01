@@ -660,17 +660,22 @@ function setupAuthHandlers() {
   });
 
   // Logout trigger
-  elements.btnLogout.addEventListener("click", async () => {
-    if (
-      await showConfirm(
-        "Are you sure you want to log out?",
-        "Logout Confirmation",
-      )
-    ) {
-      sessionUser = null;
-      localStorage.removeItem("token");
-      localStorage.removeItem("auratracker_session");
-      showAuthScreen();
+  const logoutBtns = [elements.btnLogout, document.getElementById("btn-logout-header")];
+  logoutBtns.forEach(btn => {
+    if (btn) {
+      btn.addEventListener("click", async () => {
+        if (
+          await showConfirm(
+            "Are you sure you want to log out?",
+            "Logout Confirmation",
+          )
+        ) {
+          sessionUser = null;
+          localStorage.removeItem("token");
+          localStorage.removeItem("auratracker_session");
+          showAuthScreen();
+        }
+      });
     }
   });
 }
@@ -2034,33 +2039,149 @@ function setupTheme() {
   });
 }
 
+// Helper to dynamically adjust a dropdown panel's position to prevent screen overflow on mobile
+function adjustPanelPosition(panel, button) {
+  panel.style.left = "";
+  panel.style.right = "";
+
+  if (window.innerWidth > 480) {
+    return;
+  }
+
+  const rect = panel.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const padding = 12; // Safety margin from screen edge
+
+  const left = rect.left;
+  const right = rect.right;
+  const parentRect = button.parentElement.getBoundingClientRect();
+
+  if (left < padding) {
+    const newLeft = padding - parentRect.left;
+    panel.style.left = `${newLeft}px`;
+    panel.style.right = "auto";
+  } else if (right > viewportWidth - padding) {
+    const newRight = parentRect.right - (viewportWidth - padding);
+    panel.style.right = `${newRight}px`;
+    panel.style.left = "auto";
+  }
+}
+
 // ============================================
 // New Header — settings panel + search shortcut
 // ============================================
 function setupNewHeader() {
   const settingsBtn = document.getElementById("nh-settings-btn");
   const settingsPanel = document.getElementById("nh-settings-panel");
+  const bellBtn = document.getElementById("nh-bell-btn");
+  const notifPanel = document.getElementById("nh-notif-panel");
+  const notifDot = document.getElementById("nh-notif-dot");
+  const markReadBtn = document.getElementById("btn-mark-read");
   const searchInput = document.getElementById("nh-search-input");
+  const profileBtn = document.getElementById("header-avatar-badge");
+  const profilePanel = document.getElementById("nh-profile-panel");
+  const profileViewBtn = document.getElementById("nh-profile-btn-view");
 
   // Toggle settings panel open/close
   if (settingsBtn && settingsPanel) {
     settingsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       settingsPanel.classList.toggle("hidden");
-    });
-
-    // Close on outside click
-    document.addEventListener("click", (e) => {
-      if (!settingsBtn.contains(e.target) && !settingsPanel.contains(e.target)) {
-        settingsPanel.classList.add("hidden");
+      if (notifPanel) notifPanel.classList.add("hidden"); // mutually exclusive
+      if (profilePanel) profilePanel.classList.add("hidden"); // mutually exclusive
+      if (!settingsPanel.classList.contains("hidden")) {
+        adjustPanelPosition(settingsPanel, settingsBtn);
       }
     });
+  }
 
-    // Close on Escape key
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") settingsPanel.classList.add("hidden");
+  // Toggle notification panel open/close
+  if (bellBtn && notifPanel) {
+    bellBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      notifPanel.classList.toggle("hidden");
+      if (settingsPanel) settingsPanel.classList.add("hidden"); // mutually exclusive
+      if (profilePanel) profilePanel.classList.add("hidden"); // mutually exclusive
+      
+      // Hide red dot when opened
+      if (notifDot) {
+        notifDot.classList.remove("visible");
+      }
+
+      if (!notifPanel.classList.contains("hidden")) {
+        adjustPanelPosition(notifPanel, bellBtn);
+      }
     });
   }
+
+  // Toggle profile dropdown panel open/close
+  if (profileBtn && profilePanel) {
+    profileBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      profilePanel.classList.toggle("hidden");
+      if (settingsPanel) settingsPanel.classList.add("hidden"); // mutually exclusive
+      if (notifPanel) notifPanel.classList.add("hidden"); // mutually exclusive
+      if (!profilePanel.classList.contains("hidden")) {
+        adjustPanelPosition(profilePanel, profileBtn);
+      }
+    });
+  }
+
+  // Handle View Profile button inside the profile menu
+  if (profileViewBtn) {
+    profileViewBtn.addEventListener("click", () => {
+      const profileTabItem = document.querySelector('.nav-item[data-tab="profile"]');
+      if (profileTabItem) {
+        profileTabItem.click();
+      }
+      if (profilePanel) {
+        profilePanel.classList.add("hidden");
+      }
+    });
+  }
+
+  // Recalculate positions on window resize if panels are open
+  window.addEventListener("resize", () => {
+    if (notifPanel && !notifPanel.classList.contains("hidden")) {
+      adjustPanelPosition(notifPanel, bellBtn);
+    }
+    if (settingsPanel && !settingsPanel.classList.contains("hidden")) {
+      adjustPanelPosition(settingsPanel, settingsBtn);
+    }
+    if (profilePanel && !profilePanel.classList.contains("hidden")) {
+      adjustPanelPosition(profilePanel, profileBtn);
+    }
+  });
+
+  // Mark all as read button
+  if (markReadBtn && notifDot) {
+    markReadBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      notifDot.classList.remove("visible");
+    });
+  }
+
+  // Close on outside click
+  document.addEventListener("click", (e) => {
+    if (settingsBtn && settingsPanel && !settingsBtn.contains(e.target) && !settingsPanel.contains(e.target)) {
+      settingsPanel.classList.add("hidden");
+    }
+    if (bellBtn && notifPanel && !bellBtn.contains(e.target) && !notifPanel.contains(e.target)) {
+      notifPanel.classList.add("hidden");
+    }
+    if (profileBtn && profilePanel && !profileBtn.contains(e.target) && !profilePanel.contains(e.target)) {
+      profilePanel.classList.add("hidden");
+    }
+  });
+
+  // Close on Escape key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (settingsPanel) settingsPanel.classList.add("hidden");
+      if (notifPanel) notifPanel.classList.add("hidden");
+      if (profilePanel) profilePanel.classList.add("hidden");
+    }
+  });
 
   // ⌘K / Ctrl+K focuses the search bar
   if (searchInput) {
@@ -2179,7 +2300,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Color Scheme Switch Listener
   if (elements.btnToggleScheme) {
-    elements.btnToggleScheme.addEventListener("click", () => {
+    elements.btnToggleScheme.addEventListener("click", (e) => {
+      e.stopPropagation();
       state.colorScheme = state.colorScheme === "dark" ? "light" : "dark";
       document.documentElement.setAttribute("data-scheme", state.colorScheme);
       localStorage.setItem("auratracker_scheme", state.colorScheme);

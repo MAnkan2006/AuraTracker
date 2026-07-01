@@ -272,10 +272,28 @@
           <!-- Right: Icon cluster + profile -->
           <div class="nh-right">
             <!-- Notification bell -->
-            <button class="nh-icon-btn" id="nh-bell-btn" title="Notifications" aria-label="Notifications">
-              <i data-lucide="bell"></i>
-              <span class="nh-notif-dot" id="nh-notif-dot"></span>
-            </button>
+            <div class="nh-notif-wrapper">
+              <button class="nh-icon-btn" id="nh-bell-btn" title="Notifications" aria-label="Notifications">
+                <i data-lucide="bell"></i>
+                <span class="nh-notif-dot" id="nh-notif-dot"></span>
+              </button>
+              
+              <!-- Notifications Dropdown Panel -->
+              <div class="nh-notif-panel hidden" id="nh-notif-panel">
+                <div class="nh-notif-header">
+                  <span class="nh-notif-title">Notifications</span>
+                  <button class="nh-notif-mark-read" id="btn-mark-read" title="Mark all as read" aria-label="Mark all as read">
+                    <i data-lucide="check-check"></i>
+                  </button>
+                </div>
+                <div class="nh-notif-list" id="nh-notif-list">
+                  <div class="nh-notif-empty">
+                    <i data-lucide="coffee"></i>
+                    <p>You're all caught up!</p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <!-- Settings (opens appearance dropdown) -->
             <div class="nh-settings-wrapper">
@@ -309,9 +327,10 @@
                   </select>
                 </div>
                 <div class="nh-settings-row nh-settings-row-last">
-                  <span class="nh-settings-label"><i data-lucide="sun"></i> Appearance</span>
-                  <button class="nh-scheme-pill" id="btn-toggle-scheme" title="Toggle light/dark">
-                    <span class="nh-scheme-pill-thumb"></span>
+                  <span class="nh-settings-label"> Appearance</span>
+                  <button class="nh-icon-btn" id="btn-toggle-scheme" style="width: 28px; height: 28px;" title="Toggle Light/Dark Mode" aria-label="Toggle light/dark mode">
+                    <i data-lucide="sun" class="scheme-icon sun-icon"></i>
+                    <i data-lucide="moon" class="scheme-icon moon-icon"></i>
                   </button>
                 </div>
               </div>
@@ -320,11 +339,23 @@
             <!-- Divider -->
             <div class="nh-divider"></div>
 
-            <!-- Compact profile chip -->
-            <div class="nh-profile-chip" id="header-avatar-badge" title="Profile">
-              <div class="user-avatar-circle mini" id="header-user-avatar"></div>
-              <span id="header-user-badge-name">User</span>
-              <i data-lucide="chevron-down" class="nh-profile-chevron"></i>
+            <!-- Profile Dropdown Wrapper -->
+            <div class="nh-profile-wrapper">
+              <div class="nh-profile-chip" id="header-avatar-badge" title="Profile">
+                <div class="user-avatar-circle mini" id="header-user-avatar"></div>
+                <span id="header-user-badge-name">User</span>
+                <i data-lucide="chevron-down" class="nh-profile-chevron"></i>
+              </div>
+              <!-- Profile Dropdown Panel -->
+              <div class="nh-profile-panel hidden" id="nh-profile-panel">
+                <button class="nh-profile-item" id="nh-profile-btn-view">
+                  <i data-lucide="user-cog"></i> View Profile
+                </button>
+                <div class="nh-profile-divider"></div>
+                <button class="nh-profile-item nh-profile-logout" id="btn-logout-header">
+                  <i data-lucide="log-out"></i> Log Out
+                </button>
+              </div>
             </div>
           </div>
         </header>
