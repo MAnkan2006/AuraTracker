@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AuraTracker // Premium Attendance & Routine Dashboard</title>
- 
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,13 +12,13 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Fira+Code:wght@400;500&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Sora:wght@400;500;600;700;800&family=Urbanist:wght@400;500;600;700;800;900&family=Poppins:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&family=Space+Mono:wght@400;700&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
- 
+
     <!-- Custom stylesheet -->
     <link rel="stylesheet" href="style.css" />
- 
+
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
-    
+
     <!-- Chart.js for premium graphics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </head>
@@ -27,15 +27,26 @@
     <div class="blob blob-1"></div>
     <div class="blob blob-2"></div>
     <div class="blob blob-3"></div>
- 
+
     <!-- 1. Full Screen Authentication Overlay -->
     <div id="auth-screen" class="auth-screen">
       <div class="auth-card">
         <div class="auth-brand">
           <div class="logo-icon">
-            <i data-lucide="hexagon"></i>
+            <img
+              src="Logo/LightModeLogo.png"
+              class="logo-img logo-light"
+              alt="AuraTracker Logo"
+            />
+            <img
+              src="Logo/DarkModeLogo.png"
+              class="logo-img logo-dark"
+              alt="AuraTracker Logo"
+            />
           </div>
-          <h2 class="brand-name">Aura<span class="brand-thin">Tracker</span></h2>
+          <h2 class="brand-name">
+            Aura<span class="brand-thin">Tracker</span>
+          </h2>
           <p>Premium Attendance & Routine Manager by ManTools'</p>
         </div>
 
@@ -72,7 +83,11 @@
                 required
                 autocomplete="current-password"
               />
-              <button type="button" class="btn-toggle-password" data-target="login-password">
+              <button
+                type="button"
+                class="btn-toggle-password"
+                data-target="login-password"
+              >
                 <i data-lucide="eye" class="icon-show"></i>
                 <i data-lucide="eye-off" class="icon-hide"></i>
               </button>
@@ -119,7 +134,11 @@
                 required
                 autocomplete="new-password"
               />
-              <button type="button" class="btn-toggle-password" data-target="signup-password">
+              <button
+                type="button"
+                class="btn-toggle-password"
+                data-target="signup-password"
+              >
                 <i data-lucide="eye" class="icon-show"></i>
                 <i data-lucide="eye-off" class="icon-hide"></i>
               </button>
@@ -172,12 +191,7 @@
         </div>
 
         <div class="auth-guest-row">
-          <button
-            type="button"
-            class="btn btn-secondary"
-            id="btn-guest-login"
-           
-          >
+          <button type="button" class="btn btn-secondary" id="btn-guest-login">
             <i data-lucide="shield-alert"></i> Explore as Guest
           </button>
         </div>
@@ -190,10 +204,21 @@
       <aside class="sidebar">
         <div class="brand">
           <div class="logo-icon">
-            <i data-lucide="hexagon"></i>
+            <img
+              src="Logo/LightModeLogo.png"
+              class="logo-img logo-light"
+              alt="AuraTracker Logo"
+            />
+            <img
+              src="Logo/DarkModeLogo.png"
+              class="logo-img logo-dark"
+              alt="AuraTracker Logo"
+            />
           </div>
           <div class="brand-text">
-            <h1 class="brand-name">Aura<span class="brand-thin">Tracker</span></h1>
+            <h1 class="brand-name">
+              Aura<span class="brand-thin">Tracker</span>
+            </h1>
             <span>DASHBOARD</span>
           </div>
         </div>
@@ -273,16 +298,26 @@
           <div class="nh-right">
             <!-- Notification bell -->
             <div class="nh-notif-wrapper">
-              <button class="nh-icon-btn" id="nh-bell-btn" title="Notifications" aria-label="Notifications">
+              <button
+                class="nh-icon-btn"
+                id="nh-bell-btn"
+                title="Notifications"
+                aria-label="Notifications"
+              >
                 <i data-lucide="bell"></i>
                 <span class="nh-notif-dot" id="nh-notif-dot"></span>
               </button>
-              
+
               <!-- Notifications Dropdown Panel -->
               <div class="nh-notif-panel hidden" id="nh-notif-panel">
                 <div class="nh-notif-header">
                   <span class="nh-notif-title">Notifications</span>
-                  <button class="nh-notif-mark-read" id="btn-mark-read" title="Mark all as read" aria-label="Mark all as read">
+                  <button
+                    class="nh-notif-mark-read"
+                    id="btn-mark-read"
+                    title="Mark all as read"
+                    aria-label="Mark all as read"
+                  >
                     <i data-lucide="check-check"></i>
                   </button>
                 </div>
@@ -297,13 +332,20 @@
 
             <!-- Settings (opens appearance dropdown) -->
             <div class="nh-settings-wrapper">
-              <button class="nh-icon-btn" id="nh-settings-btn" title="Appearance settings" aria-label="Appearance settings">
+              <button
+                class="nh-icon-btn"
+                id="nh-settings-btn"
+                title="Appearance settings"
+                aria-label="Appearance settings"
+              >
                 <i data-lucide="settings-2"></i>
               </button>
               <!-- Settings dropdown panel -->
               <div class="nh-settings-panel hidden" id="nh-settings-panel">
                 <div class="nh-settings-row">
-                  <span class="nh-settings-label"><i data-lucide="palette"></i> Theme</span>
+                  <span class="nh-settings-label"
+                    ><i data-lucide="palette"></i> Theme</span
+                  >
                   <select id="theme-selector" class="nh-inline-select">
                     <option value="classic-obsidian">Classic Obsidian</option>
                     <option value="cyberpunk-onyx">Cyberpunk Onyx</option>
@@ -315,7 +357,9 @@
                   </select>
                 </div>
                 <div class="nh-settings-row">
-                  <span class="nh-settings-label"><i data-lucide="type"></i> Font</span>
+                  <span class="nh-settings-label"
+                    ><i data-lucide="type"></i> Font</span
+                  >
                   <select id="font-selector" class="nh-inline-select">
                     <option value="font-modern">Modern Sans</option>
                     <option value="font-clean">Geometric</option>
@@ -328,7 +372,13 @@
                 </div>
                 <div class="nh-settings-row nh-settings-row-last">
                   <span class="nh-settings-label"> Appearance</span>
-                  <button class="nh-icon-btn" id="btn-toggle-scheme" style="width: 28px; height: 28px;" title="Toggle Light/Dark Mode" aria-label="Toggle light/dark mode">
+                  <button
+                    class="nh-icon-btn"
+                    id="btn-toggle-scheme"
+                    style="width: 28px; height: 28px"
+                    title="Toggle Light/Dark Mode"
+                    aria-label="Toggle light/dark mode"
+                  >
                     <i data-lucide="sun" class="scheme-icon sun-icon"></i>
                     <i data-lucide="moon" class="scheme-icon moon-icon"></i>
                   </button>
@@ -341,8 +391,15 @@
 
             <!-- Profile Dropdown Wrapper -->
             <div class="nh-profile-wrapper">
-              <div class="nh-profile-chip" id="header-avatar-badge" title="Profile">
-                <div class="user-avatar-circle mini" id="header-user-avatar"></div>
+              <div
+                class="nh-profile-chip"
+                id="header-avatar-badge"
+                title="Profile"
+              >
+                <div
+                  class="user-avatar-circle mini"
+                  id="header-user-avatar"
+                ></div>
                 <span id="header-user-badge-name">User</span>
                 <i data-lucide="chevron-down" class="nh-profile-chevron"></i>
               </div>
@@ -352,7 +409,10 @@
                   <i data-lucide="user-cog"></i> View Profile
                 </button>
                 <div class="nh-profile-divider"></div>
-                <button class="nh-profile-item nh-profile-logout" id="btn-logout-header">
+                <button
+                  class="nh-profile-item nh-profile-logout"
+                  id="btn-logout-header"
+                >
                   <i data-lucide="log-out"></i> Log Out
                 </button>
               </div>
@@ -391,31 +451,41 @@
             <!-- Stats Overview Cards Grid -->
             <div class="overview-stats-grid">
               <div class="overview-stat-tile" id="overview-tile-attendance">
-                <div class="tile-icon"><i data-lucide="check-circle-2"></i></div>
+                <div class="tile-icon">
+                  <i data-lucide="check-circle-2"></i>
+                </div>
                 <div class="tile-details">
                   <span class="tile-label">Average Attendance</span>
-                  <strong class="tile-value" id="overview-avg-attendance">0%</strong>
+                  <strong class="tile-value" id="overview-avg-attendance"
+                    >0%</strong
+                  >
                 </div>
               </div>
               <div class="overview-stat-tile" id="overview-tile-streak">
                 <div class="tile-icon"><i data-lucide="flame"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Max Streak</span>
-                  <strong class="tile-value" id="overview-max-streak">0 Days</strong>
+                  <strong class="tile-value" id="overview-max-streak"
+                    >0 Days</strong
+                  >
                 </div>
               </div>
               <div class="overview-stat-tile" id="overview-tile-tasks">
                 <div class="tile-icon"><i data-lucide="list-todo"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Active Tasks</span>
-                  <strong class="tile-value" id="overview-active-tasks">0 / 0</strong>
+                  <strong class="tile-value" id="overview-active-tasks"
+                    >0 / 0</strong
+                  >
                 </div>
               </div>
               <div class="overview-stat-tile" id="overview-tile-routine">
                 <div class="tile-icon"><i data-lucide="clock"></i></div>
                 <div class="tile-details">
                   <span class="tile-label">Scheduled Events</span>
-                  <strong class="tile-value" id="overview-routine-count">0 slots</strong>
+                  <strong class="tile-value" id="overview-routine-count"
+                    >0 slots</strong
+                  >
                 </div>
               </div>
             </div>
@@ -426,8 +496,12 @@
                 <h4>Attendance Trend (Last 30 Days)</h4>
                 <div class="chart-canvas-container height-260">
                   <canvas id="overview-trend-chart"></canvas>
-                  <div id="overview-trend-empty" class="chart-empty-placeholder hidden">
-                    No attendance logs recorded yet. Log attendance to see trends.
+                  <div
+                    id="overview-trend-empty"
+                    class="chart-empty-placeholder hidden"
+                  >
+                    No attendance logs recorded yet. Log attendance to see
+                    trends.
                   </div>
                 </div>
               </div>
@@ -437,8 +511,12 @@
                 <h4>Class Performance Breakdown</h4>
                 <div class="chart-canvas-container height-220">
                   <canvas id="overview-classes-chart"></canvas>
-                  <div id="overview-classes-empty" class="chart-empty-placeholder hidden">
-                    No active classes scheduled. Go to Weekly Routine tab to schedule classes.
+                  <div
+                    id="overview-classes-empty"
+                    class="chart-empty-placeholder hidden"
+                  >
+                    No active classes scheduled. Go to Weekly Routine tab to
+                    schedule classes.
                   </div>
                 </div>
               </div>
@@ -448,7 +526,10 @@
                 <h4>Task Progress Velocity</h4>
                 <div class="chart-canvas-container height-220">
                   <canvas id="overview-tasks-chart"></canvas>
-                  <div id="overview-tasks-empty" class="chart-empty-placeholder hidden">
+                  <div
+                    id="overview-tasks-empty"
+                    class="chart-empty-placeholder hidden"
+                  >
                     No active tasks. Go to Tasks & To-Dos tab to add tasks.
                   </div>
                 </div>
@@ -458,7 +539,10 @@
               <div class="overview-chart-card span-2-margin">
                 <h4>Visual Attendance Grid (Last 30 Days)</h4>
                 <div class="overview-heatmap-wrapper">
-                  <div class="overview-heatmap-grid" id="overview-attendance-heatmap">
+                  <div
+                    class="overview-heatmap-grid"
+                    id="overview-attendance-heatmap"
+                  >
                     <!-- Populated dynamically as glowing mini activity squares -->
                   </div>
                   <div class="heatmap-legend">
@@ -487,7 +571,12 @@
               <select id="subject-selector" class="subject-dropdown">
                 <!-- Populated dynamically -->
               </select>
-              <button id="btn-delete-subject" class="btn btn-danger" title="Delete Subject" aria-label="Delete Subject">
+              <button
+                id="btn-delete-subject"
+                class="btn btn-danger"
+                title="Delete Subject"
+                aria-label="Delete Subject"
+              >
                 <i data-lucide="trash-2"></i>
                 <span class="btn-text">Delete Subject</span>
               </button>
@@ -499,11 +588,7 @@
                 <div class="stat-label">Attendance Rate</div>
                 <div class="stat-value" id="stat-rate">0%</div>
                 <div class="stat-progress-bar">
-                  <div
-                    class="progress-fill"
-                    id="stat-rate-fill"
-                   
-                  ></div>
+                  <div class="progress-fill" id="stat-rate-fill"></div>
                 </div>
               </div>
               <div class="stat-card">
@@ -513,11 +598,7 @@
               </div>
               <div class="stat-card">
                 <div class="stat-label">Class Schedule</div>
-                <div
-                  class="stat-value"
-                  id="class-occurrences-summary"
-                 
-                >
+                <div class="stat-value" id="class-occurrences-summary">
                   Mon, Wed
                 </div>
                 <div class="stat-subtitle" id="class-total-logs">
@@ -530,12 +611,7 @@
               <span class="summary-p" id="summary-present">P: 0</span>
               <span class="summary-a" id="summary-absent">A: 0</span>
               <span class="summary-l" id="summary-late">L: 0</span>
-              <span
-                class="summary-e"
-                id="summary-excused"
-               
-                >E: 0</span
-              >
+              <span class="summary-e" id="summary-excused">E: 0</span>
             </div>
 
             <!-- Calendar Month View Grid -->
@@ -654,11 +730,7 @@
             <!-- Progress bar -->
             <div class="todo-progress-container">
               <div class="todo-progress-bar">
-                <div
-                  class="todo-progress-fill"
-                  id="todo-progress-fill"
-                 
-                ></div>
+                <div class="todo-progress-fill" id="todo-progress-fill"></div>
               </div>
               <span class="todo-progress-text" id="todo-progress-text"
                 >0% Complete</span
@@ -688,9 +760,7 @@
                   </select>
                 </div>
                 <div class="form-group" class="no-margin">
-                  <label for="todo-urgency" class="small-label"
-                    >Priority</label
-                  >
+                  <label for="todo-urgency" class="small-label">Priority</label>
                   <select id="todo-urgency" class="todo-select">
                     <option value="low">Low</option>
                     <option value="medium" selected>Medium</option>
@@ -711,11 +781,7 @@
                   <option value="0">📅 Sunday</option>
                 </select>
 
-                <button
-                  type="submit"
-                  class="btn btn-primary"
-                 
-                >
+                <button type="submit" class="btn btn-primary">
                   <i data-lucide="plus"></i> Add
                 </button>
               </div>
@@ -772,11 +838,7 @@
               </div>
 
               <!-- 1. REGULAR USER SETTINGS FORM (Hidden if guest) -->
-              <div
-                class="profile-section-block"
-                id="profile-edit-section"
-               
-              >
+              <div class="profile-section-block" id="profile-edit-section">
                 <!-- Goal Comparison Box -->
                 <div class="profile-comparison-box">
                   <div class="comparison-header">
@@ -793,14 +855,10 @@
                       <div class="value" id="profile-target-rate-val">85%</div>
                     </div>
                   </div>
-                  <div
-                    class="todo-progress-bar"
-                   
-                  >
+                  <div class="todo-progress-bar">
                     <div
                       class="progress-fill"
                       id="profile-goal-comparison-fill"
-                     
                     ></div>
                   </div>
                 </div>
@@ -849,11 +907,7 @@
                     </div>
                   </div>
 
-                  <button
-                    type="submit"
-                    class="btn btn-primary"
-                   
-                  >
+                  <button type="submit" class="btn btn-primary">
                     <i data-lucide="check"></i> Save Profile Settings
                   </button>
                 </form>
@@ -863,7 +917,6 @@
               <div
                 class="profile-section-block hidden"
                 id="guest-convert-section"
-               
               >
                 <div class="guest-conversion-card">
                   <div class="conversion-intro">
@@ -878,11 +931,7 @@
                     </div>
                   </div>
 
-                  <form
-                    id="guest-convert-form"
-                    class="profile-edit-form"
-                   
-                  >
+                  <form id="guest-convert-form" class="profile-edit-form">
                     <div class="form-row">
                       <div class="form-group">
                         <label for="convert-username">Username</label>
@@ -918,7 +967,11 @@
                             required
                             autocomplete="new-password"
                           />
-                          <button type="button" class="btn-toggle-password" data-target="convert-password">
+                          <button
+                            type="button"
+                            class="btn-toggle-password"
+                            data-target="convert-password"
+                          >
                             <i data-lucide="eye" class="icon-show"></i>
                             <i data-lucide="eye-off" class="icon-hide"></i>
                           </button>
@@ -962,11 +1015,7 @@
                     <div class="auth-error-msg hidden" id="convert-error">
                       Username is already taken.
                     </div>
-                    <button
-                      type="submit"
-                      class="btn btn-primary"
-                     
-                    >
+                    <button type="submit" class="btn btn-primary">
                       <i data-lucide="shield-check"></i> Register Account & Save
                       My Workspace
                     </button>
@@ -1101,11 +1150,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button
-            type="button"
-            class="btn btn-secondary btn-close-modal"
-           
-          >
+          <button type="button" class="btn btn-secondary btn-close-modal">
             Close
           </button>
         </div>
@@ -1116,7 +1161,16 @@
     <div id="walkthrough-overlay" class="walkthrough-overlay hidden">
       <div class="walkthrough-header">
         <div class="logo-icon mini">
-          <i data-lucide="hexagon"></i>
+          <img
+            src="Logo/LightModeLogo.png"
+            class="logo-img logo-light"
+            alt="AuraTracker Logo"
+          />
+          <img
+            src="Logo/DarkModeLogo.png"
+            class="logo-img logo-dark"
+            alt="AuraTracker Logo"
+          />
         </div>
         <h3>Dashboard Tour (<span id="walkthrough-step-num">1</span>/5)</h3>
       </div>
@@ -1124,8 +1178,20 @@
         <p id="walkthrough-text"></p>
       </div>
       <div class="walkthrough-footer">
-        <button type="button" class="btn btn-secondary btn-icon-small" id="walkthrough-btn-skip">Skip</button>
-        <button type="button" class="btn btn-primary btn-icon-small" id="walkthrough-btn-next">Next <i data-lucide="arrow-right"></i></button>
+        <button
+          type="button"
+          class="btn btn-secondary btn-icon-small"
+          id="walkthrough-btn-skip"
+        >
+          Skip
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-icon-small"
+          id="walkthrough-btn-next"
+        >
+          Next <i data-lucide="arrow-right"></i>
+        </button>
       </div>
     </div>
 
@@ -1134,7 +1200,11 @@
       <div class="modal-card">
         <div class="modal-header">
           <h3 id="confirm-modal-title">Confirm Action</h3>
-          <button id="btn-close-confirm-modal" class="btn-close-modal" aria-label="Close modal">
+          <button
+            id="btn-close-confirm-modal"
+            class="btn-close-modal"
+            aria-label="Close modal"
+          >
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -1142,7 +1212,9 @@
           <p id="confirm-modal-message"></p>
         </div>
         <div class="modal-footer">
-          <button id="btn-confirm-cancel" class="btn btn-secondary">Cancel</button>
+          <button id="btn-confirm-cancel" class="btn btn-secondary">
+            Cancel
+          </button>
           <button id="btn-confirm-ok" class="btn btn-primary">Confirm</button>
         </div>
       </div>

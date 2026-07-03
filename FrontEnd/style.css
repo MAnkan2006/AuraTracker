@@ -1318,6 +1318,46 @@ h5,
   z-index: 1;
 }
 
+/* Logo Image Styling & Dimensions */
+.logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2; /* Renders above the conic gradient background wrapper */
+  display: block;
+}
+
+/* Default / Dark Theme Logo Visibility */
+.logo-light {
+  display: none !important;
+}
+.logo-dark {
+  display: block !important;
+}
+
+/* Explicit Light Mode Override */
+[data-scheme="light"] .logo-light {
+  display: block !important;
+}
+[data-scheme="light"] .logo-dark {
+  display: none !important;
+}
+
+/* Explicit Dark Mode */
+[data-scheme="dark"] .logo-light {
+  display: none !important;
+}
+[data-scheme="dark"] .logo-dark {
+  display: block !important;
+}
+
+/* Walkthrough Guide - Mini Logo Container */
+.logo-icon.mini {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+}
+
 .brand-text {
   display: flex;
   flex-direction: column;
