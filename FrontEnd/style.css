@@ -805,6 +805,15 @@
   border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
+[data-scheme="light"] .profile-header-summary {
+  background: #f1f5f9 !important;
+  border-color: rgba(15, 23, 42, 0.06) !important;
+}
+
+[data-scheme="light"] .guest-conversion-card{
+  background: #f1f5f9 !important;
+}
+
 /* --- Base Styles & Reset --- */
 
 * {
@@ -4812,5 +4821,10 @@ h5,
   .top-header {
     padding: 12px 14px;
     gap: 10px;
+  }
+
+  .form-row {
+    display: flex;
+    flex-direction: column;
   }
 }
