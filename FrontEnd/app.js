@@ -444,6 +444,11 @@ function showDashboard() {
       startWalkthrough();
     }, 1000);
   }
+
+  // Onboarding profile check (delayed to not overlap with walkthrough)
+  setTimeout(() => {
+    checkOnboardingStatus();
+  }, 1500);
 }
 
 function setupAuthHandlers() {
@@ -2392,6 +2397,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const wkSkip = document.getElementById("walkthrough-btn-skip");
   if (wkNext) wkNext.addEventListener("click", nextWalkthroughStep);
   if (wkSkip) wkSkip.addEventListener("click", endWalkthrough);
+
+  // Setup onboarding & routine import handlers
+  setupOnboardingHandlers();
 });
 
 // --- Overview Insights Tab Calculations & Renders ---
@@ -3006,4 +3014,622 @@ function endWalkthrough() {
 
   localStorage.removeItem("is_first_signup");
   showToast("Onboarding complete! Your dashboard is ready.", "success");
+}
+
+// ================================================
+// ONBOARDING WIZARD & ROUTINE IMPORT SYSTEM
+// ================================================
+
+let onboardingStep = 1;
+let onboardingData = {
+  university: "",
+  college: "",
+  department: "",
+  program: "",
+  semester: 1,
+  academicSession: "",
+};
+let selectedPdfFile = null;
+let previewClasses = [];
+
+const DAY_NAME_TO_NUM = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+const DAY_NAMES_LIST = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+// --- Check Onboarding Status ---
+async function checkOnboardingStatus() {
+  if (sessionUser.username === "Guest") return;
+
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/onboarding`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (data.onboardingComplete === false) {
+      showOnboardingOverlay();
+    }
+  } catch (e) {
+    // Silently ignore — onboarding is non-critical
+    console.warn("Onboarding check failed:", e);
+  }
+}
+
+function showOnboardingOverlay() {
+  onboardingStep = 1;
+  onboardingData = {
+    university: "",
+    college: "",
+    department: "",
+    program: "",
+    semester: 1,
+    academicSession: "",
+  };
+  selectedPdfFile = null;
+
+  // Reset form inputs
+  const uniInput = document.getElementById("onboarding-university");
+  const deptInput = document.getElementById("onboarding-department");
+  const progSelect = document.getElementById("onboarding-program");
+  const sessionInput = document.getElementById("onboarding-session");
+  if (uniInput) uniInput.value = "";
+  if (deptInput) deptInput.value = "";
+  if (progSelect) progSelect.selectedIndex = 0;
+  if (sessionInput) sessionInput.value = "";
+
+  // Reset semester pills
+  document.querySelectorAll(".semester-pill").forEach((p) => {
+    p.classList.remove("active");
+  });
+  const firstPill = document.querySelector('.semester-pill[data-semester="1"]');
+  if (firstPill) firstPill.classList.add("active");
+
+  // Reset PDF state
+  const fileInfo = document.getElementById("pdf-file-info");
+  const uploadZone = document.getElementById("pdf-upload-zone");
+  if (fileInfo) fileInfo.classList.add("hidden");
+  if (uploadZone) uploadZone.style.display = "";
+
+  showOnboardingStep(1);
+  document.getElementById("onboarding-overlay").classList.remove("hidden");
+  lucide.createIcons();
+}
+
+function showOnboardingStep(step) {
+  onboardingStep = step;
+  const totalSteps = 7;
+
+  // Update step content visibility
+  document.querySelectorAll(".onboarding-step").forEach((s) => {
+    s.classList.remove("active");
+  });
+  const activeStep = document.querySelector(
+    `[data-onboarding-step="${step}"]`,
+  );
+  if (activeStep) activeStep.classList.add("active");
+
+  // Update dots
+  document.querySelectorAll(".step-dot").forEach((dot) => {
+    const dotStep = parseInt(dot.getAttribute("data-step"));
+    dot.classList.remove("active", "completed");
+    if (dotStep === step) {
+      dot.classList.add("active");
+    } else if (dotStep < step) {
+      dot.classList.add("completed");
+    }
+  });
+
+  // Update progress bar
+  const progressFill = document.getElementById("onboarding-progress-fill");
+  if (progressFill) {
+    progressFill.style.width = `${(step / totalSteps) * 100}%`;
+  }
+
+  // Update nav buttons
+  const btnBack = document.getElementById("btn-onboarding-back");
+  const btnNext = document.getElementById("btn-onboarding-next");
+  const btnSkip = document.getElementById("btn-onboarding-skip");
+
+  // Back button: hidden on step 1
+  if (btnBack) {
+    if (step === 1) {
+      btnBack.classList.add("hidden");
+    } else {
+      btnBack.classList.remove("hidden");
+    }
+  }
+
+  // Skip button: visible only on step 7
+  if (btnSkip) {
+    if (step === totalSteps) {
+      btnSkip.classList.remove("hidden");
+    } else {
+      btnSkip.classList.add("hidden");
+    }
+  }
+
+  // Next button text
+  if (btnNext) {
+    if (step === totalSteps) {
+      btnNext.innerHTML = `<i data-lucide="check"></i> Finish`;
+    } else if (step === 1) {
+      btnNext.innerHTML = `Get Started <i data-lucide="arrow-right"></i>`;
+    } else {
+      btnNext.innerHTML = `Next <i data-lucide="arrow-right"></i>`;
+    }
+  }
+
+  lucide.createIcons();
+}
+
+function nextOnboardingStep() {
+  const totalSteps = 7;
+
+  // Collect data from current step
+  switch (onboardingStep) {
+    case 2: {
+      const val = document.getElementById("onboarding-university")?.value.trim();
+      if (!val) {
+        showToast("Please enter your university or college.", "error");
+        return;
+      }
+      onboardingData.university = val;
+      onboardingData.college = val; // same field maps to both
+      break;
+    }
+    case 3: {
+      const val = document.getElementById("onboarding-department")?.value.trim();
+      if (!val) {
+        showToast("Please enter your department.", "error");
+        return;
+      }
+      onboardingData.department = val;
+      break;
+    }
+    case 4: {
+      const val = document.getElementById("onboarding-program")?.value;
+      if (!val) {
+        showToast("Please select your program.", "error");
+        return;
+      }
+      onboardingData.program = val;
+      break;
+    }
+    case 5: {
+      // Semester is set via pill click handler; already stored
+      break;
+    }
+    case 6: {
+      const val = document.getElementById("onboarding-session")?.value.trim();
+      if (!val) {
+        showToast("Please enter your academic session.", "error");
+        return;
+      }
+      onboardingData.academicSession = val;
+      break;
+    }
+  }
+
+  if (onboardingStep < totalSteps) {
+    showOnboardingStep(onboardingStep + 1);
+  } else {
+    // Step 7 — Finish
+    finishOnboarding();
+  }
+}
+
+function prevOnboardingStep() {
+  if (onboardingStep > 1) {
+    showOnboardingStep(onboardingStep - 1);
+  }
+}
+
+async function finishOnboarding() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  // Save onboarding profile data
+  try {
+    const res = await fetch(`${API_URL}/api/onboarding`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(onboardingData),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.message || "Failed to save profile.", "error");
+      return;
+    }
+  } catch (e) {
+    showToast("Network error saving profile.", "error");
+    return;
+  }
+
+  // Close onboarding overlay
+  document.getElementById("onboarding-overlay").classList.add("hidden");
+  showToast("Academic profile saved!", "success");
+
+  // If a PDF was selected, trigger import
+  if (selectedPdfFile) {
+    importRoutinePdf(selectedPdfFile);
+  }
+}
+
+function skipOnboarding() {
+  // Still save profile data (steps 1-6), just skip PDF upload
+  selectedPdfFile = null;
+  finishOnboarding();
+}
+
+// --- Routine Import Preview Logic ---
+
+async function importRoutinePdf(file) {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  // Show preview overlay in loading state
+  const previewOverlay = document.getElementById("routine-preview-overlay");
+  const loadingDiv = document.getElementById("routine-preview-loading");
+  const tableContainer = document.getElementById(
+    "routine-preview-table-container",
+  );
+  const footer = document.getElementById("routine-preview-footer");
+
+  previewOverlay.classList.remove("hidden");
+  loadingDiv.classList.remove("hidden");
+  tableContainer.classList.add("hidden");
+  footer.style.display = "none";
+
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`${API_URL}/api/routine/import`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.message || "Failed to extract timetable.", "error");
+      previewOverlay.classList.add("hidden");
+      return;
+    }
+
+    const data = await res.json();
+    previewClasses = Array.isArray(data.classes)
+      ? data.classes
+      : Array.isArray(data)
+        ? data
+        : [];
+
+    if (previewClasses.length === 0) {
+      showToast(
+        "No classes could be extracted from the PDF. Try adding them manually.",
+        "info",
+      );
+    }
+
+    // Show table
+    loadingDiv.classList.add("hidden");
+    tableContainer.classList.remove("hidden");
+    footer.style.display = "flex";
+    renderPreviewTable();
+  } catch (e) {
+    showToast("Network error during PDF import.", "error");
+    previewOverlay.classList.add("hidden");
+  }
+}
+
+function renderPreviewTable() {
+  const tbody = document.getElementById("routine-preview-tbody");
+  if (!tbody) return;
+
+  tbody.innerHTML = previewClasses
+    .map((cls, index) => {
+      const dayOptions = DAY_NAMES_LIST.map(
+        (d) =>
+          `<option value="${d}" ${cls.day === d ? "selected" : ""}>${d}</option>`,
+      ).join("");
+
+      const typeOptions = ["Lecture", "Lab", "Tutorial", "Seminar", "Other"]
+        .map(
+          (t) =>
+            `<option value="${t}" ${cls.type === t ? "selected" : ""}>${t}</option>`,
+        )
+        .join("");
+
+      return `
+        <tr data-preview-index="${index}">
+          <td>
+            <select class="preview-day" data-field="day">
+              ${dayOptions}
+            </select>
+          </td>
+          <td>
+            <input type="text" class="preview-subject" data-field="subject" value="${escapeHtml(cls.subject || "")}" placeholder="Subject" />
+          </td>
+          <td>
+            <select class="preview-type" data-field="type">
+              ${typeOptions}
+            </select>
+          </td>
+          <td>
+            <input type="time" class="preview-start" data-field="start" value="${cls.start || ""}" />
+          </td>
+          <td>
+            <input type="time" class="preview-end" data-field="end" value="${cls.end || ""}" />
+          </td>
+          <td>
+            <input type="text" class="preview-faculty" data-field="faculty" value="${escapeHtml(cls.faculty || "")}" placeholder="Faculty" />
+          </td>
+          <td>
+            <input type="text" class="preview-room" data-field="room" value="${escapeHtml(cls.room || "")}" placeholder="Room" />
+          </td>
+          <td class="preview-row-actions">
+            <button class="btn-delete-preview-row" data-delete-index="${index}" title="Remove">
+              <i data-lucide="trash-2"></i>
+            </button>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
+
+  lucide.createIcons();
+
+  // Bind inline edit change events
+  tbody.querySelectorAll("input, select").forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const row = e.target.closest("tr");
+      const idx = parseInt(row.getAttribute("data-preview-index"));
+      const field = e.target.getAttribute("data-field");
+      if (idx >= 0 && field && previewClasses[idx]) {
+        previewClasses[idx][field] = e.target.value;
+      }
+    });
+  });
+
+  // Bind delete buttons
+  tbody.querySelectorAll(".btn-delete-preview-row").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const idx = parseInt(btn.getAttribute("data-delete-index"));
+      deletePreviewRow(idx);
+    });
+  });
+}
+
+// Helper to escape HTML in input values
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function addPreviewRow() {
+  previewClasses.push({
+    day: "Monday",
+    subject: "",
+    type: "Lecture",
+    start: "",
+    end: "",
+    faculty: "",
+    room: "",
+  });
+  renderPreviewTable();
+}
+
+function deletePreviewRow(index) {
+  if (index >= 0 && index < previewClasses.length) {
+    previewClasses.splice(index, 1);
+    renderPreviewTable();
+  }
+}
+
+async function confirmRoutineImport() {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  if (previewClasses.length === 0) {
+    showToast("No classes to import. Add at least one class.", "error");
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API_URL}/api/routine/confirm`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ classes: previewClasses }),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      showToast(err.message || "Failed to save routine.", "error");
+      return;
+    }
+
+    // Fetch updated routine from backend
+    const routineRes = await fetch(`${API_URL}/api/routine`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (routineRes.ok) {
+      const routineData = await routineRes.json();
+      const backendClasses = Array.isArray(routineData.routine)
+        ? routineData.routine
+        : Array.isArray(routineData)
+          ? routineData
+          : [];
+
+      // Convert backend format (day names) to frontend format (day integers)
+      const convertedClasses = backendClasses.map((cls) => ({
+        id: cls.id || cls._id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        type: (cls.type || "Lecture").toLowerCase(),
+        day:
+          typeof cls.day === "number"
+            ? cls.day
+            : DAY_NAME_TO_NUM[cls.day] ?? 1,
+        title: cls.subject || cls.title || "",
+        start: cls.start || "",
+        end: cls.end || "",
+        tag: cls.tag || "default",
+      }));
+
+      // Merge into existing state (avoid duplicates by id)
+      const existingIds = new Set(state.routine.map((r) => r.id));
+      convertedClasses.forEach((cls) => {
+        if (!existingIds.has(cls.id)) {
+          state.routine.push(cls);
+          existingIds.add(cls.id);
+        }
+      });
+
+      saveUserScopedData();
+      renderRoutineTimeline();
+      renderAttendance();
+      renderOverviewTab();
+    }
+
+    // Close preview modal
+    document.getElementById("routine-preview-overlay").classList.add("hidden");
+    showToast("Timetable imported successfully!", "success");
+  } catch (e) {
+    showToast("Network error confirming import.", "error");
+  }
+}
+
+function cancelRoutinePreview() {
+  previewClasses = [];
+  document.getElementById("routine-preview-overlay").classList.add("hidden");
+}
+
+// --- Setup All Onboarding & Import Handlers ---
+
+function setupOnboardingHandlers() {
+  // Step navigation
+  const btnNext = document.getElementById("btn-onboarding-next");
+  const btnBack = document.getElementById("btn-onboarding-back");
+  const btnSkip = document.getElementById("btn-onboarding-skip");
+
+  if (btnNext) btnNext.addEventListener("click", nextOnboardingStep);
+  if (btnBack) btnBack.addEventListener("click", prevOnboardingStep);
+  if (btnSkip) btnSkip.addEventListener("click", skipOnboarding);
+
+  // Semester pills
+  document.querySelectorAll(".semester-pill").forEach((pill) => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll(".semester-pill").forEach((p) => {
+        p.classList.remove("active");
+      });
+      pill.classList.add("active");
+      onboardingData.semester = parseInt(
+        pill.getAttribute("data-semester"),
+        10,
+      );
+    });
+  });
+
+  // PDF Upload Zone — click to browse
+  const uploadZone = document.getElementById("pdf-upload-zone");
+  const fileInput = document.getElementById("pdf-file-input");
+
+  if (uploadZone && fileInput) {
+    uploadZone.addEventListener("click", () => {
+      fileInput.click();
+    });
+
+    // Drag & Drop events
+    uploadZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadZone.classList.add("drag-active");
+    });
+
+    uploadZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove("drag-active");
+    });
+
+    uploadZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove("drag-active");
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === "application/pdf") {
+        handlePdfFileSelected(files[0]);
+      } else {
+        showToast("Please drop a valid PDF file.", "error");
+      }
+    });
+
+    // File input change
+    fileInput.addEventListener("change", (e) => {
+      if (e.target.files.length > 0) {
+        handlePdfFileSelected(e.target.files[0]);
+      }
+    });
+  }
+
+  // Remove PDF button
+  const btnRemovePdf = document.getElementById("btn-remove-pdf");
+  if (btnRemovePdf) {
+    btnRemovePdf.addEventListener("click", () => {
+      selectedPdfFile = null;
+      const fileInfo = document.getElementById("pdf-file-info");
+      const zone = document.getElementById("pdf-upload-zone");
+      if (fileInfo) fileInfo.classList.add("hidden");
+      if (zone) zone.style.display = "";
+      // Reset file input
+      const input = document.getElementById("pdf-file-input");
+      if (input) input.value = "";
+    });
+  }
+
+  // Routine Preview Modal handlers
+  const btnConfirm = document.getElementById("btn-confirm-preview");
+  const btnCancel = document.getElementById("btn-cancel-preview");
+  const btnClose = document.getElementById("btn-close-preview");
+  const btnAddRow = document.getElementById("btn-add-preview-row");
+
+  if (btnConfirm) btnConfirm.addEventListener("click", confirmRoutineImport);
+  if (btnCancel) btnCancel.addEventListener("click", cancelRoutinePreview);
+  if (btnClose) btnClose.addEventListener("click", cancelRoutinePreview);
+  if (btnAddRow) btnAddRow.addEventListener("click", addPreviewRow);
+}
+
+function handlePdfFileSelected(file) {
+  selectedPdfFile = file;
+  const fileInfo = document.getElementById("pdf-file-info");
+  const fileName = document.getElementById("pdf-file-name");
+  const uploadZone = document.getElementById("pdf-upload-zone");
+
+  if (fileName) fileName.textContent = file.name;
+  if (fileInfo) fileInfo.classList.remove("hidden");
+  if (uploadZone) uploadZone.style.display = "none";
+  lucide.createIcons();
 }

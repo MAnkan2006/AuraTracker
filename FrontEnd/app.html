@@ -1220,6 +1220,193 @@
       </div>
     </div>
 
+    <!-- Onboarding Modal (7-Step Wizard) -->
+    <div id="onboarding-overlay" class="modal-backdrop hidden">
+      <div class="onboarding-card">
+        <!-- Step Indicator Dots -->
+        <div class="onboarding-steps-indicator">
+          <span class="step-dot active" data-step="1"></span>
+          <span class="step-dot" data-step="2"></span>
+          <span class="step-dot" data-step="3"></span>
+          <span class="step-dot" data-step="4"></span>
+          <span class="step-dot" data-step="5"></span>
+          <span class="step-dot" data-step="6"></span>
+          <span class="step-dot" data-step="7"></span>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="onboarding-progress">
+          <div class="onboarding-progress-fill" id="onboarding-progress-fill" style="width: 14.28%"></div>
+        </div>
+
+        <!-- Step Content Area -->
+        <div id="onboarding-step-content">
+          <!-- Step 1: Welcome -->
+          <div class="onboarding-step active" data-onboarding-step="1">
+            <div class="onboarding-welcome-icon">
+              <i data-lucide="sparkles"></i>
+            </div>
+            <h2>Welcome to AuraTracker</h2>
+            <p class="onboarding-description">Let's set up your academic profile so we can personalize your experience. This will only take a minute!</p>
+          </div>
+
+          <!-- Step 2: University / College -->
+          <div class="onboarding-step" data-onboarding-step="2">
+            <h2>Your Institution</h2>
+            <p class="onboarding-description">What university or college do you attend?</p>
+            <div class="form-group">
+              <label for="onboarding-university">University / College</label>
+              <input type="text" id="onboarding-university" placeholder="e.g. Lovely Professional University" autocomplete="organization" />
+            </div>
+          </div>
+
+          <!-- Step 3: Department -->
+          <div class="onboarding-step" data-onboarding-step="3">
+            <h2>Your Department</h2>
+            <p class="onboarding-description">Which department or school are you in?</p>
+            <div class="form-group">
+              <label for="onboarding-department">Department</label>
+              <input type="text" id="onboarding-department" placeholder="e.g. Computer Science & Engineering" autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Step 4: Program -->
+          <div class="onboarding-step" data-onboarding-step="4">
+            <h2>Your Program</h2>
+            <p class="onboarding-description">Select the program you're enrolled in.</p>
+            <div class="form-group">
+              <label for="onboarding-program">Program</label>
+              <select id="onboarding-program" class="form-select">
+                <option value="" disabled selected>Select your program</option>
+                <option value="B.Tech">B.Tech</option>
+                <option value="BCA">BCA</option>
+                <option value="BSc">BSc</option>
+                <option value="MCA">MCA</option>
+                <option value="MSc">MSc</option>
+                <option value="M.Tech">M.Tech</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Step 5: Semester -->
+          <div class="onboarding-step" data-onboarding-step="5">
+            <h2>Current Semester</h2>
+            <p class="onboarding-description">Which semester are you currently in?</p>
+            <div class="semester-pills">
+              <button class="semester-pill active" data-semester="1">1</button>
+              <button class="semester-pill" data-semester="2">2</button>
+              <button class="semester-pill" data-semester="3">3</button>
+              <button class="semester-pill" data-semester="4">4</button>
+              <button class="semester-pill" data-semester="5">5</button>
+              <button class="semester-pill" data-semester="6">6</button>
+              <button class="semester-pill" data-semester="7">7</button>
+              <button class="semester-pill" data-semester="8">8</button>
+              <button class="semester-pill" data-semester="9">9</button>
+              <button class="semester-pill" data-semester="10">10</button>
+            </div>
+          </div>
+
+          <!-- Step 6: Academic Session -->
+          <div class="onboarding-step" data-onboarding-step="6">
+            <h2>Academic Session</h2>
+            <p class="onboarding-description">Enter your current academic session year.</p>
+            <div class="form-group">
+              <label for="onboarding-session">Academic Session</label>
+              <input type="text" id="onboarding-session" placeholder="e.g. 2024-2025" autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Step 7: Upload Routine PDF -->
+          <div class="onboarding-step" data-onboarding-step="7">
+            <h2>Import Your Timetable</h2>
+            <p class="onboarding-description">Upload your routine/timetable PDF and our AI will extract your classes automatically.</p>
+            <div class="pdf-upload-zone" id="pdf-upload-zone">
+              <i data-lucide="upload-cloud" class="pdf-upload-icon"></i>
+              <p class="pdf-upload-text">Drag & drop your PDF here</p>
+              <p class="pdf-upload-subtext">or click to browse</p>
+              <input type="file" id="pdf-file-input" accept=".pdf" hidden />
+            </div>
+            <div class="pdf-file-info hidden" id="pdf-file-info">
+              <i data-lucide="file-text"></i>
+              <span id="pdf-file-name"></span>
+              <button class="btn-remove-file" id="btn-remove-pdf" title="Remove file">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="onboarding-nav">
+          <button id="btn-onboarding-back" class="btn btn-secondary hidden">
+            <i data-lucide="arrow-left"></i> Back
+          </button>
+          <div class="onboarding-nav-spacer"></div>
+          <button id="btn-onboarding-skip" class="btn btn-secondary hidden">
+            Skip for Now
+          </button>
+          <button id="btn-onboarding-next" class="btn btn-primary">
+            Next <i data-lucide="arrow-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Routine Import Preview Modal -->
+    <div id="routine-preview-overlay" class="modal-backdrop hidden">
+      <div class="modal-card" style="max-width: 800px;">
+        <div class="modal-header">
+          <h3>
+            <i data-lucide="table-2"></i>
+            Review Extracted Timetable
+          </h3>
+          <button id="btn-close-preview" class="btn-modal-close" title="Close">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="routine-preview-loading" class="preview-loading-overlay">
+          <div class="spinner"></div>
+          <p>AI is extracting your timetable…</p>
+        </div>
+
+        <!-- Preview Table -->
+        <div id="routine-preview-table-container" class="hidden">
+          <p class="modal-subtext">Review and edit the extracted classes below. Click any cell to edit.</p>
+          <div class="routine-preview-table-wrapper">
+            <table class="routine-preview-table">
+              <thead>
+                <tr>
+                  <th>Day</th>
+                  <th>Subject</th>
+                  <th>Type</th>
+                  <th>Start</th>
+                  <th>End</th>
+                  <th>Faculty</th>
+                  <th>Room</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="routine-preview-tbody"></tbody>
+            </table>
+          </div>
+          <button id="btn-add-preview-row" class="btn btn-secondary btn-add-preview-row">
+            <i data-lucide="plus-circle"></i> Add Class
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer" id="routine-preview-footer" style="display: none;">
+          <button id="btn-cancel-preview" class="btn btn-secondary">Cancel</button>
+          <button id="btn-confirm-preview" class="btn btn-primary">
+            <i data-lucide="check"></i> Confirm & Save
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notifications Container -->
     <div id="toast-container" class="toast-container"></div>
 

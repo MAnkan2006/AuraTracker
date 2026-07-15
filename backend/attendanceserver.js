@@ -24,44 +24,16 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
-function verifyToken(req, res, next) {
-  const token = req.headers.authorization;
+const verifyToken = require("./middleware/auth");
+const User = require("./models/User");
 
-  if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: "No token",
-    });
-  }
+// Routers
+const onboardingRoutes = require("./routes/onboardingRoutes");
+app.use("/api/onboarding", onboardingRoutes);
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+const routineRoutes = require("./routes/routineRoutes");
+app.use("/api/routine", routineRoutes);
 
-    req.user = decoded;
-
-    next();
-  } catch (err) {
-    res.status(401).json({
-      success: false,
-      message: "Invalid token",
-    });
-  }
-}
-
-const UserSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    unique: true,
-    required: true,
-  },
-  email: String,
-  avatar: String,
-  bio: String,
-  targetGoal: Number,
-  password: String,
-});
-
-const User = mongoose.model("User", UserSchema);
 app.post("/register", async (req, res) => {
   try {
     const { username, email, avatar, password } = req.body;

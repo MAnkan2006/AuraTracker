@@ -805,12 +805,14 @@
   border-color: rgba(15, 23, 42, 0.1) !important;
 }
 
+/* User Profile items*/
+
 [data-scheme="light"] .profile-header-summary {
   background: #f1f5f9 !important;
   border-color: rgba(15, 23, 42, 0.06) !important;
 }
 
-[data-scheme="light"] .guest-conversion-card{
+[data-scheme="light"] .guest-conversion-card {
   background: #f1f5f9 !important;
 }
 
@@ -4828,3 +4830,562 @@ h5,
     flex-direction: column;
   }
 }
+
+/* ================================================
+   ONBOARDING WIZARD & ROUTINE PREVIEW STYLES
+   ================================================ */
+
+/* --- Onboarding Card --- */
+.onboarding-card {
+  background: var(--bg-base);
+  background-image: linear-gradient(
+    135deg,
+    var(--bg-gradient-start) 0%,
+    var(--bg-gradient-end) 100%
+  );
+  border: 1px solid var(--card-border);
+  border-radius: 24px;
+  width: 92%;
+  max-width: 560px;
+  padding: 36px 32px 28px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.65),
+    0 0 40px var(--card-border-glow);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: modalSlideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle radial glow inside the card */
+.onboarding-card::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120%;
+  height: 120%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(var(--accent-rgb), 0.06) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.onboarding-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* --- Step Indicator Dots --- */
+.onboarding-steps-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
+}
+
+.step-dot.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 4px var(--accent);
+  transform: scale(1.25);
+}
+
+.step-dot.completed {
+  background: var(--accent);
+  border-color: var(--accent);
+  opacity: 0.7;
+}
+
+/* --- Progress Bar --- */
+.onboarding-progress {
+  width: 100%;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.onboarding-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+  border-radius: 4px;
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* --- Step Content --- */
+.onboarding-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 16px;
+  min-height: 200px;
+  justify-content: center;
+}
+
+.onboarding-step.active {
+  display: flex;
+  animation: onboardingFadeIn 0.35s ease forwards;
+}
+
+@keyframes onboardingFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.onboarding-step h2 {
+  font-family: var(--font-heading);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.onboarding-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 400px;
+  margin: 0;
+}
+
+.onboarding-step .form-group {
+  width: 100%;
+  max-width: 380px;
+  text-align: left;
+}
+
+.onboarding-step .form-group input,
+.onboarding-step .form-group .form-select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* --- Welcome Icon --- */
+.onboarding-welcome-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent-rgb), 0.2) 0%,
+    rgba(var(--accent-rgb), 0.05) 100%
+  );
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.onboarding-welcome-icon i,
+.onboarding-welcome-icon svg {
+  width: 36px;
+  height: 36px;
+  color: var(--accent);
+  stroke-width: 1.5;
+}
+
+/* --- Navigation Buttons --- */
+.onboarding-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  padding-top: 20px;
+}
+
+.onboarding-nav-spacer {
+  flex: 1;
+}
+
+.onboarding-nav .btn i,
+.onboarding-nav .btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Semester Pills --- */
+.semester-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  max-width: 380px;
+}
+
+.semester-pill {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 700;
+  font-family: var(--font-heading);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.semester-pill:hover {
+  background: rgba(var(--accent-rgb), 0.1);
+  border-color: rgba(var(--accent-rgb), 0.3);
+  color: var(--text-primary);
+  transform: translateY(-2px);
+}
+
+.semester-pill.active {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--accent-rgb), 0.25) 0%,
+    rgba(var(--accent-rgb), 0.1) 100%
+  );
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.3), 0 4px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+}
+
+/* --- PDF Upload Zone --- */
+.pdf-upload-zone {
+  width: 100%;
+  max-width: 380px;
+  padding: 36px 24px;
+  border: 2px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.pdf-upload-zone:hover {
+  border-color: rgba(var(--accent-rgb), 0.4);
+  background: rgba(var(--accent-rgb), 0.04);
+}
+
+.pdf-upload-zone.drag-active {
+  border-color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.08);
+  box-shadow: 0 0 24px rgba(var(--accent-rgb), 0.15);
+}
+
+.pdf-upload-zone .pdf-upload-icon,
+.pdf-upload-zone i,
+.pdf-upload-zone svg {
+  width: 40px;
+  height: 40px;
+  color: var(--text-muted);
+  stroke-width: 1.5;
+  transition: color 0.3s ease;
+}
+
+.pdf-upload-zone:hover i,
+.pdf-upload-zone:hover svg,
+.pdf-upload-zone.drag-active i,
+.pdf-upload-zone.drag-active svg {
+  color: var(--accent);
+}
+
+.pdf-upload-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 4px 0 0;
+}
+
+.pdf-upload-subtext {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* --- PDF File Info --- */
+.pdf-file-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 380px;
+  padding: 12px 16px;
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.2);
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.pdf-file-info i,
+.pdf-file-info svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.pdf-file-info span {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pdf-file-info.hidden {
+  display: none;
+}
+
+.btn-remove-file {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.btn-remove-file:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-remove-file i,
+.btn-remove-file svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+}
+
+.btn-remove-file:hover i,
+.btn-remove-file:hover svg {
+  color: #f87171;
+}
+
+/* ================================================
+   ROUTINE PREVIEW TABLE STYLES
+   ================================================ */
+
+.routine-preview-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  border: 1px solid var(--card-border);
+}
+
+.routine-preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 650px;
+}
+
+.routine-preview-table th {
+  background: rgba(var(--accent-rgb), 0.12);
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid rgba(var(--accent-rgb), 0.15);
+  white-space: nowrap;
+}
+
+.routine-preview-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  vertical-align: middle;
+}
+
+.routine-preview-table tr:last-child td {
+  border-bottom: none;
+}
+
+.routine-preview-table tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.routine-preview-table td input,
+.routine-preview-table td select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 8px 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-primary);
+  outline: none;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.routine-preview-table td input:focus,
+.routine-preview-table td select:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.routine-preview-table td select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.routine-preview-table td select option {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* --- Row Actions --- */
+.preview-row-actions {
+  display: flex;
+  justify-content: center;
+}
+
+.btn-delete-preview-row {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  color: var(--text-muted);
+}
+
+.btn-delete-preview-row:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+}
+
+.btn-delete-preview-row i,
+.btn-delete-preview-row svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* --- Add Row Button --- */
+.btn-add-preview-row {
+  margin-top: 12px;
+  width: 100%;
+  justify-content: center;
+  border-style: dashed !important;
+  padding: 10px !important;
+}
+
+.btn-add-preview-row:hover {
+  border-color: rgba(var(--accent-rgb), 0.3) !important;
+  background: rgba(var(--accent-rgb), 0.06) !important;
+  color: var(--accent);
+}
+
+/* --- Loading Overlay --- */
+.preview-loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.preview-loading-overlay p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.preview-loading-overlay.hidden {
+  display: none;
+}
+
+/* --- Spinner --- */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spinRotate 0.8s linear infinite;
+}
+
+@keyframes spinRotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* --- Responsive adjustments for onboarding --- */
+@media (max-width: 600px) {
+  .onboarding-card {
+    width: 96%;
+    padding: 28px 20px 22px;
+    border-radius: 20px;
+  }
+
+  .onboarding-step h2 {
+    font-size: 19px;
+  }
+
+  .semester-pill {
+    width: 42px;
+    height: 42px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  .pdf-upload-zone {
+    padding: 28px 16px;
+  }
+
+  .onboarding-nav {
+    flex-wrap: wrap;
+  }
+
+  .routine-preview-table-wrapper {
+    margin: 0 -12px;
+    width: calc(100% + 24px);
+    border-radius: 8px;
+  }
+}
+
