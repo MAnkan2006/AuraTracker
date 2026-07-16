@@ -134,16 +134,15 @@ exports.confirmRoutine = async (req, res) => {
 
     const userId = req.user.userId;
 
-    // Use explicit $set so Mongoose handles the array subdocuments correctly.
-    // $setOnInsert stamps userId only when creating a new document (upsert).
-    const routine = await Routine.findOneAndUpdate(
-      { userId },
-      {
-        $set: { classes },
-        $setOnInsert: { userId },
-      },
-      { upsert: true, new: true }
-    );
+    // findOne + save is the most reliable upsert pattern across Mongoose versions.
+    // findOneAndUpdate with mixed operators ($set + $setOnInsert) can cause 500s.
+    let routine = await Routine.findOne({ userId });
+    if (routine) {
+      routine.classes = classes;
+    } else {
+      routine = new Routine({ userId, classes });
+    }
+    await routine.save();
 
     res.json({
       success: true,
@@ -158,6 +157,7 @@ exports.confirmRoutine = async (req, res) => {
     });
   }
 };
+
 
 /**
  * GET /
