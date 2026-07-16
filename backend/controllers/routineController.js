@@ -116,9 +116,16 @@ exports.importRoutine = async (req, res) => {
  */
 exports.confirmRoutine = async (req, res) => {
   try {
-    const { classes } = req.body;
+    let { classes } = req.body;
 
-    if (!classes || !Array.isArray(classes) || classes.length === 0) {
+    // Defensive: parse if frontend accidentally sent classes as a JSON string
+    if (typeof classes === 'string') {
+      try { classes = JSON.parse(classes); } catch (e) {
+        return res.status(400).json({ success: false, message: 'Invalid classes format — expected an array.' });
+      }
+    }
+
+    if (!Array.isArray(classes) || classes.length === 0) {
       return res.status(400).json({
         success: false,
         message: 'No classes provided. Please provide a valid classes array.'
@@ -127,11 +134,15 @@ exports.confirmRoutine = async (req, res) => {
 
     const userId = req.user.userId;
 
-    // Upsert: update if exists, create if not
+    // Use explicit $set so Mongoose handles the array subdocuments correctly.
+    // $setOnInsert stamps userId only when creating a new document (upsert).
     const routine = await Routine.findOneAndUpdate(
       { userId },
-      { userId, classes },
-      { upsert: true, new: true, runValidators: true }
+      {
+        $set: { classes },
+        $setOnInsert: { userId },
+      },
+      { upsert: true, new: true }
     );
 
     res.json({
@@ -197,8 +208,8 @@ exports.updateRoutine = async (req, res) => {
 
     const routine = await Routine.findOneAndUpdate(
       { userId },
-      { classes },
-      { new: true, runValidators: true }
+      { $set: { classes } },
+      { new: true }
     );
 
     if (!routine) {
