@@ -1,8 +1,8 @@
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-const MODEL_NAME = 'gemini-2.5-flash';
+const MODEL_NAME = "gemini-3.5-flash";
 
 /**
  * Send a prompt to Gemini and parse the response as JSON.
@@ -23,8 +23,12 @@ const generateRoutine = async (prompt) => {
   }
 
   // Retry once with explicit JSON instruction
-  console.log('[GeminiService] First parse failed, retrying with JSON instruction...');
-  const retryPrompt = prompt + '\n\nIMPORTANT: Your previous response was not valid JSON. Please output valid JSON only. No markdown, no code fences, no explanations. Just the raw JSON object.';
+  console.log(
+    "[GeminiService] First parse failed, retrying with JSON instruction...",
+  );
+  const retryPrompt =
+    prompt +
+    "\n\nIMPORTANT: Your previous response was not valid JSON. Please output valid JSON only. No markdown, no code fences, no explanations. Just the raw JSON object.";
 
   responseText = await callGemini(model, retryPrompt);
   parsed = tryParseJSON(responseText);
@@ -33,7 +37,9 @@ const generateRoutine = async (prompt) => {
     return parsed;
   }
 
-  throw new Error('Failed to parse Gemini response as valid JSON after 2 attempts. The AI may not have been able to extract a routine from this PDF.');
+  throw new Error(
+    "Failed to parse Gemini response as valid JSON after 2 attempts. The AI may not have been able to extract a routine from this PDF.",
+  );
 };
 
 /**
@@ -69,7 +75,7 @@ const tryParseJSON = (text) => {
   // Try direct parse
   try {
     const parsed = JSON.parse(cleaned);
-    if (parsed && typeof parsed === 'object') {
+    if (parsed && typeof parsed === "object") {
       return parsed;
     }
   } catch (e) {
@@ -82,7 +88,7 @@ const tryParseJSON = (text) => {
   if (objMatch) {
     try {
       const parsed = JSON.parse(objMatch[0]);
-      if (parsed && typeof parsed === 'object') {
+      if (parsed && typeof parsed === "object") {
         return parsed;
       }
     } catch (e) {
