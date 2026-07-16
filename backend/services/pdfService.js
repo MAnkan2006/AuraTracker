@@ -1,4 +1,4 @@
-const pdfParse = require('pdf-parse');
+const { PDFParse } = require('pdf-parse');
 
 /**
  * Extract and clean text content from a PDF buffer.
@@ -10,13 +10,15 @@ const extractText = async (buffer) => {
     throw new Error('Empty PDF buffer provided');
   }
 
-  const data = await pdfParse(buffer);
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  await parser.destroy();
 
-  if (!data.text || data.text.trim().length === 0) {
+  if (!result.text || result.text.trim().length === 0) {
     throw new Error('No text content could be extracted from the PDF. The file may be image-based or empty.');
   }
 
-  return cleanText(data.text);
+  return cleanText(result.text);
 };
 
 /**

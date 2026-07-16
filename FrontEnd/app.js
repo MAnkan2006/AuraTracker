@@ -354,7 +354,7 @@ async function checkAuthSession() {
     const response = await fetch(`${API_URL}/profile`, {
       method: "GET",
       headers: {
-        Authorization: token,
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -537,7 +537,7 @@ function setupAuthHandlers() {
           // Fetch user profile settings from backend
           const profileResponse = await fetch(`${API_URL}/profile`, {
             headers: {
-              Authorization: loginData.token,
+              Authorization: `Bearer ${loginData.token}`,
             },
           });
 
@@ -616,7 +616,7 @@ function setupAuthHandlers() {
 
       const profileResponse = await fetch(`${API_URL}/profile`, {
         headers: {
-          Authorization: data.token,
+          Authorization: `Bearer ${data.token}`,
         },
       });
 
@@ -917,7 +917,7 @@ function setupProfileEditHandlers() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: token,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           email,
