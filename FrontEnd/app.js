@@ -3305,7 +3305,7 @@ async function importRoutinePdf(file) {
 
   try {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("pdf", file);
 
     const res = await fetch(`${API_URL}/api/routine/import`, {
       method: "POST",
@@ -3356,10 +3356,14 @@ function renderPreviewTable() {
           `<option value="${d}" ${cls.day === d ? "selected" : ""}>${d}</option>`,
       ).join("");
 
-      const typeOptions = ["Lecture", "Lab", "Tutorial", "Seminar", "Other"]
+      const typeOptions = [
+        { label: "Theory",   value: "theory" },
+        { label: "Lab",      value: "lab" },
+        { label: "Tutorial", value: "tutorial" },
+      ]
         .map(
           (t) =>
-            `<option value="${t}" ${cls.type === t ? "selected" : ""}>${t}</option>`,
+            `<option value="${t.value}" ${cls.type === t.value ? "selected" : ""}>${t.label}</option>`,
         )
         .join("");
 
@@ -3371,7 +3375,7 @@ function renderPreviewTable() {
             </select>
           </td>
           <td>
-            <input type="text" class="preview-subject" data-field="subject" value="${escapeHtml(cls.subject || "")}" placeholder="Subject" />
+            <input type="text" class="preview-subject" data-field="title" value="${escapeHtml(cls.title || "")}" placeholder="Subject" />
           </td>
           <td>
             <select class="preview-type" data-field="type">
@@ -3379,10 +3383,10 @@ function renderPreviewTable() {
             </select>
           </td>
           <td>
-            <input type="time" class="preview-start" data-field="start" value="${cls.start || ""}" />
+            <input type="time" class="preview-start" data-field="startTime" value="${cls.startTime || ""}" />
           </td>
           <td>
-            <input type="time" class="preview-end" data-field="end" value="${cls.end || ""}" />
+            <input type="time" class="preview-end" data-field="endTime" value="${cls.endTime || ""}" />
           </td>
           <td>
             <input type="text" class="preview-faculty" data-field="faculty" value="${escapeHtml(cls.faculty || "")}" placeholder="Faculty" />
@@ -3433,10 +3437,10 @@ function escapeHtml(str) {
 function addPreviewRow() {
   previewClasses.push({
     day: "Monday",
-    subject: "",
-    type: "Lecture",
-    start: "",
-    end: "",
+    title: "",
+    type: "theory",
+    startTime: "",
+    endTime: "",
     faculty: "",
     room: "",
   });
@@ -3482,23 +3486,25 @@ async function confirmRoutineImport() {
 
     if (routineRes.ok) {
       const routineData = await routineRes.json();
-      const backendClasses = Array.isArray(routineData.routine)
-        ? routineData.routine
-        : Array.isArray(routineData)
-          ? routineData
+      // Bug fix: backend returns { routine: { userId, classes: [] } } not a flat array
+      const routinePayload = routineData.routine;
+      const backendClasses = Array.isArray(routinePayload?.classes)
+        ? routinePayload.classes
+        : Array.isArray(routinePayload)
+          ? routinePayload
           : [];
 
       // Convert backend format (day names) to frontend format (day integers)
       const convertedClasses = backendClasses.map((cls) => ({
         id: cls.id || cls._id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-        type: (cls.type || "Lecture").toLowerCase(),
+        type: (cls.type || "theory").toLowerCase(),
         day:
           typeof cls.day === "number"
             ? cls.day
             : DAY_NAME_TO_NUM[cls.day] ?? 1,
-        title: cls.subject || cls.title || "",
-        start: cls.start || "",
-        end: cls.end || "",
+        title: cls.title || cls.subject || "",
+        start: cls.startTime || cls.start || "",
+        end: cls.endTime || cls.end || "",
         tag: cls.tag || "default",
       }));
 
