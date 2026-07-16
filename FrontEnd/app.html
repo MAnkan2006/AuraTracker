@@ -668,6 +668,11 @@
                     Weekly Scope
                   </button>
                 </div>
+                <button class="btn btn-secondary btn-icon" id="btn-import-routine-pdf" title="Re-import timetable from PDF">
+                  <i data-lucide="upload-cloud"></i>
+                  <span>Import PDF</span>
+                </button>
+                <input type="file" id="routine-reimport-file-input" accept=".pdf" hidden />
                 <button class="btn btn-primary btn-icon" id="add-routine-btn">
                   <i data-lucide="plus"></i>
                   <span>Add Slot</span>
@@ -861,6 +866,93 @@
                       id="profile-goal-comparison-fill"
                     ></div>
                   </div>
+                </div>
+
+                <!-- Academic Info Block -->
+                <div class="profile-academic-block" id="profile-academic-block">
+                  <div class="academic-info-header">
+                    <div class="header-title">
+                      <i data-lucide="graduation-cap"></i>
+                      <span>Academic Information</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-icon btn-sm" id="btn-toggle-academic-edit">
+                      <i data-lucide="pencil"></i>
+                      <span>Edit</span>
+                    </button>
+                  </div>
+
+                  <!-- Display view -->
+                  <div id="academic-info-display" class="academic-info-grid">
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">University / College</span>
+                      <span class="academic-info-value" id="academic-university-val">—</span>
+                    </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Department</span>
+                      <span class="academic-info-value" id="academic-department-val">—</span>
+                    </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Program</span>
+                      <span class="academic-info-value" id="academic-program-val">—</span>
+                    </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Semester</span>
+                      <span class="academic-info-value" id="academic-semester-val">—</span>
+                    </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Academic Session</span>
+                      <span class="academic-info-value" id="academic-session-val">—</span>
+                    </div>
+                  </div>
+
+                  <!-- Edit form (hidden by default) -->
+                  <form id="academic-edit-form" class="academic-edit-form hidden">
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="academic-edit-university">University / College</label>
+                        <input type="text" id="academic-edit-university" placeholder="e.g. Jadavpur University" />
+                      </div>
+                      <div class="form-group">
+                        <label for="academic-edit-department">Department</label>
+                        <input type="text" id="academic-edit-department" placeholder="e.g. Computer Science" />
+                      </div>
+                    </div>
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="academic-edit-program">Program</label>
+                        <select id="academic-edit-program">
+                          <option value="">Select program</option>
+                          <option value="B.Tech">B.Tech</option>
+                          <option value="B.Sc">B.Sc</option>
+                          <option value="BCA">BCA</option>
+                          <option value="BBA">BBA</option>
+                          <option value="B.Com">B.Com</option>
+                          <option value="M.Tech">M.Tech</option>
+                          <option value="M.Sc">M.Sc</option>
+                          <option value="MCA">MCA</option>
+                          <option value="MBA">MBA</option>
+                          <option value="PhD">PhD</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                      <div class="form-group">
+                        <label for="academic-edit-semester">Semester</label>
+                        <input type="number" id="academic-edit-semester" min="1" max="12" placeholder="e.g. 3" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label for="academic-edit-session">Academic Session</label>
+                      <input type="text" id="academic-edit-session" placeholder="e.g. 2024-2025" />
+                    </div>
+                    <div class="form-actions-row">
+                      <button type="submit" class="btn btn-primary btn-sm">
+                        <i data-lucide="check"></i> Save Academic Info
+                      </button>
+                      <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-academic-edit">
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
                 </div>
 
                 <!-- Edit Form -->

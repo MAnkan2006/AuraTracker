@@ -135,6 +135,8 @@ app.get("/profile", verifyToken, async (req, res) => {
       avatar: user.avatar,
       bio: user.bio,
       targetGoal: user.targetGoal,
+      academicProfile: user.academicProfile || {},
+      onboardingComplete: user.onboardingComplete || false,
     });
   } catch (err) {
     res.status(500).json({

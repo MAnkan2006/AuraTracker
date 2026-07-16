@@ -373,6 +373,7 @@ async function checkAuthSession() {
       avatar: data.avatar,
       bio: data.bio,
       targetGoal: data.targetGoal,
+      academicProfile: data.academicProfile || {},
     };
 
     loadUserScopedData();
@@ -549,6 +550,7 @@ function setupAuthHandlers() {
             avatar: profileData.avatar,
             bio: profileData.bio,
             targetGoal: profileData.targetGoal,
+            academicProfile: profileData.academicProfile || {},
           };
 
           setTimeout(() => {
@@ -628,6 +630,7 @@ function setupAuthHandlers() {
         avatar: profileData.avatar,
         bio: profileData.bio,
         targetGoal: profileData.targetGoal,
+        academicProfile: profileData.academicProfile || {},
       };
 
       loadUserScopedData();
@@ -831,6 +834,18 @@ function renderProfileView() {
     // Render preset edit selections
     renderEditAvatarsGrid();
 
+    // Academic info display
+    const ap = sessionUser.academicProfile || {};
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val || "—";
+    };
+    setVal("academic-university-val", ap.university || ap.college);
+    setVal("academic-department-val", ap.department);
+    setVal("academic-program-val",    ap.program);
+    setVal("academic-semester-val",   ap.semester ? `Semester ${ap.semester}` : null);
+    setVal("academic-session-val",    ap.academicSession);
+
     // Stats calculations
     const actualRate = calculateOverallAttendance();
     elements.profileActualRateVal.textContent = `${actualRate}%`;
@@ -951,6 +966,87 @@ function setupProfileEditHandlers() {
       showToast("Server Connection Error: Failed to save changes.", "error");
     }
   });
+
+  // --- Academic Info toggle & edit ---
+  const btnToggleAcademic = document.getElementById("btn-toggle-academic-edit");
+  const btnCancelAcademic = document.getElementById("btn-cancel-academic-edit");
+  const academicEditForm  = document.getElementById("academic-edit-form");
+  const academicDisplay   = document.getElementById("academic-info-display");
+
+  function openAcademicEdit() {
+    const ap = sessionUser.academicProfile || {};
+    const setInput = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val || "";
+    };
+    setInput("academic-edit-university", ap.university || ap.college || "");
+    setInput("academic-edit-department", ap.department);
+    setInput("academic-edit-semester",   ap.semester);
+    setInput("academic-edit-session",    ap.academicSession);
+    // Set program select
+    const progEl = document.getElementById("academic-edit-program");
+    if (progEl) progEl.value = ap.program || "";
+
+    if (academicDisplay)   academicDisplay.classList.add("hidden");
+    if (academicEditForm)  academicEditForm.classList.remove("hidden");
+    if (btnToggleAcademic) btnToggleAcademic.classList.add("hidden");
+  }
+
+  function closeAcademicEdit() {
+    if (academicDisplay)   academicDisplay.classList.remove("hidden");
+    if (academicEditForm)  academicEditForm.classList.add("hidden");
+    if (btnToggleAcademic) btnToggleAcademic.classList.remove("hidden");
+  }
+
+  if (btnToggleAcademic) btnToggleAcademic.addEventListener("click", openAcademicEdit);
+  if (btnCancelAcademic) btnCancelAcademic.addEventListener("click", closeAcademicEdit);
+
+  if (academicEditForm) {
+    academicEditForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const university      = document.getElementById("academic-edit-university")?.value.trim();
+      const department      = document.getElementById("academic-edit-department")?.value.trim();
+      const program         = document.getElementById("academic-edit-program")?.value;
+      const semester        = parseInt(document.getElementById("academic-edit-semester")?.value, 10) || null;
+      const academicSession = document.getElementById("academic-edit-session")?.value.trim();
+
+      try {
+        const res = await fetch(`${API_URL}/api/onboarding`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            university,
+            college: university,
+            department,
+            program,
+            semester,
+            academicSession,
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          showToast(err.message || "Failed to save academic info.", "error");
+          return;
+        }
+
+        // Update in-memory
+        sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession };
+
+        closeAcademicEdit();
+        renderProfileView();
+        showToast("Academic info updated!", "success");
+      } catch (err) {
+        showToast("Server error saving academic info.", "error");
+      }
+    });
+  }
 
   // Guest conversion form submit
   elements.guestConvertForm.addEventListener("submit", async (e) => {
@@ -3626,6 +3722,31 @@ function setupOnboardingHandlers() {
   if (btnCancel) btnCancel.addEventListener("click", cancelRoutinePreview);
   if (btnClose) btnClose.addEventListener("click", cancelRoutinePreview);
   if (btnAddRow) btnAddRow.addEventListener("click", addPreviewRow);
+
+  // --- Re-import PDF button in the routine card header ---
+  const btnReimport = document.getElementById("btn-import-routine-pdf");
+  const reimportInput = document.getElementById("routine-reimport-file-input");
+
+  if (btnReimport && reimportInput) {
+    btnReimport.addEventListener("click", () => {
+      if (sessionUser && sessionUser.username === "Guest") {
+        showToast("Please register an account to use AI PDF import.", "error");
+        return;
+      }
+      reimportInput.value = ""; // reset so same file can be re-selected
+      reimportInput.click();
+    });
+
+    reimportInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      if (file.type !== "application/pdf") {
+        showToast("Please select a valid PDF file.", "error");
+        return;
+      }
+      importRoutinePdf(file);
+    });
+  }
 }
 
 function handlePdfFileSelected(file) {
