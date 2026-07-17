@@ -46,7 +46,7 @@ exports.importRoutine = async (req, res) => {
     }
 
     const profile = user.academicProfile || {};
-    const { college, department, program, semester, university } = profile;
+    const { college, department, program, semester, university, section } = profile;
 
     // Fetch academic knowledge (subjects list) for context
     let subjects = [];
@@ -68,6 +68,7 @@ exports.importRoutine = async (req, res) => {
       department: department || '',
       program: program || '',
       semester: semester || '',
+      section: section || '',
       subjects,
       pdfText
     });

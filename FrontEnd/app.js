@@ -983,6 +983,7 @@ function setupProfileEditHandlers() {
     setInput("academic-edit-department", ap.department);
     setInput("academic-edit-semester",   ap.semester);
     setInput("academic-edit-session",    ap.academicSession);
+    setInput("academic-edit-section",    ap.section);
     // Set program select
     const progEl = document.getElementById("academic-edit-program");
     if (progEl) progEl.value = ap.program || "";
@@ -1012,6 +1013,7 @@ function setupProfileEditHandlers() {
       const program         = document.getElementById("academic-edit-program")?.value;
       const semester        = parseInt(document.getElementById("academic-edit-semester")?.value, 10) || null;
       const academicSession = document.getElementById("academic-edit-session")?.value.trim();
+      const section         = document.getElementById("academic-edit-section")?.value.trim();
 
       try {
         const res = await fetch(`${API_URL}/api/onboarding`, {
@@ -1027,6 +1029,7 @@ function setupProfileEditHandlers() {
             program,
             semester,
             academicSession,
+            section
           }),
         });
 
@@ -1037,7 +1040,7 @@ function setupProfileEditHandlers() {
         }
 
         // Update in-memory
-        sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession };
+        sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession, section };
 
         closeAcademicEdit();
         renderProfileView();
@@ -3124,6 +3127,7 @@ let onboardingData = {
   program: "",
   semester: 1,
   academicSession: "",
+  section: "",
 };
 let selectedPdfFile = null;
 let previewClasses = [];
@@ -3179,6 +3183,7 @@ function showOnboardingOverlay() {
     program: "",
     semester: 1,
     academicSession: "",
+    section: "",
   };
   selectedPdfFile = null;
 
@@ -3212,7 +3217,7 @@ function showOnboardingOverlay() {
 
 function showOnboardingStep(step) {
   onboardingStep = step;
-  const totalSteps = 7;
+  const totalSteps = 8;
 
   // Update step content visibility
   document.querySelectorAll(".onboarding-step").forEach((s) => {
@@ -3278,7 +3283,7 @@ function showOnboardingStep(step) {
 }
 
 function nextOnboardingStep() {
-  const totalSteps = 7;
+  const totalSteps = 8;
 
   // Collect data from current step
   switch (onboardingStep) {
@@ -3323,12 +3328,17 @@ function nextOnboardingStep() {
       onboardingData.academicSession = val;
       break;
     }
+    case 7: {
+      const val = document.getElementById("onboarding-section")?.value.trim();
+      onboardingData.section = val || "";
+      break;
+    }
   }
 
   if (onboardingStep < totalSteps) {
     showOnboardingStep(onboardingStep + 1);
   } else {
-    // Step 7 — Finish
+    // Step 8 — Finish
     finishOnboarding();
   }
 }

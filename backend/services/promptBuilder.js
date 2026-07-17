@@ -6,11 +6,12 @@
  * @param {string} params.department - Department name
  * @param {string} params.program - Program name (e.g., "B.Tech", "BCA")
  * @param {number} params.semester - Semester number
+ * @param {string} params.section - Section or Group (e.g., A, B)
  * @param {Array}  params.subjects - Known subjects from AcademicKnowledge cache
  * @param {string} params.pdfText - Extracted text from the routine PDF
  * @returns {string} - Complete prompt string
  */
-const buildPrompt = ({ college, department, program, semester, subjects, pdfText }) => {
+const buildPrompt = ({ college, department, program, semester, section, subjects, pdfText }) => {
   const subjectList = formatSubjectList(subjects);
 
   const prompt = `You are an expert academic schedule parser. Your task is to extract a weekly class routine/timetable from the provided PDF text and return it as structured JSON.
@@ -20,6 +21,7 @@ ACADEMIC CONTEXT:
 - Department: ${department || 'Unknown'}
 - Program: ${program || 'Unknown'}
 - Semester: ${semester || 'Unknown'}
+- Section/Group: ${section || 'Unknown'}
 
 KNOWN SUBJECTS FOR THIS SEMESTER:
 ${subjectList || 'No subject data available. Infer subjects from the PDF content.'}
@@ -33,6 +35,7 @@ INSTRUCTIONS:
 6. Day names must be full English names with proper capitalization: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday".
 7. The "type" field must be one of: "theory", "lab", or "tutorial". Infer from context if not explicitly stated (e.g., practical/laboratory = "lab", lecture = "theory").
 8. Do NOT include break periods, lunch hours, or free periods.
+9. VERY IMPORTANT: If the timetable contains multiple sections (e.g. Section A, Section B), you MUST ONLY extract the classes intended for Section: "${section || 'Unknown'}". Ignore classes meant for other sections. If no section is provided, assume it's a general timetable.
 
 OUTPUT FORMAT:
 You MUST output ONLY valid JSON with no markdown formatting, no code fences, no explanations, no text before or after the JSON. Output exactly this structure:

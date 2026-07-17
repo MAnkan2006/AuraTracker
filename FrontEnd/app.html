@@ -903,6 +903,10 @@
                       <span class="academic-info-label">Academic Session</span>
                       <span class="academic-info-value" id="academic-session-val">—</span>
                     </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Section</span>
+                      <span class="academic-info-value" id="academic-section-val">—</span>
+                    </div>
                   </div>
 
                   <!-- Edit form (hidden by default) -->
@@ -940,9 +944,15 @@
                         <input type="number" id="academic-edit-semester" min="1" max="12" placeholder="e.g. 3" />
                       </div>
                     </div>
-                    <div class="form-group">
-                      <label for="academic-edit-session">Academic Session</label>
-                      <input type="text" id="academic-edit-session" placeholder="e.g. 2024-2025" />
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="academic-edit-session">Academic Session</label>
+                        <input type="text" id="academic-edit-session" placeholder="e.g. 2024-2025" />
+                      </div>
+                      <div class="form-group">
+                        <label for="academic-edit-section">Section / Group</label>
+                        <input type="text" id="academic-edit-section" placeholder="e.g. B" />
+                      </div>
                     </div>
                     <div class="form-actions-row">
                       <button type="submit" class="btn btn-primary btn-sm">
@@ -1409,8 +1419,18 @@
             </div>
           </div>
 
-          <!-- Step 7: Upload Routine PDF -->
+          <!-- Step 7: Section -->
           <div class="onboarding-step" data-onboarding-step="7">
+            <h2>Section / Group</h2>
+            <p class="onboarding-description">Which section are you in? (Optional but recommended for AI routine import)</p>
+            <div class="form-group">
+              <label for="onboarding-section">Section</label>
+              <input type="text" id="onboarding-section" placeholder="e.g. A, B, G1" autocomplete="off" />
+            </div>
+          </div>
+
+          <!-- Step 8: Upload Routine PDF -->
+          <div class="onboarding-step" data-onboarding-step="8">
             <h2>Import Your Timetable</h2>
             <p class="onboarding-description">Upload your routine/timetable PDF and our AI will extract your classes automatically.</p>
             <div class="pdf-upload-zone" id="pdf-upload-zone">

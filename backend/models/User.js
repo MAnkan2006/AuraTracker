@@ -17,7 +17,8 @@ const UserSchema = new mongoose.Schema({
     semester: Number,
     academicSession: String,
     university: String,
-    program: String
+    program: String,
+    section: String
   },
   onboardingComplete: {
     type: Boolean,
