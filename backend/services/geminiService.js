@@ -1,21 +1,19 @@
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const MODEL_NAME = "gemini-3.5-flash";
+const MODEL_NAME = "llama-3.3-70b-versatile";
 
 /**
- * Send a prompt to Gemini and parse the response as JSON.
+ * Send a prompt to the LLM and parse the response as JSON.
  * Retries once on JSON parse failure with an appended instruction.
  *
  * @param {string} prompt - The full prompt string
  * @returns {Promise<Object>} - Parsed JSON object with { classes: [] }
  */
 const generateRoutine = async (prompt) => {
-  const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
   // First attempt
-  let responseText = await callGemini(model, prompt);
+  let responseText = await callGroq(prompt);
   let parsed = tryParseJSON(responseText);
 
   if (parsed) {
@@ -30,7 +28,7 @@ const generateRoutine = async (prompt) => {
     prompt +
     "\n\nIMPORTANT: Your previous response was not valid JSON. Please output valid JSON only. No markdown, no code fences, no explanations. Just the raw JSON object.";
 
-  responseText = await callGemini(model, retryPrompt);
+  responseText = await callGroq(retryPrompt);
   parsed = tryParseJSON(responseText);
 
   if (parsed) {
@@ -43,15 +41,17 @@ const generateRoutine = async (prompt) => {
 };
 
 /**
- * Call the Gemini model and return raw response text.
- * @param {Object} model - Gemini model instance
+ * Call the Groq model and return raw response text.
  * @param {string} prompt - Prompt string
  * @returns {Promise<string>} - Raw response text
  */
-const callGemini = async (model, prompt) => {
-  const result = await model.generateContent(prompt);
-  const response = result.response;
-  return response.text();
+const callGroq = async (prompt) => {
+  const result = await groq.chat.completions.create({
+    messages: [{ role: 'user', content: prompt }],
+    model: MODEL_NAME,
+    temperature: 0.2
+  });
+  return result.choices[0].message.content;
 };
 
 /**
