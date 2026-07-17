@@ -191,15 +191,15 @@ const elements = {
   profileAvatarDisplay: document.getElementById("profile-avatar-display"),
   profileUsernameLabel: document.getElementById("profile-username-label"),
   profileEmailLabel: document.getElementById("profile-email-label"),
+  profileBioLabel: document.getElementById("profile-bio-label"),
   profileTargetGoalText: document.getElementById("profile-target-goal-text"),
   profileGoalBadgeContainer: document.getElementById(
     "profile-goal-badge-container",
   ),
   profileActualRateVal: document.getElementById("profile-actual-rate-val"),
   profileTargetRateVal: document.getElementById("profile-target-rate-val"),
-  profileGoalComparisonFill: document.getElementById(
-    "profile-goal-comparison-fill",
-  ),
+  profileActualFillBar: document.getElementById("profile-actual-fill-bar"),
+  profileTargetMarkerLine: document.getElementById("profile-target-marker-line"),
   comparisonStatusText: document.getElementById("comparison-status-text"),
 
   // Regular Edit Section
@@ -810,6 +810,9 @@ function renderProfileView() {
   elements.profileAvatarDisplay.className = `user-avatar-circle large ${sessionUser.avatar}`;
   elements.profileUsernameLabel.textContent = sessionUser.username;
   elements.profileEmailLabel.textContent = sessionUser.email;
+  if (elements.profileBioLabel) {
+    elements.profileBioLabel.textContent = sessionUser.bio || "No motto or bio set yet.";
+  }
   elements.profileTargetGoalText.textContent = `${sessionUser.targetGoal}%`;
 
   if (isGuest) {
@@ -830,6 +833,7 @@ function renderProfileView() {
     elements.profileEmailInput.value = sessionUser.email;
     elements.profileBioInput.value = sessionUser.bio || "";
     elements.profileTargetRateInput.value = sessionUser.targetGoal;
+    updateTargetRateSliderUI();
 
     // Render preset edit selections
     renderEditAvatarsGrid();
@@ -845,6 +849,7 @@ function renderProfileView() {
     setVal("academic-program-val",    ap.program);
     setVal("academic-semester-val",   ap.semester ? `Semester ${ap.semester}` : null);
     setVal("academic-session-val",    ap.academicSession);
+    setVal("academic-section-val",    ap.section);
 
     // Stats calculations
     const actualRate = calculateOverallAttendance();
@@ -852,11 +857,20 @@ function renderProfileView() {
     elements.profileTargetRateVal.textContent = `${sessionUser.targetGoal}%`;
 
     const target = sessionUser.targetGoal;
-    const progressPercent = Math.min(
-      Math.round((actualRate / target) * 100),
-      100,
-    );
-    elements.profileGoalComparisonFill.style.width = `${progressPercent}%`;
+    if (elements.profileActualFillBar) {
+      elements.profileActualFillBar.style.width = `${Math.min(actualRate, 100)}%`;
+      elements.profileActualFillBar.className = "progress-actual-fill";
+      if (actualRate < 75) {
+        elements.profileActualFillBar.classList.add("low");
+      } else if (actualRate < target) {
+        elements.profileActualFillBar.classList.add("mid");
+      } else {
+        elements.profileActualFillBar.classList.add("high");
+      }
+    }
+    if (elements.profileTargetMarkerLine) {
+      elements.profileTargetMarkerLine.style.left = `${Math.min(target, 100)}%`;
+    }
 
     const statusText = elements.comparisonStatusText;
     if (actualRate >= target) {
@@ -914,139 +928,316 @@ function renderConvertAvatarsGrid() {
   });
 }
 
+function updateTargetRateSliderUI() {
+  const slider = document.getElementById("profile-target-rate");
+  if (!slider) return;
+
+  const val = slider.value;
+
+  const badge = document.getElementById("target-rate-slider-val");
+  if (badge) {
+    badge.textContent = `${val}%`;
+    badge.classList.remove("low", "mid", "high");
+    if (val < 75) {
+      badge.classList.add("low");
+    } else if (val < 85) {
+      badge.classList.add("mid");
+    } else {
+      badge.classList.add("high");
+    }
+  }
+
+  // Real-time update the Target marker line on the visual progress track
+  const targetLine = document.getElementById("profile-target-marker-line");
+  if (targetLine) {
+    targetLine.style.left = `${val}%`;
+  }
+
+  // Real-time update the Target Value text inside the stat bubble
+  const targetValText = document.getElementById("profile-target-rate-val");
+  if (targetValText) {
+    targetValText.textContent = `${val}%`;
+  }
+}
+
 // Setup User account conversion and registration upgrades
 function setupProfileEditHandlers() {
-  // Normal Profile settings save
-  elements.profileEditForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    if (!sessionUser || sessionUser.username === "Guest") return;
+  // Setup real-time target rate slider updater
+  const slider = document.getElementById("profile-target-rate");
+  if (slider) {
+    slider.addEventListener("input", updateTargetRateSliderUI);
+  }
 
-    const email = elements.profileEmailInput.value.trim();
-    const bio = elements.profileBioInput.value.trim();
-    const targetGoal = parseInt(elements.profileTargetRateInput.value, 10);
+  // Global Profile Edit Toggle logic
+  const btnGlobalEdit = document.getElementById("btn-global-profile-edit");
+  const profileEditForm = document.getElementById("profile-edit-form");
+  const academicEditForm = document.getElementById("academic-edit-form");
+  const academicDisplay = document.getElementById("academic-info-display");
+  const btnCancelAcademic = document.getElementById("btn-cancel-academic-edit");
 
-    const token = localStorage.getItem("token");
+  let isEditing = false;
 
-    try {
-      const response = await fetch(`${API_URL}/profile`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email,
-          bio,
-          targetGoal,
-          avatar: editSelectedAvatar,
-        }),
-      });
+  const progressContainer = document.querySelector(".visual-progress-container");
+  const progressTrack = document.querySelector(".progress-track-bg");
 
-      const data = await response.json();
+  let isDragging = false;
 
-      if (!response.ok || !data.success) {
-        showToast(data.message || "Failed to update profile", "error");
-        return;
+  function handleTrackInteraction(e) {
+    if (!isEditing || !progressTrack) return;
+    const rect = progressTrack.getBoundingClientRect();
+    const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+    if (clientX === undefined) return;
+
+    let pct = Math.round(((clientX - rect.left) / rect.width) * 100);
+    pct = Math.max(50, Math.min(100, pct)); // target must be 50%-100%
+
+    // Magnetic snap to 75%
+    if (pct >= 72 && pct <= 78) {
+      pct = 75;
+    }
+
+    const targetInput = document.getElementById("profile-target-rate");
+    if (targetInput) {
+      targetInput.value = pct;
+      updateTargetRateSliderUI();
+    }
+  }
+
+  if (progressTrack) {
+    progressTrack.addEventListener("mousedown", (e) => {
+      if (!isEditing) return;
+      isDragging = true;
+      handleTrackInteraction(e);
+    });
+
+    window.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        handleTrackInteraction(e);
+      }
+    });
+
+    window.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    // Touch events for mobile support
+    progressTrack.addEventListener("touchstart", (e) => {
+      if (!isEditing) return;
+      isDragging = true;
+      handleTrackInteraction(e);
+    }, { passive: true });
+
+    window.addEventListener("touchmove", (e) => {
+      if (isDragging) {
+        handleTrackInteraction(e);
+      }
+    }, { passive: false });
+
+    window.addEventListener("touchend", () => {
+      isDragging = false;
+    });
+  }
+
+  function toggleProfileEditing(forceState) {
+    isEditing = typeof forceState === "boolean" ? forceState : !isEditing;
+
+    const profileEditActions = document.getElementById("profile-edit-actions");
+    const btnEditAvatarOverlay = document.getElementById("btn-edit-avatar-overlay");
+    const editAvatarGrid = document.getElementById("edit-avatar-presets-grid");
+    
+    // Inline edit elements
+    const emailLabel = document.getElementById("profile-email-label");
+    const emailInput = document.getElementById("profile-email");
+    const bioLabel = document.getElementById("profile-bio-label");
+    const bioInput = document.getElementById("profile-bio");
+
+    if (isEditing) {
+      // Enter Edit Mode
+      if (btnGlobalEdit) btnGlobalEdit.classList.add("hidden");
+      if (profileEditActions) profileEditActions.classList.remove("hidden");
+
+      if (progressContainer) {
+        progressContainer.classList.add("editable");
       }
 
-      sessionUser.email = email;
-      sessionUser.bio = bio;
-      sessionUser.targetGoal = targetGoal;
-      sessionUser.avatar = editSelectedAvatar;
+      // Show inline inputs
+      if (emailLabel) emailLabel.classList.add("hidden");
+      if (emailInput) {
+        emailInput.classList.remove("hidden");
+        emailInput.value = sessionUser.email || "";
+      }
+      
+      if (bioLabel) bioLabel.classList.add("hidden");
+      if (bioInput) {
+        bioInput.classList.remove("hidden");
+        bioInput.value = sessionUser.bio || "";
+      }
 
-      saveUserScopedData();
+      // Show avatar edit overlay
+      if (btnEditAvatarOverlay) btnEditAvatarOverlay.classList.remove("hidden");
 
-      elements.sidebarUserAvatar.className = `user-avatar-circle ${sessionUser.avatar}`;
-      elements.headerUserAvatar.className = `user-avatar-circle mini ${sessionUser.avatar}`;
+      // Re-initialize avatarPreset selection Grid to match current user
+      editSelectedAvatar = sessionUser.avatar;
+      renderEditAvatarsGrid();
 
-      renderProfileView();
-      showToast("Profile Settings updated successfully!", "success");
-    } catch (err) {
-      console.error(err);
-      showToast("Server Connection Error: Failed to save changes.", "error");
+      if (academicEditForm) {
+        academicEditForm.classList.remove("hidden");
+        academicEditForm.classList.add("fade-in-animate");
+
+        // Populate and Sync academic input fields
+        const ap = sessionUser.academicProfile || {};
+        const setInput = (id, val) => {
+          const el = document.getElementById(id);
+          if (el) el.value = val || "";
+        };
+        setInput("academic-edit-university", ap.university || ap.college || "");
+        setInput("academic-edit-department", ap.department);
+        setInput("academic-edit-semester",   ap.semester);
+        setInput("academic-edit-session",    ap.academicSession);
+        setInput("academic-edit-section",    ap.section);
+
+        const progEl = document.getElementById("academic-edit-program");
+        if (progEl) {
+          progEl.value = ap.program || "";
+          if (typeof initCustomSelect === "function") initCustomSelect(progEl);
+        }
+      }
+      if (academicDisplay) {
+        academicDisplay.classList.add("hidden");
+      }
+    } else {
+      // Exit Edit Mode (Reset to View Mode)
+      if (btnGlobalEdit) btnGlobalEdit.classList.remove("hidden");
+      if (profileEditActions) profileEditActions.classList.add("hidden");
+
+      if (progressContainer) {
+        progressContainer.classList.remove("editable");
+      }
+
+      // Hide inline inputs
+      if (emailLabel) emailLabel.classList.remove("hidden");
+      if (emailInput) emailInput.classList.add("hidden");
+      if (bioLabel) bioLabel.classList.remove("hidden");
+      if (bioInput) bioInput.classList.add("hidden");
+
+      // Hide avatar overlay and grid
+      if (btnEditAvatarOverlay) btnEditAvatarOverlay.classList.add("hidden");
+      if (editAvatarGrid) editAvatarGrid.classList.add("hidden");
+      if (academicEditForm) {
+        academicEditForm.classList.add("hidden");
+        academicEditForm.classList.remove("fade-in-animate");
+      }
+      if (academicDisplay) {
+        academicDisplay.classList.remove("hidden");
+        academicDisplay.classList.add("fade-in-animate");
+      }
+
+      // Reset form values back to session values
+      elements.profileEmailInput.value = sessionUser.email || "";
+      elements.profileBioInput.value = sessionUser.bio || "";
+      elements.profileTargetRateInput.value = sessionUser.targetGoal || 75;
+      updateTargetRateSliderUI();
     }
-  });
-
-  // --- Academic Info toggle & edit ---
-  const btnToggleAcademic = document.getElementById("btn-toggle-academic-edit");
-  const btnCancelAcademic = document.getElementById("btn-cancel-academic-edit");
-  const academicEditForm  = document.getElementById("academic-edit-form");
-  const academicDisplay   = document.getElementById("academic-info-display");
-
-  function openAcademicEdit() {
-    const ap = sessionUser.academicProfile || {};
-    const setInput = (id, val) => {
-      const el = document.getElementById(id);
-      if (el) el.value = val || "";
-    };
-    setInput("academic-edit-university", ap.university || ap.college || "");
-    setInput("academic-edit-department", ap.department);
-    setInput("academic-edit-semester",   ap.semester);
-    setInput("academic-edit-session",    ap.academicSession);
-    setInput("academic-edit-section",    ap.section);
-    // Set program select
-    const progEl = document.getElementById("academic-edit-program");
-    if (progEl) progEl.value = ap.program || "";
-
-    if (academicDisplay)   academicDisplay.classList.add("hidden");
-    if (academicEditForm)  academicEditForm.classList.remove("hidden");
-    if (btnToggleAcademic) btnToggleAcademic.classList.add("hidden");
   }
 
-  function closeAcademicEdit() {
-    if (academicDisplay)   academicDisplay.classList.remove("hidden");
-    if (academicEditForm)  academicEditForm.classList.add("hidden");
-    if (btnToggleAcademic) btnToggleAcademic.classList.remove("hidden");
+  if (btnGlobalEdit) {
+    btnGlobalEdit.addEventListener("click", () => toggleProfileEditing());
+  }
+  
+  const btnEditAvatarOverlay = document.getElementById("btn-edit-avatar-overlay");
+  if (btnEditAvatarOverlay) {
+    btnEditAvatarOverlay.addEventListener("click", () => {
+      const grid = document.getElementById("edit-avatar-presets-grid");
+      if (grid) grid.classList.toggle("hidden");
+    });
+  }
+  const btnCancelProfileEdit = document.getElementById("btn-cancel-profile-edit");
+  const btnSaveProfileEdit = document.getElementById("btn-save-profile-edit");
+  if (btnCancelProfileEdit) {
+    btnCancelProfileEdit.addEventListener("click", () => toggleProfileEditing(false));
   }
 
-  if (btnToggleAcademic) btnToggleAcademic.addEventListener("click", openAcademicEdit);
-  if (btnCancelAcademic) btnCancelAcademic.addEventListener("click", closeAcademicEdit);
+  // Global Profile settings save
+  if (btnSaveProfileEdit) {
+    btnSaveProfileEdit.addEventListener("click", async () => {
+      if (!sessionUser || sessionUser.username === "Guest") return;
 
-  if (academicEditForm) {
-    academicEditForm.addEventListener("submit", async (e) => {
-      e.preventDefault();
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const university      = document.getElementById("academic-edit-university")?.value.trim();
-      const department      = document.getElementById("academic-edit-department")?.value.trim();
-      const program         = document.getElementById("academic-edit-program")?.value;
-      const semester        = parseInt(document.getElementById("academic-edit-semester")?.value, 10) || null;
+      btnSaveProfileEdit.classList.add("btn-loading");
+
+      // Gather Profile Data
+      const email = elements.profileEmailInput.value.trim();
+      const bio = elements.profileBioInput.value.trim();
+      const targetGoal = parseInt(elements.profileTargetRateInput.value, 10);
+
+      // Gather Academic Data
+      const university = document.getElementById("academic-edit-university")?.value.trim();
+      const department = document.getElementById("academic-edit-department")?.value.trim();
+      const program = document.getElementById("academic-edit-program")?.value;
+      const semester = parseInt(document.getElementById("academic-edit-semester")?.value, 10) || null;
       const academicSession = document.getElementById("academic-edit-session")?.value.trim();
-      const section         = document.getElementById("academic-edit-section")?.value.trim();
+      const section = document.getElementById("academic-edit-section")?.value.trim();
 
       try {
-        const res = await fetch(`${API_URL}/api/onboarding`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            university,
-            college: university,
-            department,
-            program,
-            semester,
-            academicSession,
-            section
+        const [profileRes, academicRes] = await Promise.all([
+          fetch(`${API_URL}/profile`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ email, bio, targetGoal, avatar: editSelectedAvatar }),
           }),
-        });
+          fetch(`${API_URL}/api/onboarding`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              university,
+              college: university,
+              department,
+              program,
+              semester,
+              academicSession,
+              section
+            }),
+          })
+        ]);
 
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          showToast(err.message || "Failed to save academic info.", "error");
-          return;
+        const profileData = await profileRes.json().catch(() => ({}));
+        
+        if (!profileRes.ok || !profileData.success) {
+          throw new Error(profileData.message || "Failed to update profile settings.");
+        }
+        if (!academicRes.ok) {
+          const academicData = await academicRes.json().catch(() => ({}));
+          throw new Error(academicData.message || "Failed to update academic info.");
         }
 
         // Update in-memory
+        sessionUser.email = email;
+        sessionUser.bio = bio;
+        sessionUser.targetGoal = targetGoal;
+        sessionUser.avatar = editSelectedAvatar;
         sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession, section };
 
-        closeAcademicEdit();
+        saveUserScopedData();
+
+        elements.sidebarUserAvatar.className = `user-avatar-circle ${sessionUser.avatar}`;
+        elements.headerUserAvatar.className = `user-avatar-circle mini ${sessionUser.avatar}`;
+
         renderProfileView();
-        showToast("Academic info updated!", "success");
+        showToast("Profile completely updated!", "success");
+        toggleProfileEditing(false); // Switch back to View Mode
       } catch (err) {
-        showToast("Server error saving academic info.", "error");
+        console.error(err);
+        showToast(err.message || "Server Error: Failed to save changes.", "error");
+      } finally {
+        btnSaveProfileEdit.classList.remove("btn-loading");
       }
     });
   }

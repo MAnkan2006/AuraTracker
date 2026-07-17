@@ -668,12 +668,12 @@
                     Weekly Scope
                   </button>
                 </div>
-                <button class="btn btn-secondary btn-icon" id="btn-import-routine-pdf" title="Re-import timetable from PDF">
+                <button class="btn btn-secondary" id="btn-import-routine-pdf" title="Re-import timetable from PDF">
                   <i data-lucide="upload-cloud"></i>
                   <span>Import PDF</span>
                 </button>
                 <input type="file" id="routine-reimport-file-input" accept=".pdf" hidden />
-                <button class="btn btn-primary btn-icon" id="add-routine-btn">
+                <button class="btn btn-primary" id="add-routine-btn">
                   <i data-lucide="plus"></i>
                   <span>Add Slot</span>
                 </button>
@@ -820,18 +820,52 @@
                 <i data-lucide="user-cog"></i>
                 <h3>User Profile & Settings</h3>
               </div>
+              <div class="header-actions" id="profile-header-actions">
+                <button type="button" class="btn btn-secondary btn-sm btn-icon-text" id="btn-global-profile-edit">
+                  <i data-lucide="pencil"></i> <span>Edit Profile</span>
+                </button>
+                <div class="edit-mode-actions hidden" id="profile-edit-actions">
+                  <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-profile-edit">
+                    Cancel
+                  </button>
+                  <button type="button" class="btn btn-primary btn-sm" id="btn-save-profile-edit">
+                    <i data-lucide="save"></i> Save Changes
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="profile-settings-wrapper">
               <!-- Profile Card Overview -->
               <div class="profile-header-summary">
-                <div
-                  class="user-avatar-circle large"
-                  id="profile-avatar-display"
-                ></div>
+                <div class="avatar-edit-container">
+                  <div class="user-avatar-circle large" id="profile-avatar-display"></div>
+                  <!-- Inline Avatar Edit Button -->
+                  <div class="avatar-edit-overlay hidden" id="btn-edit-avatar-overlay">
+                    <i data-lucide="camera"></i>
+                  </div>
+                </div>
                 <div class="profile-summary-details">
                   <h4 id="profile-username-label">User Name</h4>
-                  <span id="profile-email-label">user@example.com</span>
+                  
+                  <!-- Email block -->
+                  <div class="inline-edit-group">
+                    <span id="profile-email-label">user@example.com</span>
+                    <input type="email" id="profile-email" class="inline-edit-input hidden" required autocomplete="email" />
+                  </div>
+
+                  <!-- Bio block -->
+                  <div class="inline-edit-group">
+                    <p id="profile-bio-label" class="profile-bio-text">No bio set.</p>
+                    <input type="text" id="profile-bio" class="inline-edit-input hidden" placeholder="e.g. Keep pushing, stay consistent!" />
+                  </div>
+
+                  <input type="hidden" id="profile-target-rate" value="75" />
+                  
+                  <div class="avatar-presets edit-presets hidden" id="edit-avatar-presets-grid" style="margin-top: 12px; gap: 8px;">
+                    <!-- Preset buttons populated by JS -->
+                  </div>
+
                   <div
                     class="profile-goal-badge"
                     id="profile-goal-badge-container"
@@ -852,19 +886,33 @@
                   </div>
                   <div class="comparison-stats-row">
                     <div class="comp-stat-bubble">
-                      <div class="label">Actual Combined Rate</div>
-                      <div class="value" id="profile-actual-rate-val">78%</div>
+                      <i data-lucide="activity" class="stat-icon actual"></i>
+                      <div class="stat-info">
+                        <div class="label">Actual Rate</div>
+                        <div class="value" id="profile-actual-rate-val">78%</div>
+                      </div>
                     </div>
                     <div class="comp-stat-bubble">
-                      <div class="label">Target Objective</div>
-                      <div class="value" id="profile-target-rate-val">85%</div>
+                      <i data-lucide="target" class="stat-icon target"></i>
+                      <div class="stat-info">
+                        <div class="label">Target Goal</div>
+                        <div class="value" id="profile-target-rate-val">85%</div>
+                      </div>
                     </div>
                   </div>
-                  <div class="todo-progress-bar">
-                    <div
-                      class="progress-fill"
-                      id="profile-goal-comparison-fill"
-                    ></div>
+                  <div class="visual-progress-container">
+                    <div class="progress-track-bg">
+                      <div class="progress-actual-fill" id="profile-actual-fill-bar"></div>
+                      <div class="progress-target-marker" id="profile-target-marker-line">
+                        <span class="marker-label">Target</span>
+                      </div>
+                    </div>
+                    <div class="progress-axis-labels" style="position: relative; height: 14px; margin-top: 8px;">
+                      <span style="position: absolute; left: 0%; transform: translateX(-50%);">0</span>
+                      <span style="position: absolute; left: 50%; transform: translateX(-50%);">50</span>
+                      <span style="position: absolute; left: 75%; transform: translateX(-50%);">75</span>
+                      <span style="position: absolute; left: 100%; transform: translateX(-50%);">100</span>
+                    </div>
                   </div>
                 </div>
 
@@ -875,7 +923,7 @@
                       <i data-lucide="graduation-cap"></i>
                       <span>Academic Information</span>
                     </div>
-                    <button type="button" class="btn btn-secondary btn-icon btn-sm" id="btn-toggle-academic-edit">
+                    <button type="button" class="btn btn-secondary btn-sm hidden" id="btn-toggle-academic-edit">
                       <i data-lucide="pencil"></i>
                       <span>Edit</span>
                     </button>
@@ -954,66 +1002,11 @@
                         <input type="text" id="academic-edit-section" placeholder="e.g. B" />
                       </div>
                     </div>
-                    <div class="form-actions-row">
-                      <button type="submit" class="btn btn-primary btn-sm">
-                        <i data-lucide="check"></i> Save Academic Info
-                      </button>
-                      <button type="button" class="btn btn-secondary btn-sm" id="btn-cancel-academic-edit">
-                        Cancel
-                      </button>
-                    </div>
+
                   </form>
                 </div>
 
-                <!-- Edit Form -->
-                <form id="profile-edit-form" class="profile-edit-form">
-                  <div class="form-group">
-                    <label for="profile-email">Email Address</label>
-                    <input
-                      type="email"
-                      id="profile-email"
-                      required
-                      autocomplete="email"
-                    />
-                  </div>
-                  <div class="form-group">
-                    <label for="profile-bio">Personal Motto / Bio</label>
-                    <input
-                      type="text"
-                      id="profile-bio"
-                      placeholder="e.g. Keep pushing, stay consistent!"
-                    />
-                  </div>
 
-                  <div class="form-row">
-                    <div class="form-group">
-                      <label for="profile-target-rate"
-                        >Target Attendance Goal (%)</label
-                      >
-                      <input
-                        type="number"
-                        id="profile-target-rate"
-                        min="10"
-                        max="100"
-                        required
-                      />
-                    </div>
-                    <div class="form-group">
-                      <label>Change Avatar Preset</label>
-                      <div
-                        class="avatar-presets edit-presets"
-                        id="edit-avatar-presets-grid"
-                      >
-                        <!-- Preset buttons populated by JS -->
-                      </div>
-                    </div>
-                  </div>
-
-                  <button type="submit" class="btn btn-primary">
-                    <i data-lucide="check"></i> Save Profile Settings
-                  </button>
-                </form>
-              </div>
 
               <!-- 2. GUEST CONVERT FORM (Only shown if guest user active) -->
               <div
@@ -1282,14 +1275,14 @@
       <div class="walkthrough-footer">
         <button
           type="button"
-          class="btn btn-secondary btn-icon-small"
+          class="btn btn-secondary btn-sm"
           id="walkthrough-btn-skip"
         >
           Skip
         </button>
         <button
           type="button"
-          class="btn btn-primary btn-icon-small"
+          class="btn btn-primary btn-sm"
           id="walkthrough-btn-next"
         >
           Next <i data-lucide="arrow-right"></i>
