@@ -98,6 +98,7 @@ const elements = {
   loginUsername: document.getElementById("login-username"),
   loginPassword: document.getElementById("login-password"),
   signupUsername: document.getElementById("signup-username"),
+  signupName: document.getElementById("signup-name"),
   signupEmail: document.getElementById("signup-email"),
   signupPassword: document.getElementById("signup-password"),
   btnToggleLogin: document.getElementById("btn-toggle-login"),
@@ -133,12 +134,16 @@ const elements = {
   // User sidebar footer
   sidebarUserAvatar: document.getElementById("sidebar-user-avatar"),
   sidebarUserName: document.getElementById("sidebar-user-name"),
+  sidebarUserHandle: document.getElementById("sidebar-user-handle"),
   btnLogout: document.getElementById("btn-logout"),
 
   // Header user info
   headerUserName: document.getElementById("header-user-name"),
   headerUserAvatar: document.getElementById("header-user-avatar"),
   headerUserBadgeName: document.getElementById("header-user-badge-name"),
+  headerUserBadgeHandle: document.getElementById("header-user-badge-handle"),
+  notifList: document.getElementById("nh-notif-list"),
+  notifDot: document.getElementById("nh-notif-dot"),
 
   // Clock
   liveTime: document.getElementById("live-time"),
@@ -222,6 +227,10 @@ const elements = {
   convertError: document.getElementById("convert-error"),
 
   // Modals
+  updateNameModal: document.getElementById("update-name-modal"),
+  updateNameForm: document.getElementById("update-name-form"),
+  updateNameInput: document.getElementById("update-name-input"),
+
   routineModal: document.getElementById("routine-modal"),
   routineForm: document.getElementById("routine-form"),
   routineTitle: document.getElementById("routine-title"),
@@ -230,6 +239,9 @@ const elements = {
   routineTag: document.getElementById("routine-tag"),
   routineStart: document.getElementById("routine-start"),
   routineEnd: document.getElementById("routine-end"),
+  routineId: document.getElementById("routine-id"),
+  btnRoutineDelete: document.getElementById("btn-routine-delete"),
+  btnRoutineSubmit: document.getElementById("btn-routine-submit"),
 
   dayModal: document.getElementById("day-modal"),
   modalDateString: document.getElementById("modal-date-string"),
@@ -340,7 +352,54 @@ function loadUserScopedData() {
   saveUserScopedData();
 }
 
-// --- Auth Session Loops ---
+function checkNotifications() {
+  const notifList = elements.notifList;
+  const notifDot = elements.notifDot;
+  if (!notifList || !notifDot) return;
+
+  // Clear existing
+  notifList.innerHTML = "";
+  let hasNotifications = false;
+
+  if (!sessionUser.name && sessionUser.username !== "Guest") {
+    hasNotifications = true;
+    const notifItem = document.createElement("div");
+    notifItem.className = "nh-notif-item unread";
+    notifItem.style.cursor = "pointer";
+    notifItem.innerHTML = `
+      <div class="nh-notif-icon primary"><i data-lucide="user"></i></div>
+      <div class="nh-notif-content">
+        <h4>Profile Incomplete</h4>
+        <p>Please update your full name to personalize your experience.</p>
+        <span class="nh-notif-time">Just now</span>
+      </div>
+    `;
+    notifItem.addEventListener("click", () => {
+      elements.updateNameModal.classList.remove("hidden");
+      const notifPanel = document.getElementById("nh-notif-panel");
+      if (notifPanel) notifPanel.classList.add("hidden");
+    });
+    notifList.appendChild(notifItem);
+  }
+
+  if (hasNotifications) {
+    notifDot.classList.add("visible");
+    notifDot.style.display = ""; // clear inline style just in case
+    lucide.createIcons();
+  } else {
+    notifDot.classList.remove("visible");
+    notifDot.style.display = "";
+    notifList.innerHTML = `
+      <div class="nh-notif-empty">
+        <i data-lucide="coffee"></i>
+        <p>You're all caught up!</p>
+      </div>
+    `;
+    lucide.createIcons();
+  }
+}
+
+// --- Auth Handling ---Loops ---
 async function checkAuthSession() {
   const token = localStorage.getItem("token");
 
@@ -369,6 +428,7 @@ async function checkAuthSession() {
 
     sessionUser = {
       username: data.username,
+      name: data.name || "",
       email: data.email,
       avatar: data.avatar,
       bio: data.bio,
@@ -377,6 +437,7 @@ async function checkAuthSession() {
     };
 
     loadUserScopedData();
+    await syncRoutineFromBackend(token);
     showDashboard();
   } catch (err) {
     console.error("Session check failed:", err);
@@ -385,6 +446,59 @@ async function checkAuthSession() {
     localStorage.removeItem("auratracker_session");
 
     showAuthScreen();
+  }
+}
+
+async function syncRoutineFromBackend(token) {
+  try {
+    const routineRes = await fetch(`${API_URL}/api/routine`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (routineRes.ok) {
+      const routineData = await routineRes.json();
+      const routinePayload = routineData.routine;
+      if (!routinePayload) return;
+      
+      const backendClasses = Array.isArray(routinePayload?.classes)
+        ? routinePayload.classes
+        : Array.isArray(routinePayload)
+          ? routinePayload
+          : [];
+
+      // Convert backend format to frontend format
+      const convertedClasses = backendClasses.map((cls) => ({
+        id: cls.id || cls._id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+        type: "class",
+        day:
+          typeof cls.day === "number"
+            ? cls.day
+            : DAY_NAME_TO_NUM[cls.day] ?? 1,
+        title: cls.title || cls.subject || "",
+        start: cls.startTime || cls.start || "",
+        end: cls.endTime || cls.end || "",
+        tag: "study",
+      }));
+
+      // Merge into existing state (avoid duplicates by title + day + start)
+      let changed = false;
+      convertedClasses.forEach((cls) => {
+        const exists = state.routine.find((r) => r.title === cls.title && r.day === cls.day && r.start === cls.start);
+        if (!exists) {
+          state.routine.push(cls);
+          changed = true;
+        }
+      });
+
+      if (changed) {
+        saveUserScopedData();
+        renderRoutineTimeline();
+        renderWeeklyScopeGrid();
+        if (typeof renderAttendance === 'function') renderAttendance();
+      }
+    }
+  } catch (err) {
+    console.error("Failed to sync routine from backend:", err);
   }
 }
 
@@ -414,12 +528,20 @@ function showDashboard() {
   document.documentElement.setAttribute("data-font", state.selectedFont);
 
   // User header / sidebar mappings
-  elements.sidebarUserName.textContent = sessionUser.username;
+  elements.sidebarUserName.textContent = sessionUser.name || sessionUser.username;
+  if (elements.sidebarUserHandle) {
+    elements.sidebarUserHandle.textContent = "@" + sessionUser.username;
+  }
   elements.sidebarUserAvatar.className = `user-avatar-circle ${sessionUser.avatar}`;
 
-  elements.headerUserName.textContent = sessionUser.username;
+  elements.headerUserName.textContent = sessionUser.name || sessionUser.username;
   elements.headerUserAvatar.className = `user-avatar-circle mini ${sessionUser.avatar}`;
-  elements.headerUserBadgeName.textContent = sessionUser.username;
+  elements.headerUserBadgeName.textContent = sessionUser.name || sessionUser.username;
+  if (elements.headerUserBadgeHandle) {
+    elements.headerUserBadgeHandle.textContent = "@" + sessionUser.username;
+  }
+
+  checkNotifications();
 
   // Toggle warning banner
   if (sessionUser.username === "Guest") {
@@ -488,6 +610,7 @@ function setupAuthHandlers() {
     e.preventDefault();
 
     const username = elements.signupUsername.value.trim();
+    const name = elements.signupName.value.trim();
     const email = elements.signupEmail.value.trim();
     const password = elements.signupPassword.value;
 
@@ -499,6 +622,7 @@ function setupAuthHandlers() {
         },
         body: JSON.stringify({
           username,
+          name,
           email,
           avatar: signupSelectedAvatar,
           password,
@@ -546,6 +670,7 @@ function setupAuthHandlers() {
 
           sessionUser = {
             username: profileData.username,
+            name: profileData.name || "",
             email: profileData.email,
             avatar: profileData.avatar,
             bio: profileData.bio,
@@ -556,6 +681,7 @@ function setupAuthHandlers() {
           setTimeout(() => {
             // Clear signup inputs
             elements.signupUsername.value = "";
+            elements.signupName.value = "";
             elements.signupEmail.value = "";
             elements.signupPassword.value = "";
 
@@ -571,6 +697,7 @@ function setupAuthHandlers() {
             elements.loginPassword.focus();
 
             elements.signupUsername.value = "";
+            elements.signupName.value = "";
             elements.signupEmail.value = "";
             elements.signupPassword.value = "";
           }, 1000);
@@ -626,6 +753,7 @@ function setupAuthHandlers() {
 
       sessionUser = {
         username: profileData.username,
+        name: profileData.name || "",
         email: profileData.email,
         avatar: profileData.avatar,
         bio: profileData.bio,
@@ -634,12 +762,15 @@ function setupAuthHandlers() {
       };
 
       loadUserScopedData();
+      await syncRoutineFromBackend(data.token);
       showDashboard();
     } catch (err) {
       console.error(err);
       showToast("Connection failed: Server error.", "error");
     }
   });
+
+
 
   // Guest Login click
   elements.btnGuestLogin.addEventListener("click", () => {
@@ -808,7 +939,7 @@ function renderProfileView() {
 
   // Core Profile overview details
   elements.profileAvatarDisplay.className = `user-avatar-circle large ${sessionUser.avatar}`;
-  elements.profileUsernameLabel.textContent = sessionUser.username;
+  elements.profileUsernameLabel.textContent = sessionUser.name || sessionUser.username;
   elements.profileEmailLabel.textContent = sessionUser.email;
   if (elements.profileBioLabel) {
     elements.profileBioLabel.textContent = sessionUser.bio || "No motto or bio set yet.";
@@ -1671,7 +1802,7 @@ function renderRoutineTimeline() {
   elements.weeklyGridContainer.classList.add("hidden");
   elements.dailyTabsWrapper.classList.remove("hidden");
   elements.quickInfoText.textContent =
-    "Classes, routines, and tasks are merged. Click any item to delete it.";
+    "Classes, routines, and tasks are merged. Click any item to edit or delete.";
 
   elements.routineItemsList.innerHTML = "";
 
@@ -1832,18 +1963,9 @@ function renderRoutineTimeline() {
         });
       }
 
-      itemDiv.addEventListener("click", async () => {
-        const typeLabel = item.type === "class" ? "class slot" : "routine slot";
-        if (
-          await showConfirm(
-            `Remove the ${typeLabel} "${item.title}"?`,
-            "Remove Slot",
-          )
-        ) {
-          state.routine = state.routine.filter((r) => r.id !== item.refId);
-          saveUserScopedData();
-          renderRoutineTimeline();
-          renderAttendance();
+      itemDiv.addEventListener("click", () => {
+        if (typeof window.openRoutineEditModal === "function") {
+          window.openRoutineEditModal(item.rawItem);
         }
       });
     }
@@ -1859,7 +1981,7 @@ function renderWeeklyScopeGrid() {
   elements.weeklyGridContainer.classList.remove("hidden");
   elements.dailyTabsWrapper.classList.add("hidden");
   elements.quickInfoText.textContent =
-    "Weekly Scope: Click any card to remove. Click (+) to add routine slots directly.";
+    "Weekly Scope: Click any card to edit. Click (+) to add routine slots directly.";
 
   elements.weeklyGridColumns.innerHTML = "";
 
@@ -1896,6 +2018,9 @@ function renderWeeklyScopeGrid() {
       elements.routineTag.value = "study";
       elements.routineStart.value = "09:00";
       elements.routineEnd.value = "10:00";
+      if (elements.routineId) elements.routineId.value = "";
+      if (elements.btnRoutineSubmit) elements.btnRoutineSubmit.textContent = "Add Slot";
+      if (elements.btnRoutineDelete) elements.btnRoutineDelete.classList.add("hidden");
       if (typeof initCustomSelect === "function") {
         initCustomSelect(elements.routineDay);
         initCustomSelect(elements.routineType);
@@ -1980,19 +2105,9 @@ function renderWeeklyScopeGrid() {
                         <span class="weekly-slot-badge">${badge}</span>
                     `;
 
-          card.addEventListener("click", async () => {
-            const typeLabel =
-              item.type === "class" ? "class slot" : "routine slot";
-            if (
-              await showConfirm(
-                `Delete the ${typeLabel} "${item.title}"?`,
-                "Delete Slot",
-              )
-            ) {
-              state.routine = state.routine.filter((r) => r.id !== item.refId);
-              saveUserScopedData();
-              renderWeeklyScopeGrid();
-              renderAttendance();
+          card.addEventListener("click", () => {
+            if (typeof window.openRoutineEditModal === "function") {
+              window.openRoutineEditModal(item.rawItem);
             }
           });
         }
@@ -2041,6 +2156,9 @@ function setupRoutineHandlers() {
     elements.routineTag.value = "study";
     elements.routineStart.value = "09:00";
     elements.routineEnd.value = "10:00";
+    if (elements.routineId) elements.routineId.value = "";
+    if (elements.btnRoutineSubmit) elements.btnRoutineSubmit.textContent = "Add Slot";
+    if (elements.btnRoutineDelete) elements.btnRoutineDelete.classList.add("hidden");
     if (typeof initCustomSelect === "function") {
       initCustomSelect(elements.routineDay);
       initCustomSelect(elements.routineType);
@@ -2048,6 +2166,39 @@ function setupRoutineHandlers() {
     }
     openModal(elements.routineModal);
   });
+
+  window.openRoutineEditModal = function(item) {
+    elements.routineTitle.value = item.title;
+    elements.routineDay.value = item.day;
+    elements.routineType.value = item.type;
+    elements.routineTag.value = item.tag;
+    elements.routineStart.value = item.start;
+    elements.routineEnd.value = item.end;
+    if (elements.routineId) elements.routineId.value = item.id || item.refId;
+    if (elements.btnRoutineSubmit) elements.btnRoutineSubmit.textContent = "Update Slot";
+    if (elements.btnRoutineDelete) elements.btnRoutineDelete.classList.remove("hidden");
+    if (typeof initCustomSelect === "function") {
+      initCustomSelect(elements.routineDay);
+      initCustomSelect(elements.routineType);
+      initCustomSelect(elements.routineTag);
+    }
+    openModal(elements.routineModal);
+  };
+
+  if (elements.btnRoutineDelete) {
+    elements.btnRoutineDelete.addEventListener("click", async () => {
+      const routineId = elements.routineId.value;
+      if (!routineId) return;
+      if (await showConfirm("Delete this routine slot?", "Delete Slot")) {
+        state.routine = state.routine.filter((r) => r.id !== routineId);
+        saveUserScopedData();
+        closeModal(elements.routineModal);
+        renderRoutineTimeline();
+        renderWeeklyScopeGrid();
+        if (typeof renderAttendance === 'function') renderAttendance();
+      }
+    });
+  }
 
   elements.routineForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2068,17 +2219,34 @@ function setupRoutineHandlers() {
         return;
       }
 
-      const newRoutine = {
-        id: "rot_" + Date.now(),
-        type,
-        day,
-        title,
-        start,
-        end,
-        tag,
-      };
-
-      state.routine.push(newRoutine);
+      const routineId = elements.routineId ? elements.routineId.value : "";
+      
+      if (routineId) {
+        const index = state.routine.findIndex(r => r.id === routineId);
+        if (index !== -1) {
+          const oldTitle = state.routine[index].title;
+          state.routine[index] = {
+            ...state.routine[index],
+            type, day, title, start, end, tag
+          };
+          // Migrate attendance if title changed and it was a class
+          if (type === "class" && oldTitle !== title && state.attendance[oldTitle]) {
+            state.attendance[title] = state.attendance[oldTitle];
+            delete state.attendance[oldTitle];
+          }
+        }
+      } else {
+        const newRoutine = {
+          id: "rot_" + Date.now(),
+          type,
+          day,
+          title,
+          start,
+          end,
+          tag,
+        };
+        state.routine.push(newRoutine);
+      }
 
       if (type === "class" && !state.attendance[title]) {
         state.attendance[title] = {};
@@ -3794,7 +3962,7 @@ async function confirmRoutineImport() {
       // Convert backend format (day names) to frontend format (day integers)
       const convertedClasses = backendClasses.map((cls) => ({
         id: cls.id || cls._id || `imported-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-        type: (cls.type || "theory").toLowerCase(),
+        type: "class",
         day:
           typeof cls.day === "number"
             ? cls.day
@@ -3802,7 +3970,7 @@ async function confirmRoutineImport() {
         title: cls.title || cls.subject || "",
         start: cls.startTime || cls.start || "",
         end: cls.endTime || cls.end || "",
-        tag: cls.tag || "default",
+        tag: "study",
       }));
 
       // Merge into existing state (avoid duplicates by id)
@@ -3960,4 +4128,40 @@ function handlePdfFileSelected(file) {
   if (fileInfo) fileInfo.classList.remove("hidden");
   if (uploadZone) uploadZone.style.display = "none";
   lucide.createIcons();
+}
+// Update Name Form
+if (elements.updateNameForm) {
+  elements.updateNameForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const newName = elements.updateNameInput.value.trim();
+    if (!newName) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`${API_URL}/profile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name: newName }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        sessionUser.name = newName;
+        elements.updateNameModal.classList.add("hidden");
+        showToast("Name updated successfully!", "success");
+        // Re-render UI and check notifications
+        elements.sidebarUserName.textContent = sessionUser.name || sessionUser.username;
+        elements.headerUserName.textContent = sessionUser.name || sessionUser.username;
+        elements.headerUserBadgeName.textContent = sessionUser.name || sessionUser.username;
+        checkNotifications();
+      } else {
+        showToast(data.message || "Failed to update name.", "error");
+      }
+    } catch (err) {
+      showToast("Server error. Try again later.", "error");
+    }
+  });
 }

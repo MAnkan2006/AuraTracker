@@ -36,7 +36,7 @@ app.use("/api/routine", routineRoutes);
 
 app.post("/register", async (req, res) => {
   try {
-    const { username, email, avatar, password } = req.body;
+    const { username, email, name, avatar, password } = req.body;
 
     const existingUser = await User.findOne({ username });
 
@@ -52,6 +52,7 @@ app.post("/register", async (req, res) => {
     const user = new User({
       username,
       email,
+      name,
       avatar,
       bio: "Keep pushing, stay consistent!",
       targetGoal: 85,
@@ -131,6 +132,7 @@ app.get("/profile", verifyToken, async (req, res) => {
     res.json({
       success: true,
       username: user.username,
+      name: user.name,
       email: user.email,
       avatar: user.avatar,
       bio: user.bio,
@@ -148,7 +150,7 @@ app.get("/profile", verifyToken, async (req, res) => {
 
 app.post("/profile", verifyToken, async (req, res) => {
   try {
-    const { email, avatar, bio, targetGoal } = req.body;
+    const { email, avatar, bio, targetGoal, name } = req.body;
     const user = await User.findById(req.user.userId);
 
     if (!user) {
@@ -162,6 +164,7 @@ app.post("/profile", verifyToken, async (req, res) => {
     if (avatar) user.avatar = avatar;
     if (bio !== undefined) user.bio = bio;
     if (targetGoal !== undefined) user.targetGoal = targetGoal;
+    if (name !== undefined) user.name = name;
 
     await user.save();
 
