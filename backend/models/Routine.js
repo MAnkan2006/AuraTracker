@@ -10,7 +10,9 @@ const RoutineSchema = new mongoose.Schema({
     endTime: { type: String },
     faculty: { type: String },
     room: { type: String },
-    tag: { type: String }
+    tag: { type: String },
+    isSpecial: { type: Boolean, default: false },
+    date: { type: String }
   }]
 });
 

@@ -210,6 +210,19 @@
 
     <!-- 2. Main Dashboard Container (Blurred if unauthorized) -->
     <div class="app-container hidden" id="dashboard-container">
+      
+      <!-- Mobile Top Header (Visible only on small screens) -->
+      <div class="mobile-top-header">
+        <div class="logo-icon">
+          <img src="Logo/LightModeLogo.png" class="logo-img logo-light" alt="AuraTracker Logo" />
+          <img src="Logo/DarkModeLogo.png" class="logo-img logo-dark" alt="AuraTracker Logo" />
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-name" style="margin: 0; font-size: 22px;">Aura<span class="brand-thin">Tracker</span></h1>
+          <span class="company-badge">By ManTools'</span>
+        </div>
+      </div>
+
       <!-- Sidebar Navigation -->
       <aside class="sidebar">
         <div class="brand">
@@ -226,10 +239,10 @@
             />
           </div>
           <div class="brand-text">
-            <h1 class="brand-name">
+            <h1 class="brand-name" style="margin: 0; font-size: 24px;">
               Aura<span class="brand-thin">Tracker</span>
             </h1>
-            <span>DASHBOARD</span>
+            <span class="company-badge">By ManTools'</span>
           </div>
         </div>
 
@@ -250,30 +263,29 @@
             <i data-lucide="list-todo"></i>
             <span>Tasks & To-Dos</span>
           </button>
-          <button class="nav-item" data-tab="profile">
-            <i data-lucide="user-cog"></i>
-            <span>Profile Settings</span>
-          </button>
         </nav>
 
-        <!-- Logged-in User Card Footer -->
+        <!-- Unified Control Center Footer -->
         <div class="sidebar-footer">
-          <div class="user-card-widget">
-            <div class="user-avatar-circle" id="sidebar-user-avatar"></div>
-            <div class="user-card-details">
-              <span class="user-card-name" id="sidebar-user-name">User Name</span>
-              <span class="user-card-handle" id="sidebar-user-handle">@username</span>
-              <button
-                class="btn-logout"
-                id="btn-logout"
-                title="Log Out Account"
-              >
-                <i data-lucide="log-out"></i> Log Out
+          <div class="user-card-widget" id="unified-user-card">
+            <div class="user-info-left">
+              <div class="user-avatar-circle" id="sidebar-user-avatar"></div>
+              <div class="user-card-details">
+                <span class="user-card-name" id="sidebar-user-name">User Name</span>
+                <span class="user-card-handle" id="sidebar-user-handle">@username</span>
+              </div>
+            </div>
+            <div class="user-actions-right">
+              <button class="icon-action-btn nav-item" data-tab="profile" title="Profile Settings">
+                <i data-lucide="settings"></i>
+              </button>
+              <button class="icon-action-btn btn-logout" id="btn-logout" title="Log Out">
+                <i data-lucide="log-out"></i>
               </button>
             </div>
           </div>
 
-          <div class="date-widget">
+          <div class="date-widget borderless">
             <div class="time" id="live-time">12:00:00 PM</div>
             <div class="date" id="live-date">Thursday, June 18</div>
           </div>
@@ -460,109 +472,98 @@
               </div>
             </div>
 
-            <!-- Stats Overview Cards Grid -->
-            <div class="overview-stats-grid">
-              <div class="overview-stat-tile" id="overview-tile-attendance">
-                <div class="tile-icon">
-                  <i data-lucide="check-circle-2"></i>
+            <!-- Zone 1: The Goal Metrics -->
+            <div class="overview-goals-grid">
+              <div class="overview-goal-card" id="goal-card-attendance">
+                <div class="goal-header">
+                  <div class="goal-icon"><i data-lucide="target"></i></div>
+                  <span class="goal-label">Attendance Health</span>
                 </div>
-                <div class="tile-details">
-                  <span class="tile-label">Average Attendance</span>
-                  <strong class="tile-value" id="overview-avg-attendance"
-                    >0%</strong
-                  >
+                <div class="goal-body">
+                  <strong class="goal-value" id="overview-avg-attendance">0%</strong>
+                  <span class="goal-target">Target: 75%</span>
                 </div>
-              </div>
-              <div class="overview-stat-tile" id="overview-tile-streak">
-                <div class="tile-icon"><i data-lucide="flame"></i></div>
-                <div class="tile-details">
-                  <span class="tile-label">Max Streak</span>
-                  <strong class="tile-value" id="overview-max-streak"
-                    >0 Days</strong
-                  >
+                <div class="goal-progress-bar">
+                  <div class="goal-progress-fill" id="overview-attendance-progress" style="width: 0%;"></div>
                 </div>
               </div>
-              <div class="overview-stat-tile" id="overview-tile-tasks">
-                <div class="tile-icon"><i data-lucide="list-todo"></i></div>
-                <div class="tile-details">
-                  <span class="tile-label">Active Tasks</span>
-                  <strong class="tile-value" id="overview-active-tasks"
-                    >0 / 0</strong
-                  >
+
+              <div class="overview-goal-card" id="goal-card-tasks">
+                <div class="goal-header">
+                  <div class="goal-icon"><i data-lucide="check-square"></i></div>
+                  <span class="goal-label">Task Completion</span>
+                </div>
+                <div class="goal-body">
+                  <strong class="goal-value" id="overview-active-tasks">0 / 0</strong>
+                  <span class="goal-target">Tasks Done</span>
                 </div>
               </div>
-              <div class="overview-stat-tile" id="overview-tile-routine">
-                <div class="tile-icon"><i data-lucide="clock"></i></div>
-                <div class="tile-details">
-                  <span class="tile-label">Scheduled Events</span>
-                  <strong class="tile-value" id="overview-routine-count"
-                    >0 slots</strong
-                  >
+
+              <div class="overview-goal-card" id="goal-card-streak">
+                <div class="goal-header">
+                  <div class="goal-icon"><i data-lucide="flame"></i></div>
+                  <span class="goal-label">Momentum</span>
+                </div>
+                <div class="goal-body">
+                  <strong class="goal-value" id="overview-max-streak">0 Days</strong>
+                  <span class="goal-target">Current Streak</span>
                 </div>
               </div>
             </div>
 
-            <div class="overview-charts-grid">
-              <!-- Chart 1: Attendance Trend (Line Chart) -->
-              <div class="overview-chart-card span-2">
-                <h4>Attendance Trend (Last 30 Days)</h4>
-                <div class="chart-canvas-container height-260">
-                  <canvas id="overview-trend-chart"></canvas>
-                  <div
-                    id="overview-trend-empty"
-                    class="chart-empty-placeholder hidden"
-                  >
-                    No attendance logs recorded yet. Log attendance to see
-                    trends.
-                  </div>
+            <!-- Zone 2: The "Today Hub" -->
+            <div class="overview-today-hub">
+              <!-- Up Next (Classes) -->
+              <div class="today-bento-box" id="today-classes-box">
+                <div class="bento-header">
+                  <i data-lucide="calendar-clock"></i>
+                  <h4>Up Next Today</h4>
+                </div>
+                <div class="bento-content" id="overview-up-next-list">
+                  <div class="empty-state-text">No classes scheduled for today.</div>
+                  <!-- Dynamic timeline items go here -->
                 </div>
               </div>
 
-              <!-- Chart 2: Subject Attendance Performance -->
-              <div class="overview-chart-card">
+              <!-- Due Soon (Tasks) -->
+              <div class="today-bento-box" id="today-tasks-box">
+                <div class="bento-header">
+                  <i data-lucide="alert-circle"></i>
+                  <h4>Due Soon</h4>
+                </div>
+                <div class="bento-content" id="overview-due-soon-list">
+                  <div class="empty-state-text">No pending tasks due soon.</div>
+                  <!-- Dynamic task items go here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Zone 3: Core Analytics -->
+            <div class="overview-analytics-grid">
+              <!-- Chart: Subject Attendance Performance -->
+              <div class="analytics-card span-2-analytics">
                 <h4>Class Performance Breakdown</h4>
                 <div class="chart-canvas-container height-220">
                   <canvas id="overview-classes-chart"></canvas>
-                  <div
-                    id="overview-classes-empty"
-                    class="chart-empty-placeholder hidden"
-                  >
-                    No active classes scheduled. Go to Weekly Routine tab to
-                    schedule classes.
+                  <div id="overview-classes-empty" class="chart-empty-placeholder hidden">
+                    No active classes scheduled.
                   </div>
                 </div>
               </div>
 
-              <!-- Chart 3: Task Progress Doughnut -->
-              <div class="overview-chart-card">
-                <h4>Task Progress Velocity</h4>
-                <div class="chart-canvas-container height-220">
-                  <canvas id="overview-tasks-chart"></canvas>
-                  <div
-                    id="overview-tasks-empty"
-                    class="chart-empty-placeholder hidden"
-                  >
-                    No active tasks. Go to Tasks & To-Dos tab to add tasks.
-                  </div>
-                </div>
-              </div>
-
-              <!-- Chart 4: Weekly Attendance Heatmap Grid -->
-              <div class="overview-chart-card span-2-margin">
-                <h4>Visual Attendance Grid (Last 30 Days)</h4>
+              <!-- Weekly Attendance Heatmap Grid -->
+              <div class="analytics-card span-2-analytics">
+                <h4 id="heatmap-title">Visual Attendance Grid</h4>
                 <div class="overview-heatmap-wrapper">
-                  <div
-                    class="overview-heatmap-grid"
-                    id="overview-attendance-heatmap"
-                  >
-                    <!-- Populated dynamically as glowing mini activity squares -->
+                  <div class="overview-heatmap-grid" id="overview-attendance-heatmap">
+                    <!-- Populated dynamically -->
                   </div>
                   <div class="heatmap-legend">
                     <span class="legend-box p"></span> Present
                     <span class="legend-box a"></span> Absent
                     <span class="legend-box l"></span> Late
                     <span class="legend-box e"></span> Excused
-                    <span class="legend-box empty"></span> Inactive / None
+                    <span class="legend-box empty"></span> Inactive
                   </div>
                 </div>
               </div>
@@ -685,6 +686,10 @@
                   <span>Import PDF</span>
                 </button>
                 <input type="file" id="routine-reimport-file-input" accept=".pdf" hidden />
+                <button class="btn btn-manage-routine" id="btn-manage-routine" title="Select and delete multiple slots">
+                  <i data-lucide="list-checks"></i>
+                  <span>Manage</span>
+                </button>
                 <button class="btn btn-primary" id="add-routine-btn">
                   <i data-lucide="plus"></i>
                   <span>Add Slot</span>
@@ -725,6 +730,21 @@
               </div>
             </div>
 
+            <!-- Bulk-delete action bar (visible in manage mode, works in both views) -->
+            <div id="routine-bulk-action-bar" class="routine-bulk-action-bar hidden">
+              <span id="routine-selected-count" class="bulk-selected-count">0 selected</span>
+              <div class="bulk-action-buttons">
+                <button class="btn btn-link-style" id="btn-routine-select-all">Select All</button>
+                <button class="btn btn-danger" id="btn-routine-delete-selected" disabled>
+                  <i data-lucide="trash-2"></i>
+                  Delete Selected
+                </button>
+                <button class="btn btn-secondary" id="btn-routine-cancel-manage">
+                  Cancel
+                </button>
+              </div>
+            </div>
+
             <div class="routine-quick-info">
               <i data-lucide="info"></i>
               <span id="quick-info-text"
@@ -733,6 +753,7 @@
               >
             </div>
           </section>
+
 
           <!-- Tasks & Todo List Section -->
           <section class="dashboard-card card-todo">
@@ -967,6 +988,10 @@
                       <span class="academic-info-label">Section</span>
                       <span class="academic-info-value" id="academic-section-val">—</span>
                     </div>
+                    <div class="academic-info-item">
+                      <span class="academic-info-label">Term Start Date</span>
+                      <span class="academic-info-value" id="academic-term-start-val">—</span>
+                    </div>
                   </div>
 
                   <!-- Edit form (hidden by default) -->
@@ -1007,14 +1032,19 @@
                     <div class="form-row">
                       <div class="form-group">
                         <label for="academic-edit-session">Academic Session</label>
-                        <input type="text" id="academic-edit-session" placeholder="e.g. 2024-2025" />
+                        <input type="text" id="academic-edit-session" placeholder="e.g. 2023-2027" />
                       </div>
                       <div class="form-group">
                         <label for="academic-edit-section">Section / Group</label>
-                        <input type="text" id="academic-edit-section" placeholder="e.g. B" />
+                        <input type="text" id="academic-edit-section" placeholder="e.g. Section B, Group 1" />
                       </div>
                     </div>
-
+                    <div class="form-row">
+                      <div class="form-group">
+                        <label for="academic-edit-term-start">Term Start Date (for Attendance)</label>
+                        <input type="date" id="academic-edit-term-start" />
+                      </div>
+                    </div>
                   </form>
                 </div>
 
@@ -1176,15 +1206,26 @@
           <button class="btn-close-modal"><i data-lucide="x"></i></button>
         </div>
         <form id="routine-form">
-          <div class="form-group">
-            <label for="routine-title">Title / Name</label>
-            <input
-              type="text"
-              id="routine-title"
-              placeholder="e.g. Software Engineering, Gym Workout"
-              required
-              autocomplete="off"
-            />
+          <div class="form-row">
+            <div class="form-group">
+              <label for="routine-title">Subject / Task Name</label>
+              <input
+                type="text"
+                id="routine-title"
+                placeholder="e.g. Software Engineering"
+                required
+                autocomplete="off"
+              />
+            </div>
+            <div class="form-group">
+              <label for="routine-code">Subject Code (Optional)</label>
+              <input
+                type="text"
+                id="routine-code"
+                placeholder="e.g. CS201"
+                autocomplete="off"
+              />
+            </div>
           </div>
 
           <div class="form-row">
@@ -1218,21 +1259,46 @@
                 <option value="5">Friday</option>
                 <option value="6">Saturday</option>
                 <option value="0">Sunday</option>
+                <option value="special">Special Date (One-off)</option>
               </select>
             </div>
-            <div class="form-group">
-              <!-- Spacer -->
+            <div class="form-group hidden" id="routine-specific-date-group">
+              <label for="routine-specific-date">Specific Date</label>
+              <input type="date" id="routine-specific-date" class="form-input" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div style="display: flex; gap: 12px; width: 100%;">
+              <div class="form-group" style="flex: 1;">
+                <label for="routine-start">Start Time</label>
+                <input type="time" id="routine-start" required style="width: 100%;" />
+              </div>
+              <div class="form-group" style="flex: 1;">
+                <label for="routine-end">End Time</label>
+                <input type="time" id="routine-end" required style="width: 100%;" />
+              </div>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group">
-              <label for="routine-start">Start Time</label>
-              <input type="time" id="routine-start" required />
+              <label for="routine-faculty">Faculty (Optional)</label>
+              <input
+                type="text"
+                id="routine-faculty"
+                placeholder="e.g. Dr. Smith"
+                autocomplete="off"
+              />
             </div>
             <div class="form-group">
-              <label for="routine-end">End Time</label>
-              <input type="time" id="routine-end" required />
+              <label for="routine-room">Room (Optional)</label>
+              <input
+                type="text"
+                id="routine-room"
+                placeholder="e.g. Room 402"
+                autocomplete="off"
+              />
             </div>
           </div>
           <div class="modal-footer" style="display: flex; justify-content: space-between;">
@@ -1241,12 +1307,67 @@
                 Delete
               </button>
             </div>
-            <div>
+            <div style="display: flex; gap: 12px;">
+              <button type="button" class="btn btn-secondary btn-close-modal">
+                Cancel
+              </button>
               <button type="submit" id="btn-routine-submit" class="btn btn-primary">Add Slot</button>
             </div>
           </div>
           <input type="hidden" id="routine-id" value="" />
         </form>
+      </div>
+    </div>
+
+    <!-- Routine Details Modal (View Mode) -->
+    <div id="routine-details-modal" class="modal-backdrop hidden">
+      <div class="modal-card animate-fade-up" style="position: relative; max-width: 400px; padding-bottom: 24px;">
+        <button class="btn-close-modal" id="btn-close-routine-details" style="position: absolute; top: 16px; right: 16px;">
+          <i data-lucide="x"></i>
+        </button>
+        <div class="modal-header">
+          <h2 id="details-modal-title">Subject Name</h2>
+          <span class="routine-tag-pill" id="details-modal-type" style="margin-top: 8px;">Class</span>
+        </div>
+        <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px; padding: 24px 0;">
+          <div style="display: flex; align-items: center; gap: 16px; color: var(--text-primary);">
+            <div class="icon-circle" style="background: rgba(var(--accent-rgb, 99, 102, 241), 0.1); color: var(--accent); padding: 10px; border-radius: 50%;">
+              <i data-lucide="clock"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Time</div>
+              <div id="details-modal-time" style="font-weight: 600; font-size: 15px;">10:00 AM - 11:00 AM</div>
+            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 16px; color: var(--text-primary);">
+            <div class="icon-circle" style="background: rgba(var(--accent-rgb, 99, 102, 241), 0.1); color: var(--accent); padding: 10px; border-radius: 50%;">
+              <i data-lucide="user"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Faculty</div>
+              <div id="details-modal-faculty" style="font-weight: 600; font-size: 15px;">Not Assigned</div>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 16px; color: var(--text-primary);">
+            <div class="icon-circle" style="background: rgba(var(--accent-rgb, 99, 102, 241), 0.1); color: var(--accent); padding: 10px; border-radius: 50%;">
+              <i data-lucide="map-pin"></i>
+            </div>
+            <div>
+              <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Room</div>
+              <div id="details-modal-room" style="font-weight: 600; font-size: 15px;">Not Assigned</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 16px; padding: 0;">
+          <button type="button" class="btn btn-danger" id="btn-delete-routine-details" style="flex: 1;">
+            <i data-lucide="trash-2"></i> Delete
+          </button>
+          <button type="button" class="btn btn-primary" id="btn-edit-routine-details" style="flex: 1;">
+            <i data-lucide="edit-3"></i> Edit Details
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1287,6 +1408,13 @@
               <i data-lucide="minus"></i>
               <span>Excused</span>
             </button>
+            <button
+              class="btn-attendance-option opt-cancelled"
+              data-status="Cancelled"
+            >
+              <i data-lucide="slash"></i>
+              <span>Cancelled</span>
+            </button>
             <button class="btn-attendance-option opt-clear" data-status="None">
               <i data-lucide="trash-2"></i>
               <span>Clear Log</span>
@@ -1294,6 +1422,39 @@
           </div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- Custom Clock Time Picker Modal -->
+    <div id="clock-picker-overlay" class="modal-backdrop hidden" style="z-index: 10000;">
+      <div class="modal-content clock-picker-modal" onclick="event.stopPropagation()">
+        <div class="clock-picker-header">
+          <div class="clock-digital-display">
+            <span id="clock-display-hours" class="active">12</span>
+            <span class="colon">:</span>
+            <span id="clock-display-minutes">00</span>
+          </div>
+          <div class="clock-ampm-toggle">
+            <button id="clock-btn-am" class="active">AM</button>
+            <button id="clock-btn-pm">PM</button>
+          </div>
+        </div>
+
+        <div class="clock-face-container">
+          <div id="clock-face" class="clock-face">
+            <div id="clock-center-dot" class="clock-center-dot"></div>
+            <div id="clock-hand" class="clock-hand">
+              <div class="clock-hand-circle"></div>
+            </div>
+            <!-- Numbers will be injected here via JS -->
+            <div id="clock-numbers" class="clock-numbers"></div>
+          </div>
+        </div>
+
+        <div class="modal-actions" style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px; padding: 0 24px 24px;">
+          <button class="btn btn-secondary" onclick="closeClockPicker()">Cancel</button>
+          <button class="btn btn-primary" onclick="confirmClockPicker()">OK</button>
+        </div>
       </div>
     </div>
 
@@ -1511,7 +1672,7 @@
             <i data-lucide="table-2"></i>
             Review Extracted Timetable
           </h3>
-          <button id="btn-close-preview" class="btn-modal-close" title="Close">
+          <button id="btn-close-preview" class="btn-close-modal" title="Close">
             <i data-lucide="x"></i>
           </button>
         </div>
@@ -1549,9 +1710,29 @@
 
         <!-- Footer -->
         <div class="modal-footer" id="routine-preview-footer" style="display: none;">
+          <button id="btn-cancel-preview" class="btn btn-secondary">Cancel</button>
           <button id="btn-confirm-preview" class="btn btn-primary">
             <i data-lucide="check"></i> Confirm & Save
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification Details Modal -->
+    <div id="notif-details-overlay" class="modal-backdrop hidden" style="z-index: 10000;">
+      <div class="modal-card notif-details-modal" style="position: relative; max-width: 450px;">
+        <button class="btn-close-modal" id="btn-close-notif-details" style="position: absolute; top: 16px; right: 16px;">
+          <i data-lucide="x"></i>
+        </button>
+        <div class="modal-header">
+          <h2 id="notif-details-title">Insight Details</h2>
+        </div>
+        <div class="modal-body">
+          <p id="notif-details-message" style="margin-bottom: 24px; color: var(--text-secondary); line-height: 1.6;"></p>
+        </div>
+        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="btn-notif-ignore" class="btn btn-secondary">Ignore</button>
+          <button id="btn-notif-action" class="btn btn-primary">Take Action</button>
         </div>
       </div>
     </div>

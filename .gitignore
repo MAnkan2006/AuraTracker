@@ -4,3 +4,5 @@ backend/node_modules/
 backend/.env 
 backend/test-script.js
 backend/test-profile.js
+# Temp and Scratch Files
+scratch/

@@ -19,7 +19,7 @@ exports.getOnboarding = async (req, res) => {
 
 exports.saveOnboarding = async (req, res) => {
   try {
-    const { college, department, semester, academicSession, university, program, section } = req.body;
+    const { college, department, semester, academicSession, university, program, section, termStartDate } = req.body;
     const user = await User.findById(req.user.userId);
     
     if (!user) {
@@ -33,7 +33,8 @@ exports.saveOnboarding = async (req, res) => {
       academicSession,
       university,
       program,
-      section
+      section,
+      termStartDate
     };
     user.onboardingComplete = true;
     

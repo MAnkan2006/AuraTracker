@@ -26,30 +26,67 @@ ACADEMIC CONTEXT:
 KNOWN SUBJECTS FOR THIS SEMESTER:
 ${subjectList || 'No subject data available. Infer subjects from the PDF content.'}
 
-INSTRUCTIONS:
-1. Parse the PDF text below and extract ALL classes/periods from the weekly timetable.
-2. For each class entry, determine: the day of the week, subject/course title, class type, start time, end time, faculty/instructor name, and room/lab number.
-3. Use the known subjects list above to match and normalize subject names. If a subject in the PDF is abbreviated or misspelled, map it to the closest known subject.
-4. If a field (faculty, room) is not available in the PDF, set it to an empty string "".
-5. Use 24-hour time format (HH:MM) for startTime and endTime.
-6. Day names must be full English names with proper capitalization: "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday".
-7. The "type" field must be one of: "theory", "lab", or "tutorial". Infer from context if not explicitly stated (e.g., practical/laboratory = "lab", lecture = "theory").
-8. Do NOT include break periods, lunch hours, or free periods.
-9. VERY IMPORTANT: If the timetable contains multiple sections (e.g. Section A, Section B), you MUST ONLY extract the classes intended for Section: "${section || 'Unknown'}". Ignore classes meant for other sections. If no section is provided, assume it's a general timetable.
+STEP-BY-STEP PARSING STRATEGY:
+
+Step 1 — Identify the timetable structure:
+  - It may be a GRID TABLE where rows = days and columns = time slots (or vice-versa).
+  - It may be a LIST FORMAT where each entry has day + time + subject on one or more lines.
+  - Look for header rows/columns containing "Monday", "Tuesday", "MON", "TUE", day numbers, or abbreviations.
+  - Look for time markers in various formats (see Step 3).
+
+Step 2 — For GRID tables, cross-reference the row (day) and column (time slot) to get each cell's class info.
+  - If rows are days and columns are time slots, read each non-empty cell.
+  - If rows are time slots and columns are days, transpose accordingly.
+  - Cells may contain: subject name, faculty name, room number, or a combination separated by newlines or slashes.
+
+Step 3 — Normalize EVERY time value using these rules:
+  a) "9:00 AM"  or "9 AM"   → "09:00"       (12-hour AM)
+  b) "9:00 PM"  or "9 PM"   → "21:00"       (12-hour PM → add 12 hours)
+  c) "12:00 PM"             → "12:00"       (noon exception)
+  d) "12:00 AM"             → "00:00"       (midnight exception)
+  e) "9.00"     or "9.30"   → "09:00" / "09:30"  (period used as time separator)
+  f) "0900"     or "1430"   → "09:00" / "14:30"  (4-digit military/compact format)
+  g) "9-10"                 → startTime="09:00", endTime="10:00"
+  h) "9:00-10:00"           → startTime="09:00", endTime="10:00"
+  i) "9:00-10:30"           → startTime="09:00", endTime="10:30"
+  j) "9.00-10.00"           → startTime="09:00", endTime="10:00"
+  k) If only a start time is visible, infer endTime by adding 1 hour (or match neighbouring slot times for accuracy).
+  l) ALWAYS output times as "HH:MM" in 24-hour format with leading zeros: "09:00" not "9:00".
+
+Step 4 — Normalize day names to full English names:
+  - "Mon" / "MO" / "M"      → "Monday"
+  - "Tue" / "TU" / "T"      → "Tuesday"
+  - "Wed" / "WE" / "W"      → "Wednesday"
+  - "Thu" / "TH"            → "Thursday"
+  - "Fri" / "FR" / "F"      → "Friday"
+  - "Sat" / "SA" / "S"      → "Saturday"
+  - "Sun" / "SU"            → "Sunday"
+
+ADDITIONAL RULES:
+1. Use the known subjects list to match and normalize subject names. Map abbreviations/codes (e.g., "DBMS", "SE-L") to the full subject name from the list.
+2. If a field (faculty, room) is not available in the PDF, set it to an empty string "".
+3. TYPE INFERENCE — the "type" field must be one of: "theory", "lab", or "tutorial":
+   - Keywords: "Lab" / "Practical" / "Prac" / "-L" suffix / "P" → "lab"
+   - Keywords: "Tutorial" / "Tut" / "-T" suffix / "T" → "tutorial"
+   - Default (Lecture / "Lec" / "L" / no keyword) → "theory"
+4. Do NOT include: break periods, lunch hours, library hours, free periods, or empty cells.
+5. SECTION FILTER — CRITICAL: If the timetable contains multiple sections (e.g., Section A, Section B, Gr-1, Gr-2, Division 1/2), extract ONLY the data for Section: "${section || 'Unknown'}". Ignore all rows/columns/cells that belong to other sections. If the PDF has no section information, treat the entire timetable as applicable.
+6. Do NOT invent or hallucinate classes. Only extract what is explicitly written in the PDF text.
+7. If the same class appears at the same day + time due to a duplicate entry in the PDF, include it only once.
 
 OUTPUT FORMAT:
-You MUST output ONLY valid JSON with no markdown formatting, no code fences, no explanations, no text before or after the JSON. Output exactly this structure:
+You MUST output ONLY valid JSON with no markdown formatting, no code fences, no explanations, and no text before or after the JSON. Use exactly this structure:
 
 {"classes":[{"day":"Monday","title":"Database Management Systems","type":"theory","startTime":"09:00","endTime":"10:00","faculty":"Dr. Smith","room":"Room 301"}]}
 
-Each object in the "classes" array must have these exact keys: "day", "title", "type", "startTime", "endTime", "faculty", "room".
+Each object in the "classes" array must have exactly these keys: "day", "title", "type", "startTime", "endTime", "faculty", "room".
 
 EXTRACTED PDF TEXT:
 ---
 ${pdfText}
 ---
 
-Remember: Output ONLY the JSON object. No other text.`;
+Remember: Output ONLY the JSON object. No other text whatsoever.`;
 
   return prompt;
 };

@@ -240,6 +240,8 @@ const elements = {
   routineStart: document.getElementById("routine-start"),
   routineEnd: document.getElementById("routine-end"),
   routineId: document.getElementById("routine-id"),
+  routineSpecificDateGroup: document.getElementById("routine-specific-date-group"),
+  routineSpecificDate: document.getElementById("routine-specific-date"),
   btnRoutineDelete: document.getElementById("btn-routine-delete"),
   btnRoutineSubmit: document.getElementById("btn-routine-submit"),
 
@@ -919,7 +921,7 @@ function calculateOverallAttendance() {
       const status = logs[dateKey];
       const logDate = new Date(dateKey);
 
-      if (scheduledWeekdays.has(logDate.getDay())) {
+      if (isClassScheduledOnDate(selectedClass, logDate)) {
         if (status === "Present") totalPresents++;
         else if (status === "Absent") totalAbsents++;
         else if (status === "Late") totalLates++;
@@ -1486,9 +1488,23 @@ function getUniqueClassNames() {
 
 function getClassScheduledWeekdays(classTitle) {
   const classSlots = state.routine.filter(
-    (r) => r.type === "class" && r.title === classTitle,
+    (r) => r.type === "class" && r.title === classTitle && !r.isSpecial,
   );
   return new Set(classSlots.map((c) => c.day));
+}
+
+function getClassSpecialDates(classTitle) {
+  const specialSlots = state.routine.filter(
+    (r) => r.type === "class" && r.title === classTitle && r.isSpecial && r.date,
+  );
+  return new Set(specialSlots.map((c) => c.date));
+}
+
+function isClassScheduledOnDate(classTitle, dateObj) {
+  const scheduledWeekdays = getClassScheduledWeekdays(classTitle);
+  const specialDates = getClassSpecialDates(classTitle);
+  const dateKey = getFormattedDateKey(dateObj);
+  return scheduledWeekdays.has(dateObj.getDay()) || specialDates.has(dateKey);
 }
 
 // --- Attendance Module Renderers ---
@@ -1644,7 +1660,7 @@ function renderCalendar() {
 
     const cellDate = new Date(year, month, day);
     const dateKey = getFormattedDateKey(cellDate);
-    const isScheduled = scheduledWeekdays.has(cellDate.getDay());
+    const isScheduled = isClassScheduledOnDate(selectedClass, cellDate);
 
     if (isScheduled) {
       dayDiv.classList.add("class-scheduled");
@@ -1909,10 +1925,18 @@ function renderRoutineTimeline() {
         }
       });
     } else {
-      itemDiv.className = `routine-item type-${item.type} tag-${item.tag}`;
+      let specialClassStr = "";
+      let badgeLabel = item.type === "class" ? "Class" : item.tag;
+      if (item.type === "class" && item.rawItem && item.rawItem.isSpecial) {
+          specialClassStr = " special-class";
+          badgeLabel = "Special Class: " + item.rawItem.date;
+      }
+      
+      const isSelected = typeof routineManageMode !== 'undefined' && routineManageMode && routineSelectedIds.has(item.refId);
+      itemDiv.className = `routine-item type-${item.type} tag-${item.tag}${specialClassStr}${typeof routineManageMode !== 'undefined' && routineManageMode ? " manage-selectable" : ""}${isSelected ? " manage-selected" : ""}`;
 
       let attendanceHtml = "";
-      if (item.type === "class") {
+      if (item.type === "class" && !(typeof routineManageMode !== 'undefined' && routineManageMode)) {
         const logs = state.attendance[item.title] || {};
         const currentLog = logs[todayDateKey] || "None";
 
@@ -1926,48 +1950,84 @@ function renderRoutineTimeline() {
                 `;
       }
 
-      const badgeLabel = item.type === "class" ? "Class" : item.tag;
-
-      itemDiv.innerHTML = `
+      if (typeof routineManageMode !== 'undefined' && routineManageMode) {
+        itemDiv.innerHTML = `
+                <label class="manage-checkbox-label" onclick="event.stopPropagation()">
+                    <input type="checkbox" class="manage-checkbox" ${isSelected ? "checked" : ""} />
+                    <span class="manage-check-custom"></span>
+                </label>
                 <div class="routine-details">
                     <span class="routine-title">${escapeHTML(item.title)}</span>
                     <span class="routine-time-span">
                         <i data-lucide="clock"></i> 
                         ${format12h(item.time)} - ${format12h(item.end)}
                     </span>
-                    ${attendanceHtml}
                 </div>
-                <span class="routine-tag-pill">${badgeLabel}</span>
+                <span class="routine-tag-pill${item.rawItem && item.rawItem.isSpecial ? ' special-badge' : ''}">${badgeLabel}</span>
             `;
 
-      if (item.type === "class") {
-        const logBtns = itemDiv.querySelectorAll(".inline-log-btn");
-        logBtns.forEach((btn) => {
-          btn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            const status = btn.getAttribute("data-status");
-            const logs = state.attendance[item.title] || {};
-
-            if (logs[todayDateKey] === status) {
-              delete state.attendance[item.title][todayDateKey];
+        const cb = itemDiv.querySelector(".manage-checkbox");
+        if (cb) {
+          cb.addEventListener("change", () => {
+            if (cb.checked) {
+              routineSelectedIds.add(item.refId);
             } else {
-              if (!state.attendance[item.title])
-                state.attendance[item.title] = {};
-              state.attendance[item.title][todayDateKey] = status;
+              routineSelectedIds.delete(item.refId);
             }
-
-            saveUserScopedData();
-            renderRoutineTimeline();
-            renderAttendance();
+            if (typeof updateBulkDeleteBar === 'function') updateBulkDeleteBar();
+            itemDiv.classList.toggle("manage-selected", cb.checked);
           });
+        }
+
+        itemDiv.addEventListener("click", () => {
+          const chk = itemDiv.querySelector(".manage-checkbox");
+          if (chk) {
+            chk.checked = !chk.checked;
+            chk.dispatchEvent(new Event("change"));
+          }
+        });
+      } else {
+        itemDiv.innerHTML = `
+                  <div class="routine-details">
+                      <span class="routine-title">${escapeHTML(item.title)}</span>
+                      <span class="routine-time-span">
+                          <i data-lucide="clock"></i> 
+                          ${format12h(item.time)} - ${format12h(item.end)}
+                      </span>
+                      ${attendanceHtml}
+                  </div>
+                  <span class="routine-tag-pill${item.rawItem && item.rawItem.isSpecial ? ' special-badge' : ''}">${badgeLabel}</span>
+              `;
+
+        if (item.type === "class") {
+          const logBtns = itemDiv.querySelectorAll(".inline-log-btn");
+          logBtns.forEach((btn) => {
+            btn.addEventListener("click", (e) => {
+              e.stopPropagation();
+              const status = btn.getAttribute("data-status");
+              const logs = state.attendance[item.title] || {};
+
+              if (logs[todayDateKey] === status) {
+                delete state.attendance[item.title][todayDateKey];
+              } else {
+                if (!state.attendance[item.title])
+                  state.attendance[item.title] = {};
+                state.attendance[item.title][todayDateKey] = status;
+              }
+
+              saveUserScopedData();
+              renderRoutineTimeline();
+              renderAttendance();
+            });
+          });
+        }
+
+        itemDiv.addEventListener("click", () => {
+          if (typeof window.openRoutineEditModal === "function") {
+            window.openRoutineEditModal(item.rawItem);
+          }
         });
       }
-
-      itemDiv.addEventListener("click", () => {
-        if (typeof window.openRoutineEditModal === "function") {
-          window.openRoutineEditModal(item.rawItem);
-        }
-      });
     }
 
     elements.routineItemsList.appendChild(itemDiv);
@@ -2095,21 +2155,41 @@ function renderWeeklyScopeGrid() {
             renderTodoList();
           });
         } else {
-          card.className = `weekly-slot-card type-${item.type} tag-${item.tag}`;
+          let specialClassStr = "";
+          let badge = item.type === "class" ? "Class" : item.tag;
+          if (item.type === "class" && item.rawItem && item.rawItem.isSpecial) {
+              specialClassStr = " special-class";
+              badge = "Special: " + item.rawItem.date;
+          }
+          const isSelected = typeof routineManageMode !== 'undefined' && routineManageMode && routineSelectedIds.has(item.refId);
+          card.className = `weekly-slot-card type-${item.type} tag-${item.tag}${specialClassStr}${typeof routineManageMode !== 'undefined' && routineManageMode ? " manage-selectable" : ""}${isSelected ? " manage-selected" : ""}`;
           const timeStr = item.rawItem.start + " - " + item.rawItem.end;
-          const badge = item.type === "class" ? "Class" : item.tag;
 
           card.innerHTML = `
+                        ${typeof routineManageMode !== 'undefined' && routineManageMode ? '<span class="weekly-slot-card-checkbox"></span>' : ''}
                         <span class="weekly-slot-title">${escapeHTML(item.title)}</span>
                         <span class="weekly-slot-time">${timeStr}</span>
-                        <span class="weekly-slot-badge">${badge}</span>
+                        <span class="weekly-slot-badge${item.rawItem && item.rawItem.isSpecial ? ' special-badge' : ''}">${badge}</span>
                     `;
 
-          card.addEventListener("click", () => {
-            if (typeof window.openRoutineEditModal === "function") {
-              window.openRoutineEditModal(item.rawItem);
-            }
-          });
+          if (typeof routineManageMode !== 'undefined' && routineManageMode) {
+            card.addEventListener("click", () => {
+              if (routineSelectedIds.has(item.refId)) {
+                routineSelectedIds.delete(item.refId);
+                card.classList.remove("manage-selected");
+              } else {
+                routineSelectedIds.add(item.refId);
+                card.classList.add("manage-selected");
+              }
+              if (typeof updateBulkDeleteBar === "function") updateBulkDeleteBar();
+            });
+          } else {
+            card.addEventListener("click", () => {
+              if (typeof window.openRoutineEditModal === "function") {
+                window.openRoutineEditModal(item.rawItem);
+              }
+            });
+          }
         }
 
         bodyDiv.appendChild(card);
@@ -2123,7 +2203,106 @@ function renderWeeklyScopeGrid() {
   if (window.lucide) window.lucide.createIcons();
 }
 
+
+// --- Routine Manage Mode ---
+let routineManageMode = false;
+let routineSelectedIds = new Set();
+
+function enterRoutineManageMode() {
+  routineManageMode = true;
+  routineSelectedIds.clear();
+  const btn = document.getElementById('btn-manage-routine');
+  if (btn) btn.classList.add('active-manage');
+  const bar = document.getElementById('routine-bulk-action-bar');
+  if (bar) bar.classList.remove('hidden');
+  updateBulkDeleteBar();
+  if (state.routineView === 'weekly') {
+    renderWeeklyScopeGrid();
+  } else {
+    renderRoutineTimeline();
+  }
+}
+
+function exitRoutineManageMode() {
+  routineManageMode = false;
+  routineSelectedIds.clear();
+  const btn = document.getElementById('btn-manage-routine');
+  if (btn) btn.classList.remove('active-manage');
+  const bar = document.getElementById('routine-bulk-action-bar');
+  if (bar) bar.classList.add('hidden');
+  const btnSelectAll = document.getElementById('btn-routine-select-all');
+  if (btnSelectAll) btnSelectAll.textContent = 'Select All';
+  if (state.routineView === 'weekly') {
+    renderWeeklyScopeGrid();
+  } else {
+    renderRoutineTimeline();
+  }
+}
+
+function updateBulkDeleteBar() {
+  const countEl = document.getElementById('routine-selected-count');
+  const deleteBtn = document.getElementById('btn-routine-delete-selected');
+  if (countEl) countEl.textContent = `${routineSelectedIds.size} selected`;
+  if (deleteBtn) deleteBtn.disabled = routineSelectedIds.size === 0;
+}
+
 function setupRoutineHandlers() {
+  // Manage mode buttons
+  const btnManage = document.getElementById('btn-manage-routine');
+  if (btnManage) {
+    btnManage.addEventListener('click', () => {
+      if (routineManageMode) exitRoutineManageMode();
+      else enterRoutineManageMode();
+    });
+  }
+
+  const btnCancelManage = document.getElementById('btn-routine-cancel-manage');
+  if (btnCancelManage) {
+    btnCancelManage.addEventListener('click', exitRoutineManageMode);
+  }
+
+  const btnSelectAll = document.getElementById('btn-routine-select-all');
+  if (btnSelectAll) {
+    btnSelectAll.addEventListener('click', () => {
+      let itemsToSelect = state.routineView === 'weekly' 
+        ? state.routine 
+        : state.routine.filter(r => r.day === state.activeRoutineDay);
+      
+      const allIds = itemsToSelect.map(r => r.id);
+      const allSelected = allIds.every(id => routineSelectedIds.has(id));
+      if (allSelected) {
+        allIds.forEach(id => routineSelectedIds.delete(id));
+        btnSelectAll.textContent = 'Select All';
+      } else {
+        allIds.forEach(id => routineSelectedIds.add(id));
+        btnSelectAll.textContent = 'Deselect All';
+      }
+      updateBulkDeleteBar();
+      if (state.routineView === 'weekly') renderWeeklyScopeGrid();
+      else renderRoutineTimeline();
+    });
+  }
+
+  const btnDeleteSelected = document.getElementById('btn-routine-delete-selected');
+  if (btnDeleteSelected) {
+    btnDeleteSelected.addEventListener('click', async () => {
+      if (routineSelectedIds.size === 0) return;
+      const count = routineSelectedIds.size;
+      const confirmed = await showConfirm(
+        `Delete ${count} selected slot${count !== 1 ? 's' : ''}? This cannot be undone.`,
+        'Delete Slots'
+      );
+      if (confirmed) {
+        state.routine = state.routine.filter(r => !routineSelectedIds.has(r.id));
+        saveUserScopedData();
+        exitRoutineManageMode();
+        renderAttendance();
+        if (typeof renderOverviewTab === 'function') renderOverviewTab();
+        showToast(`${count} slot${count !== 1 ? 's' : ''} deleted.`, 'success');
+      }
+    });
+  }
+
   elements.btnViewDaily.addEventListener("click", () => {
     elements.btnViewDaily.classList.add("active");
     elements.btnViewWeekly.classList.remove("active");
@@ -2157,6 +2336,8 @@ function setupRoutineHandlers() {
     elements.routineStart.value = "09:00";
     elements.routineEnd.value = "10:00";
     if (elements.routineId) elements.routineId.value = "";
+    elements.routineSpecificDateGroup.classList.add("hidden");
+    elements.routineSpecificDate.value = "";
     if (elements.btnRoutineSubmit) elements.btnRoutineSubmit.textContent = "Add Slot";
     if (elements.btnRoutineDelete) elements.btnRoutineDelete.classList.add("hidden");
     if (typeof initCustomSelect === "function") {
@@ -2167,9 +2348,25 @@ function setupRoutineHandlers() {
     openModal(elements.routineModal);
   });
 
+  elements.routineDay.addEventListener("change", (e) => {
+    if (e.target.value === "special") {
+      elements.routineSpecificDateGroup.classList.remove("hidden");
+    } else {
+      elements.routineSpecificDateGroup.classList.add("hidden");
+    }
+  });
+
   window.openRoutineEditModal = function(item) {
     elements.routineTitle.value = item.title;
-    elements.routineDay.value = item.day;
+    if (item.isSpecial) {
+      elements.routineDay.value = "special";
+      elements.routineSpecificDate.value = item.date;
+      elements.routineSpecificDateGroup.classList.remove("hidden");
+    } else {
+      elements.routineDay.value = item.day;
+      elements.routineSpecificDate.value = "";
+      elements.routineSpecificDateGroup.classList.add("hidden");
+    }
     elements.routineType.value = item.type;
     elements.routineTag.value = item.tag;
     elements.routineStart.value = item.start;
@@ -2205,10 +2402,25 @@ function setupRoutineHandlers() {
 
     const title = elements.routineTitle.value.trim();
     const type = elements.routineType.value;
-    const day = parseInt(elements.routineDay.value, 10);
     const tag = elements.routineTag.value;
     const start = elements.routineStart.value;
     const end = elements.routineEnd.value;
+    
+    let day;
+    let isSpecial = false;
+    let date = null;
+    
+    if (elements.routineDay.value === "special") {
+      isSpecial = true;
+      date = elements.routineSpecificDate.value;
+      if (!date) {
+        showToast("Validation Error: Please select a specific date.", "error");
+        return;
+      }
+      day = new Date(date).getDay();
+    } else {
+      day = parseInt(elements.routineDay.value, 10);
+    }
 
     if (title && start && end) {
       if (start >= end) {
@@ -2227,7 +2439,7 @@ function setupRoutineHandlers() {
           const oldTitle = state.routine[index].title;
           state.routine[index] = {
             ...state.routine[index],
-            type, day, title, start, end, tag
+            type, day, title, start, end, tag, isSpecial, date
           };
           // Migrate attendance if title changed and it was a class
           if (type === "class" && oldTitle !== title && state.attendance[oldTitle]) {
@@ -2244,6 +2456,8 @@ function setupRoutineHandlers() {
           start,
           end,
           tag,
+          isSpecial,
+          date
         };
         state.routine.push(newRoutine);
       }
@@ -2421,7 +2635,7 @@ function calculateClassStreak(classTitle, logs) {
 
   while (missedThreshold < 30) {
     const dayOfWeek = checkDate.getDay();
-    if (scheduledWeekdays.has(dayOfWeek)) {
+    if (isClassScheduledOnDate(classTitle, checkDate)) {
       const key = getFormattedDateKey(checkDate);
       const status = logs[key];
 
@@ -2452,6 +2666,9 @@ function openModal(modalEl) {
 }
 
 function closeModal(modalEl) {
+  if (document.activeElement && modalEl.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
   modalEl.classList.add("hidden");
   modalEl.setAttribute("aria-hidden", "true");
 }
@@ -3102,7 +3319,7 @@ function renderOverviewClassBarsChart() {
     Object.keys(logs).forEach((dateKey) => {
       const status = logs[dateKey];
       const logDate = new Date(dateKey);
-      if (scheduledWeekdays.has(logDate.getDay())) {
+      if (isClassScheduledOnDate(className, logDate)) {
         if (status === "Present") presents++;
         else if (status === "Absent") absents++;
         else if (status === "Late") lates++;
@@ -4164,4 +4381,250 @@ if (elements.updateNameForm) {
       showToast("Server error. Try again later.", "error");
     }
   });
+}
+
+
+/* ==========================================================================
+   CUSTOM CLOCK TIME PICKER
+   ========================================================================== */
+let clockPickerTarget = null;
+let clockMode = 'hours'; // 'hours' or 'minutes'
+let clockIsAM = true;
+let clockSelectedHour = 12;
+let clockSelectedMinute = 0;
+
+const clockOverlay = document.getElementById("clock-picker-overlay");
+const clockDisplayHours = document.getElementById("clock-display-hours");
+const clockDisplayMinutes = document.getElementById("clock-display-minutes");
+const clockBtnAm = document.getElementById("clock-btn-am");
+const clockBtnPm = document.getElementById("clock-btn-pm");
+const clockFace = document.getElementById("clock-face");
+const clockHand = document.getElementById("clock-hand");
+const clockNumbersContainer = document.getElementById("clock-numbers");
+
+// Intercept clicks on any time input
+document.addEventListener('click', (e) => {
+  if (e.target.matches('input[type="time"]')) {
+    e.preventDefault();
+    openClockPicker(e.target);
+  }
+});
+// Also intercept focus to prevent mobile keyboard/native picker
+document.addEventListener('focusin', (e) => {
+  if (e.target.matches('input[type="time"]')) {
+    e.preventDefault();
+    e.target.blur();
+    openClockPicker(e.target);
+  }
+});
+
+function openClockPicker(inputEl) {
+  clockPickerTarget = inputEl;
+  
+  // Parse existing time if any
+  const val = inputEl.value;
+  if (val) {
+    let [h, m] = val.split(':').map(Number);
+    clockSelectedMinute = m;
+    if (h >= 12) {
+      clockIsAM = false;
+      clockSelectedHour = h === 12 ? 12 : h - 12;
+    } else {
+      clockIsAM = true;
+      clockSelectedHour = h === 0 ? 12 : h;
+    }
+  } else {
+    const now = new Date();
+    let h = now.getHours();
+    clockSelectedMinute = Math.round(now.getMinutes() / 5) * 5;
+    if (clockSelectedMinute === 60) {
+      clockSelectedMinute = 0;
+      h = (h + 1) % 24;
+    }
+    if (h >= 12) {
+      clockIsAM = false;
+      clockSelectedHour = h === 12 ? 12 : h - 12;
+    } else {
+      clockIsAM = true;
+      clockSelectedHour = h === 0 ? 12 : h;
+    }
+  }
+
+  setClockMode('hours');
+  updateClockDigitalDisplay();
+  openModal(clockOverlay);
+}
+
+function closeClockPicker() {
+  closeModal(clockOverlay);
+  clockPickerTarget = null;
+}
+
+function confirmClockPicker() {
+  if (clockPickerTarget) {
+    let h24 = clockSelectedHour;
+    if (clockIsAM && h24 === 12) h24 = 0;
+    else if (!clockIsAM && h24 !== 12) h24 += 12;
+
+    const hh = String(h24).padStart(2, '0');
+    const mm = String(clockSelectedMinute).padStart(2, '0');
+    
+    clockPickerTarget.value = `${hh}:${mm}`;
+    // Dispatch input/change events for frameworks or other listeners
+    clockPickerTarget.dispatchEvent(new Event('input', { bubbles: true }));
+    clockPickerTarget.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  closeClockPicker();
+}
+
+function setClockMode(mode) {
+  clockMode = mode;
+  if (mode === 'hours') {
+    clockDisplayHours.classList.add('active');
+    clockDisplayMinutes.classList.remove('active');
+  } else {
+    clockDisplayHours.classList.remove('active');
+    clockDisplayMinutes.classList.add('active');
+  }
+  renderClockNumbers();
+  updateClockHand();
+}
+
+function renderClockNumbers() {
+  clockNumbersContainer.innerHTML = '';
+  const total = 12;
+  const radius = 100; // Distance from center
+  const cx = 125;
+  const cy = 125;
+  
+  for (let i = 1; i <= total; i++) {
+    const val = clockMode === 'hours' ? i : (i === 12 ? 0 : i * 5);
+    const angle = (i * 30 - 90) * (Math.PI / 180);
+    const x = cx + radius * Math.cos(angle);
+    const y = cy + radius * Math.sin(angle);
+    
+    const numEl = document.createElement('div');
+    numEl.className = 'clock-number';
+    numEl.textContent = val === 0 && clockMode === 'minutes' ? '00' : val;
+    numEl.style.left = `${x}px`;
+    numEl.style.top = `${y}px`;
+    
+    const isActive = (clockMode === 'hours' && clockSelectedHour === val) || 
+                     (clockMode === 'minutes' && clockSelectedMinute === val);
+                     
+    if (isActive) numEl.classList.add('active');
+    
+    numEl.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleClockSelection(val);
+    });
+    
+    clockNumbersContainer.appendChild(numEl);
+  }
+}
+
+function handleClockSelection(val) {
+  if (clockMode === 'hours') {
+    clockSelectedHour = val;
+    updateClockDigitalDisplay();
+    updateClockHand();
+    setTimeout(() => setClockMode('minutes'), 300);
+  } else {
+    clockSelectedMinute = val;
+    updateClockDigitalDisplay();
+    updateClockHand();
+  }
+  renderClockNumbers(); // Re-render to update active class
+}
+
+function updateClockHand() {
+  let val = clockMode === 'hours' ? clockSelectedHour : clockSelectedMinute / 5;
+  if (val === 0) val = 12;
+  const angle = val * 30;
+  clockHand.style.transform = `translate(-50%, -100%) rotate(${angle}deg)`;
+}
+
+function updateClockDigitalDisplay() {
+  clockDisplayHours.textContent = clockSelectedHour;
+  clockDisplayMinutes.textContent = String(clockSelectedMinute).padStart(2, '0');
+  
+  if (clockIsAM) {
+    clockBtnAm.classList.add('active');
+    clockBtnPm.classList.remove('active');
+  } else {
+    clockBtnAm.classList.remove('active');
+    clockBtnPm.classList.add('active');
+  }
+}
+
+clockDisplayHours.addEventListener('click', () => setClockMode('hours'));
+clockDisplayMinutes.addEventListener('click', () => setClockMode('minutes'));
+
+clockBtnAm.addEventListener('click', () => {
+  clockIsAM = true;
+  updateClockDigitalDisplay();
+});
+clockBtnPm.addEventListener('click', () => {
+  clockIsAM = false;
+  updateClockDigitalDisplay();
+});
+
+// Setup drag behavior for the clock hand
+let isDraggingClock = false;
+clockFace.addEventListener('mousedown', (e) => {
+  isDraggingClock = true;
+  handleClockDrag(e);
+});
+document.addEventListener('mousemove', (e) => {
+  if (isDraggingClock) handleClockDrag(e);
+});
+document.addEventListener('mouseup', () => {
+  if (isDraggingClock) {
+    isDraggingClock = false;
+    if (clockMode === 'hours') {
+      setTimeout(() => setClockMode('minutes'), 300);
+    }
+  }
+});
+clockFace.addEventListener('touchstart', (e) => {
+  isDraggingClock = true;
+  handleClockDrag(e.touches[0]);
+}, {passive: true});
+document.addEventListener('touchmove', (e) => {
+  if (isDraggingClock) {
+    handleClockDrag(e.touches[0]);
+    e.preventDefault(); // Prevent scrolling while dragging
+  }
+}, {passive: false});
+document.addEventListener('touchend', () => {
+  if (isDraggingClock) {
+    isDraggingClock = false;
+    if (clockMode === 'hours') {
+      setTimeout(() => setClockMode('minutes'), 300);
+    }
+  }
+});
+
+function handleClockDrag(e) {
+  const rect = clockFace.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const x = e.clientX - cx;
+  const y = e.clientY - cy;
+  
+  let angle = Math.atan2(y, x) * (180 / Math.PI) + 90;
+  if (angle < 0) angle += 360;
+  
+  let val = Math.round(angle / 30);
+  if (val === 0) val = 12;
+  
+  if (clockMode === 'hours') {
+    clockSelectedHour = val;
+  } else {
+    clockSelectedMinute = val === 12 ? 0 : val * 5;
+  }
+  
+  updateClockDigitalDisplay();
+  updateClockHand();
+  renderClockNumbers();
 }
