@@ -336,7 +336,30 @@ function loadUserScopedData() {
       state.routine = parsed.routine || [];
       state.todos = parsed.todos || [];
       state.attendance = parsed.attendance || {};
-      state.currentCalendarDate = new Date();
+      
+      state.currentCalendarDate = (sessionUser && sessionUser.academicProfile && sessionUser.academicProfile.termStartDate) 
+        ? new Date(sessionUser.academicProfile.termStartDate) 
+        : new Date();
+
+      // Migrate legacy attendance keys from YYYY-MM-DD to YYYY-MM-DD_slotID
+      if (state.attendance) {
+        Object.keys(state.attendance).forEach(classTitle => {
+          const logs = state.attendance[classTitle];
+          Object.keys(logs).forEach(key => {
+            if (!key.includes("_")) {
+              const dateObj = new Date(key);
+              const dayNum = dateObj.getDay();
+              const slots = state.routine.filter(r => r.title === classTitle && r.day === dayNum && r.type === "class");
+              if (slots.length > 0) {
+                slots.forEach(slot => {
+                  logs[`${key}_${slot.id}`] = logs[key];
+                });
+              }
+              delete logs[key];
+            }
+          });
+        });
+      }
       return;
     } catch (e) {
       console.error("Failed to load scoped data", e);
@@ -351,7 +374,9 @@ function loadUserScopedData() {
   state.routine = defaults.routine;
   state.todos = defaults.todos;
   state.attendance = defaults.attendance;
-  state.currentCalendarDate = new Date();
+  state.currentCalendarDate = (sessionUser && sessionUser.academicProfile && sessionUser.academicProfile.termStartDate) 
+        ? new Date(sessionUser.academicProfile.termStartDate) 
+        : new Date();
 
   saveUserScopedData();
 }
@@ -919,9 +944,10 @@ function calculateOverallAttendance() {
     const logs = state.attendance[className] || {};
     const scheduledWeekdays = getClassScheduledWeekdays(className);
 
-    Object.keys(logs).forEach((dateKey) => {
-      const status = logs[dateKey];
-      const logDate = new Date(dateKey);
+    Object.keys(logs).forEach((logKey) => {
+      const status = logs[logKey];
+      const dateStr = logKey.split('_')[0];
+      const logDate = new Date(dateStr);
 
       if (isClassScheduledOnDate(className, logDate)) {
         if (status === "Present") totalPresents++;
@@ -1507,6 +1533,16 @@ function getClassSpecialDates(classTitle) {
 }
 
 function isClassScheduledOnDate(classTitle, dateObj) {
+  if (typeof sessionUser !== "undefined" && sessionUser?.academicProfile?.termStartDate) {
+    const termStart = new Date(sessionUser.academicProfile.termStartDate);
+    termStart.setHours(0, 0, 0, 0);
+    const checkDate = new Date(dateObj);
+    checkDate.setHours(0, 0, 0, 0);
+    if (checkDate < termStart) {
+      return false;
+    }
+  }
+
   const scheduledWeekdays = getClassScheduledWeekdays(classTitle);
   const specialDates = getClassSpecialDates(classTitle);
   const dateKey = getFormattedDateKey(dateObj);
@@ -1574,9 +1610,10 @@ function renderAttendance() {
   let lates = 0;
   let excused = 0;
 
-  Object.keys(logs).forEach((dateKey) => {
-    const status = logs[dateKey];
-    const logDate = new Date(dateKey);
+  Object.keys(logs).forEach((logKey) => {
+    const status = logs[logKey];
+    const dateStr = logKey.split('_')[0];
+    const logDate = new Date(dateStr);
 
     if (scheduledWeekdays.has(logDate.getDay())) {
       if (status === "Present") presents++;
@@ -1682,11 +1719,24 @@ function renderCalendar() {
       dayDiv.classList.add("today");
     }
 
-    if (logs[dateKey]) {
-      dayDiv.classList.add(logs[dateKey].toLowerCase());
+    let dayAggregateStatus = "";
+    if (isScheduled) {
+      const dayNum = cellDate.getDay();
+      const slots = state.routine.filter(r => r.title === selectedClass && r.type === "class" && (r.day === dayNum || r.date === dateKey));
+      const statuses = slots.map(s => logs[`${dateKey}_${s.id}`]).filter(Boolean);
+      if (statuses.length > 0) {
+        if (statuses.includes("Absent")) dayAggregateStatus = "absent";
+        else if (statuses.includes("Late")) dayAggregateStatus = "late";
+        else if (statuses.includes("Present")) dayAggregateStatus = "present";
+        else dayAggregateStatus = statuses[0].toLowerCase();
+      }
     }
 
-    if (isScheduled || logs[dateKey]) {
+    if (dayAggregateStatus) {
+      dayDiv.classList.add(dayAggregateStatus);
+    }
+
+    if (isScheduled || dayAggregateStatus) {
       dayDiv.addEventListener("click", () => {
         openDayEditModal(dateKey, cellDate);
       });
@@ -1717,7 +1767,18 @@ function openDayEditModal(dateKey, dateObj) {
   elements.modalSubjectName.textContent = state.currentSubjectId;
 
   const logs = state.attendance[state.currentSubjectId] || {};
-  const currentStatus = logs[dateKey] || "None";
+  const dayNum = dateObj.getDay();
+  const slots = state.routine.filter(r => r.title === state.currentSubjectId && r.type === "class" && (r.day === dayNum || r.date === dateKey));
+  let currentStatus = "None";
+  if (slots.length > 0) {
+    const statuses = slots.map(s => logs[`${dateKey}_${s.id}`]).filter(Boolean);
+    if (statuses.length > 0) {
+      if (statuses.includes("Absent")) currentStatus = "Absent";
+      else if (statuses.includes("Late")) currentStatus = "Late";
+      else if (statuses.includes("Present")) currentStatus = "Present";
+      else currentStatus = statuses[0];
+    }
+  }
 
   elements.attendanceOptions.forEach((opt) => {
     const status = opt.getAttribute("data-status");
@@ -1799,10 +1860,18 @@ function setupAttendanceHandlers() {
         state.attendance[classTitle] = {};
       }
 
-      if (status === "None") {
-        delete state.attendance[classTitle][dateKey];
-      } else {
-        state.attendance[classTitle][dateKey] = status;
+      const dateObj = new Date(dateKey);
+      const dayNum = dateObj.getDay();
+      const slots = state.routine.filter(r => r.title === classTitle && r.type === "class" && (r.day === dayNum || r.date === dateKey));
+
+      if (slots.length > 0) {
+        slots.forEach(slot => {
+          if (status === "None") {
+            delete state.attendance[classTitle][`${dateKey}_${slot.id}`];
+          } else {
+            state.attendance[classTitle][`${dateKey}_${slot.id}`] = status;
+          }
+        });
       }
 
       saveUserScopedData();
@@ -1936,7 +2005,8 @@ function renderRoutineTimeline() {
       let attendanceHtml = "";
       if (item.type === "class" && !(typeof routineManageMode !== 'undefined' && routineManageMode)) {
         const logs = state.attendance[item.title] || {};
-        const currentLog = logs[todayDateKey] || "None";
+        const logKey = `${todayDateKey}_${item.refId}`;
+        const currentLog = logs[logKey] || "None";
 
         attendanceHtml = `
                     <div class="inline-checkin-container" onclick="event.stopPropagation()">
@@ -2005,13 +2075,14 @@ function renderRoutineTimeline() {
               e.stopPropagation();
               const status = btn.getAttribute("data-status");
               const logs = state.attendance[item.title] || {};
+              const logKey = `${todayDateKey}_${item.refId}`;
 
-              if (logs[todayDateKey] === status) {
-                delete state.attendance[item.title][todayDateKey];
+              if (logs[logKey] === status) {
+                delete state.attendance[item.title][logKey];
               } else {
                 if (!state.attendance[item.title])
                   state.attendance[item.title] = {};
-                state.attendance[item.title][todayDateKey] = status;
+                state.attendance[item.title][logKey] = status;
               }
 
               saveUserScopedData();
@@ -2710,19 +2781,23 @@ function calculateClassStreak(classTitle, logs) {
     const dayOfWeek = checkDate.getDay();
     if (isClassScheduledOnDate(classTitle, checkDate)) {
       const key = getFormattedDateKey(checkDate);
-      const status = logs[key];
+      const dayNum = checkDate.getDay();
+      const slots = state.routine.filter(r => r.title === classTitle && r.type === "class" && (r.day === dayNum || r.date === key));
+      const statuses = slots.map(s => logs[`${key}_${s.id}`]).filter(Boolean);
 
-      if (status === "Present") {
-        streak++;
-      } else if (status === "Cancelled") {
-        // Skip calculation for cancelled classes (they don't break the streak)
-      } else if (status === undefined || status === "None") {
+      if (statuses.length === 0) {
         const todayStr = getFormattedDateKey(new Date());
         if (key === todayStr) {
           // Skip today if not logged yet, continue checking previous days
         } else {
           break;
         }
+      } else if (statuses.includes("Absent")) {
+        break;
+      } else if (statuses.includes("Present")) {
+        streak += statuses.filter(s => s === "Present").length;
+      } else if (statuses.includes("Cancelled")) {
+        // Skip calculation for cancelled classes (they don't break the streak)
       } else {
         break;
       }
@@ -3226,13 +3301,14 @@ function getAttendanceTrendData() {
       const logs = state.attendance[className] || {};
       const scheduledWeekdays = getClassScheduledWeekdays(className);
 
-      Object.keys(logs).forEach((dateKey) => {
-        const logDate = new Date(dateKey);
+      Object.keys(logs).forEach((logKey) => {
+        const dateStr = logKey.split('_')[0];
+        const logDate = new Date(dateStr);
         if (
           logDate.getTime() <= targetTime.getTime() &&
           scheduledWeekdays.has(logDate.getDay())
         ) {
-          const status = logs[dateKey];
+          const status = logs[logKey];
           if (status === "Present") presents++;
           else if (status === "Absent") absents++;
           else if (status === "Late") lates++;
@@ -3391,9 +3467,10 @@ function renderOverviewClassBarsChart() {
     let absents = 0;
     let lates = 0;
 
-    Object.keys(logs).forEach((dateKey) => {
-      const status = logs[dateKey];
-      const logDate = new Date(dateKey);
+    Object.keys(logs).forEach((logKey) => {
+      const status = logs[logKey];
+      const dateStr = logKey.split('_')[0];
+      const logDate = new Date(dateStr);
       if (isClassScheduledOnDate(className, logDate)) {
         if (status === "Present") presents++;
         else if (status === "Absent") absents++;
