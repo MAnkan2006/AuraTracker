@@ -1322,12 +1322,12 @@
     <!-- Routine Details Modal (View Mode) -->
     <div id="routine-details-modal" class="modal-backdrop hidden">
       <div class="modal-card animate-fade-up" style="position: relative; max-width: 400px; padding-bottom: 24px;">
-        <button class="btn-close-modal" id="btn-close-routine-details" style="position: absolute; top: 16px; right: 16px;">
+        <button class="btn-close-modal" id="btn-close-routine-details" style="position: absolute; top: 16px; right: 16px; z-index: 10;">
           <i data-lucide="x"></i>
         </button>
-        <div class="modal-header">
-          <h2 id="details-modal-title">Subject Name</h2>
-          <span class="routine-tag-pill" id="details-modal-type" style="margin-top: 8px;">Class</span>
+        <div class="modal-header" style="justify-content: flex-start; gap: 12px; padding-right: 40px;">
+          <h2 id="details-modal-title" style="margin: 0;">Subject Name</h2>
+          <span class="routine-tag-pill" id="details-modal-type" style="margin-top: 0;">Class</span>
         </div>
         <div class="modal-body" style="display: flex; flex-direction: column; gap: 20px; padding: 24px 0;">
           <div style="display: flex; align-items: center; gap: 16px; color: var(--text-primary);">

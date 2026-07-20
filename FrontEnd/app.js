@@ -983,6 +983,7 @@ function renderProfileView() {
     setVal("academic-semester-val",   ap.semester ? `Semester ${ap.semester}` : null);
     setVal("academic-session-val",    ap.academicSession);
     setVal("academic-section-val",    ap.section);
+    setVal("academic-term-start-val", ap.termStartDate ? new Date(ap.termStartDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : "—");
 
     // Stats calculations
     const actualRate = calculateOverallAttendance();
@@ -1228,6 +1229,7 @@ function setupProfileEditHandlers() {
         setInput("academic-edit-semester",   ap.semester);
         setInput("academic-edit-session",    ap.academicSession);
         setInput("academic-edit-section",    ap.section);
+        setInput("academic-edit-term-start", ap.termStartDate ? ap.termStartDate.substring(0, 10) : "");
 
         const progEl = document.getElementById("academic-edit-program");
         if (progEl) {
@@ -1312,6 +1314,7 @@ function setupProfileEditHandlers() {
       const semester = parseInt(document.getElementById("academic-edit-semester")?.value, 10) || null;
       const academicSession = document.getElementById("academic-edit-session")?.value.trim();
       const section = document.getElementById("academic-edit-section")?.value.trim();
+      const termStartDate = document.getElementById("academic-edit-term-start")?.value;
 
       try {
         const [profileRes, academicRes] = await Promise.all([
@@ -1336,7 +1339,8 @@ function setupProfileEditHandlers() {
               program,
               semester,
               academicSession,
-              section
+              section,
+              termStartDate
             }),
           })
         ]);
@@ -1356,7 +1360,7 @@ function setupProfileEditHandlers() {
         sessionUser.bio = bio;
         sessionUser.targetGoal = targetGoal;
         sessionUser.avatar = editSelectedAvatar;
-        sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession, section };
+        sessionUser.academicProfile = { university, college: university, department, program, semester, academicSession, section, termStartDate };
 
         saveUserScopedData();
 
@@ -1877,15 +1881,7 @@ function renderRoutineTimeline() {
     return;
   }
 
-  const format12h = (time24) => {
-    if (!time24 || time24 === "23:59") return "All Day";
-    const [hStr, mStr] = time24.split(":");
-    let h = parseInt(hStr, 10);
-    const ampm = h >= 12 ? "PM" : "AM";
-    h = h % 12;
-    h = h ? h : 12;
-    return `${h}:${mStr} ${ampm}`;
-  };
+
 
   timelineItems.forEach((item) => {
     const itemDiv = document.createElement("div");
@@ -1946,6 +1942,7 @@ function renderRoutineTimeline() {
                         <button class="inline-log-btn ${currentLog === "Absent" ? "active-a" : ""}" data-status="Absent">A</button>
                         <button class="inline-log-btn ${currentLog === "Late" ? "active-l" : ""}" data-status="Late">L</button>
                         <button class="inline-log-btn ${currentLog === "Excused" ? "active-e" : ""}" data-status="Excused">E</button>
+                        <button class="inline-log-btn ${currentLog === "Cancelled" ? "active-c" : ""}" data-status="Cancelled">C</button>
                     </div>
                 `;
       }
@@ -2023,8 +2020,8 @@ function renderRoutineTimeline() {
         }
 
         itemDiv.addEventListener("click", () => {
-          if (typeof window.openRoutineEditModal === "function") {
-            window.openRoutineEditModal(item.rawItem);
+          if (typeof window.openRoutineDetailsModal === "function") {
+            window.openRoutineDetailsModal(item.rawItem);
           }
         });
       }
@@ -2185,8 +2182,8 @@ function renderWeeklyScopeGrid() {
             });
           } else {
             card.addEventListener("click", () => {
-              if (typeof window.openRoutineEditModal === "function") {
-                window.openRoutineEditModal(item.rawItem);
+              if (typeof window.openRoutineDetailsModal === "function") {
+                window.openRoutineDetailsModal(item.rawItem);
               }
             });
           }
@@ -2355,6 +2352,48 @@ function setupRoutineHandlers() {
       elements.routineSpecificDateGroup.classList.add("hidden");
     }
   });
+
+  window.openRoutineDetailsModal = function(item) {
+    const modal = document.getElementById("routine-details-modal");
+    if (!modal) return;
+    
+    document.getElementById("details-modal-title").textContent = item.title;
+    
+    const typeBadge = document.getElementById("details-modal-type");
+    typeBadge.textContent = item.type === "class" ? "Class" : (item.tag || "Task");
+    typeBadge.className = `routine-tag-pill tag-${item.tag || 'none'} ${item.isSpecial ? "special-badge" : ""}`;
+    
+    document.getElementById("details-modal-time").textContent = `${format12h(item.start || item.time || "")} - ${format12h(item.end || item.endTime || "")}`;
+    document.getElementById("details-modal-faculty").textContent = item.faculty || "Not Assigned";
+    document.getElementById("details-modal-room").textContent = item.room || "Not Assigned";
+    
+    const editBtn = document.getElementById("btn-edit-routine-details");
+    if (editBtn) {
+      editBtn.onclick = () => {
+        closeModal(modal);
+        if (typeof window.openRoutineEditModal === "function") {
+          window.openRoutineEditModal(item);
+        }
+      };
+    }
+    
+    const deleteBtn = document.getElementById("btn-delete-routine-details");
+    if (deleteBtn) {
+      deleteBtn.onclick = async () => {
+        if (await showConfirm(`Delete "${item.title}"?`, "Confirm Delete")) {
+          const targetId = item.id || item._id;
+          state.routine = state.routine.filter((r) => r.id !== targetId && r._id !== targetId);
+          saveUserScopedData();
+          closeModal(modal);
+          renderRoutineTimeline();
+          if (typeof renderWeeklyScopeGrid === "function") renderWeeklyScopeGrid();
+          if (typeof renderAttendance === "function") renderAttendance();
+        }
+      };
+    }
+    
+    openModal(modal);
+  };
 
   window.openRoutineEditModal = function(item) {
     elements.routineTitle.value = item.title;
@@ -2624,6 +2663,16 @@ function getFormattedDateKey(date) {
   return `${y}-${m}-${d}`;
 }
 
+function format12h(time24) {
+  if (!time24 || time24 === "23:59") return "All Day";
+  const [hStr, mStr] = time24.split(":");
+  let h = parseInt(hStr, 10);
+  const ampm = h >= 12 ? "PM" : "AM";
+  h = h % 12;
+  h = h ? h : 12;
+  return `${h}:${mStr} ${ampm}`;
+}
+
 // --- Helper: Calculate Class Streak ---
 function calculateClassStreak(classTitle, logs) {
   const scheduledWeekdays = getClassScheduledWeekdays(classTitle);
@@ -2641,6 +2690,8 @@ function calculateClassStreak(classTitle, logs) {
 
       if (status === "Present") {
         streak++;
+      } else if (status === "Cancelled") {
+        // Skip calculation for cancelled classes (they don't break the streak)
       } else if (status === undefined || status === "None") {
         const todayStr = getFormattedDateKey(new Date());
         if (key === todayStr) {

@@ -3225,6 +3225,12 @@ h5,
   border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+.inline-log-btn.active-c {
+  background: rgba(156, 163, 175, 0.16);
+  color: var(--cancelled);
+  border: 1px solid rgba(156, 163, 175, 0.3);
+}
+
 /* --- Weekly Scope Grid Layout (7 Columns) --- */
 
 .weekly-grid-container {
