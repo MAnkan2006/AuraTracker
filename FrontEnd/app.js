@@ -234,6 +234,8 @@ const elements = {
   routineModal: document.getElementById("routine-modal"),
   routineForm: document.getElementById("routine-form"),
   routineTitle: document.getElementById("routine-title"),
+  routineFaculty: document.getElementById("routine-faculty"),
+  routineRoom: document.getElementById("routine-room"),
   routineType: document.getElementById("routine-type"),
   routineDay: document.getElementById("routine-day"),
   routineTag: document.getElementById("routine-tag"),
@@ -921,7 +923,7 @@ function calculateOverallAttendance() {
       const status = logs[dateKey];
       const logDate = new Date(dateKey);
 
-      if (isClassScheduledOnDate(selectedClass, logDate)) {
+      if (isClassScheduledOnDate(className, logDate)) {
         if (status === "Present") totalPresents++;
         else if (status === "Absent") totalAbsents++;
         else if (status === "Late") totalLates++;
@@ -2397,6 +2399,8 @@ function setupRoutineHandlers() {
 
   window.openRoutineEditModal = function(item) {
     elements.routineTitle.value = item.title;
+    if (elements.routineFaculty) elements.routineFaculty.value = item.faculty || "";
+    if (elements.routineRoom) elements.routineRoom.value = item.room || "";
     if (item.isSpecial) {
       elements.routineDay.value = "special";
       elements.routineSpecificDate.value = item.date;
@@ -2440,6 +2444,8 @@ function setupRoutineHandlers() {
     e.preventDefault();
 
     const title = elements.routineTitle.value.trim();
+    const faculty = elements.routineFaculty ? elements.routineFaculty.value.trim() : "";
+    const room = elements.routineRoom ? elements.routineRoom.value.trim() : "";
     const type = elements.routineType.value;
     const tag = elements.routineTag.value;
     const start = elements.routineStart.value;
@@ -2478,8 +2484,16 @@ function setupRoutineHandlers() {
           const oldTitle = state.routine[index].title;
           state.routine[index] = {
             ...state.routine[index],
-            type, day, title, start, end, tag, isSpecial, date
+            type, day, title, start, end, tag, isSpecial, date, faculty, room
           };
+          
+          // Optionally update other slots of the same class if user wants to sync faculty/room for a subject code
+          state.routine.forEach(r => {
+            if (r.title === title && r.type === "class") {
+              r.faculty = faculty;
+              r.room = room;
+            }
+          });
           // Migrate attendance if title changed and it was a class
           if (type === "class" && oldTitle !== title && state.attendance[oldTitle]) {
             state.attendance[title] = state.attendance[oldTitle];
@@ -2496,9 +2510,19 @@ function setupRoutineHandlers() {
           end,
           tag,
           isSpecial,
-          date
+          date,
+          faculty,
+          room
         };
         state.routine.push(newRoutine);
+        
+        // If adding a new slot of an existing subject, maybe we should also sync its faculty/room to other slots of the same subject code?
+        state.routine.forEach(r => {
+          if (r.title === title && r.type === "class") {
+            r.faculty = faculty;
+            r.room = room;
+          }
+        });
       }
 
       if (type === "class" && !state.attendance[title]) {
@@ -4239,6 +4263,8 @@ async function confirmRoutineImport() {
         start: cls.startTime || cls.start || "",
         end: cls.endTime || cls.end || "",
         tag: "study",
+        faculty: cls.faculty || "",
+        room: cls.room || ""
       }));
 
       // Merge into existing state (avoid duplicates by id)
