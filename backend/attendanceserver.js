@@ -34,6 +34,9 @@ app.use("/api/onboarding", onboardingRoutes);
 const routineRoutes = require("./routes/routineRoutes");
 app.use("/api/routine", routineRoutes);
 
+const syncRoutes = require("./routes/syncRoutes");
+app.use("/api/sync", syncRoutes);
+
 app.post("/register", async (req, res) => {
   try {
     const { username, email, name, avatar, password } = req.body;

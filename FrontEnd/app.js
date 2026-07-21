@@ -304,20 +304,53 @@ function saveMasterUsersList() {
   localStorage.setItem("auratracker_users", JSON.stringify(appUsers));
 }
 
+let syncTimeout = null;
+
 function saveUserScopedData() {
   if (!sessionUser) return;
+  
+  const payload = {
+    selectedTheme: state.selectedTheme,
+    selectedFont: state.selectedFont,
+    routineView: state.routineView,
+    activeRoutineDay: state.activeRoutineDay,
+    routine: state.routine,
+    todos: state.todos,
+    attendance: state.attendance,
+  };
+
+  // 1. Instant save to local storage
   localStorage.setItem(
     `auratracker_user_${sessionUser.username}_data`,
-    JSON.stringify({
-      selectedTheme: state.selectedTheme,
-      selectedFont: state.selectedFont,
-      routineView: state.routineView,
-      activeRoutineDay: state.activeRoutineDay,
-      routine: state.routine,
-      todos: state.todos,
-      attendance: state.attendance,
-    }),
+    JSON.stringify(payload)
   );
+
+  // 2. Debounced save to cloud backend (only if logged in and not Guest)
+  if (sessionUser.username !== "Guest") {
+    clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => {
+      syncStateToBackend(payload);
+    }, 1000); // 1 second debounce
+  }
+}
+
+async function syncStateToBackend(payload) {
+  const token = localStorage.getItem("token");
+  if (!token) return;
+
+  try {
+    const res = await fetch(`${API_URL}/api/sync`, {
+      method: "POST",
+      headers: { 
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}` 
+      },
+      body: JSON.stringify({ state: payload })
+    });
+    if (!res.ok) console.warn("Failed to sync state to backend.");
+  } catch (err) {
+    console.error("Error syncing to backend:", err);
+  }
 }
 
 function loadUserScopedData() {
@@ -465,6 +498,7 @@ async function checkAuthSession() {
       academicProfile: data.academicProfile || {},
     };
 
+    await syncStateFromBackend(token);
     loadUserScopedData();
     await syncRoutineFromBackend(token);
     showDashboard();
@@ -475,6 +509,24 @@ async function checkAuthSession() {
     localStorage.removeItem("auratracker_session");
 
     showAuthScreen();
+  }
+}
+
+async function syncStateFromBackend(token) {
+  try {
+    const res = await fetch(`${API_URL}/api/sync`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.state) {
+        // Save the fetched state into local storage to merge/overwrite
+        const localKey = `auratracker_user_${sessionUser.username}_data`;
+        localStorage.setItem(localKey, JSON.stringify(data.state));
+      }
+    }
+  } catch (err) {
+    console.error("Failed to sync state from backend:", err);
   }
 }
 
@@ -790,6 +842,7 @@ function setupAuthHandlers() {
         academicProfile: profileData.academicProfile || {},
       };
 
+      await syncStateFromBackend(data.token);
       loadUserScopedData();
       await syncRoutineFromBackend(data.token);
       showDashboard();
@@ -1495,8 +1548,9 @@ function setupProfileEditHandlers() {
       elements.convertEmail.value = "";
       elements.convertPassword.value = "";
 
-      // 5. Reload new scoped state and update dashboard layout
+      // 5. Reload new scoped state, save to backend, and update dashboard layout
       loadUserScopedData();
+      saveUserScopedData(); // This triggers the debounced POST /api/sync
       showDashboard();
 
       showToast(
