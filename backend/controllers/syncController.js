@@ -52,7 +52,8 @@ exports.saveState = async (req, res) => {
           routineView: state.routineView,
           activeRoutineDay: state.activeRoutineDay,
           todos: state.todos,
-          attendance: state.attendance
+          attendance: state.attendance,
+          routine: state.routine
         } 
       },
       { new: true, upsert: true }

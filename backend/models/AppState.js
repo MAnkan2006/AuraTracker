@@ -7,7 +7,8 @@ const AppStateSchema = new mongoose.Schema({
   routineView: { type: String, default: 'daily' },
   activeRoutineDay: { type: Number, default: 1 },
   todos: { type: mongoose.Schema.Types.Mixed, default: [] },
-  attendance: { type: mongoose.Schema.Types.Mixed, default: {} }
+  attendance: { type: mongoose.Schema.Types.Mixed, default: {} },
+  routine: { type: mongoose.Schema.Types.Mixed, default: [] }
 });
 
 module.exports = mongoose.model("AppState", AppStateSchema);
