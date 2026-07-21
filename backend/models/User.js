@@ -12,6 +12,8 @@ const UserSchema = new mongoose.Schema({
   bio: String,
   targetGoal: Number,
   password: String,
+  googleId: String,
+  githubId: String,
   academicProfile: {
     college: String,
     department: String,

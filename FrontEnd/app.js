@@ -108,6 +108,8 @@ const elements = {
   signupError: document.getElementById("signup-error"),
   avatarPresetsGrid: document.getElementById("avatar-presets-grid"),
   btnGuestLogin: document.getElementById("btn-guest-login"),
+  btnGoogleLogin: document.getElementById("btn-google-login"),
+  btnGithubLogin: document.getElementById("btn-github-login"),
 
   // Guest warning banner
   guestWarningBanner: document.getElementById("guest-warning-banner"),
@@ -851,8 +853,17 @@ function setupAuthHandlers() {
     }
   });
 
-
-
+  // OAuth Login clicks
+  if (elements.btnGoogleLogin) {
+    elements.btnGoogleLogin.addEventListener("click", () => {
+      window.location.href = `${API_URL}/api/auth/google`;
+    });
+  }
+  if (elements.btnGithubLogin) {
+    elements.btnGithubLogin.addEventListener("click", () => {
+      window.location.href = `${API_URL}/api/auth/github`;
+    });
+  }
   // Guest Login click
   elements.btnGuestLogin.addEventListener("click", () => {
     sessionUser = {
@@ -3241,6 +3252,21 @@ document.addEventListener("DOMContentLoaded", () => {
         "info",
       );
     });
+  }
+
+  // OAuth Token Handling from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get('token');
+  const errorFromUrl = urlParams.get('error');
+
+  if (tokenFromUrl) {
+    localStorage.setItem("token", tokenFromUrl);
+    // Clear URL to prevent token leakage on copy/paste
+    window.history.replaceState({}, document.title, window.location.pathname);
+    showToast("Successfully logged in!", "success");
+  } else if (errorFromUrl) {
+    showToast("Social login failed: " + errorFromUrl, "error");
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 
   checkAuthSession();

@@ -37,6 +37,9 @@ app.use("/api/routine", routineRoutes);
 const syncRoutes = require("./routes/syncRoutes");
 app.use("/api/sync", syncRoutes);
 
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
+
 app.post("/register", async (req, res) => {
   try {
     const { username, email, name, avatar, password } = req.body;
