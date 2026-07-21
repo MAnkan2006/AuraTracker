@@ -4266,6 +4266,14 @@ async function finishOnboarding() {
       showToast(err.message || "Failed to save profile.", "error");
       return;
     }
+    
+    // Update local sessionUser with the saved data
+    const data = await res.json();
+    if (data.success && data.academicProfile) {
+      if (!sessionUser) sessionUser = {};
+      sessionUser.academicProfile = data.academicProfile;
+      localStorage.setItem("auratracker_user", JSON.stringify(sessionUser));
+    }
   } catch (e) {
     showToast("Network error saving profile.", "error");
     return;
