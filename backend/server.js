@@ -9,7 +9,15 @@ const cors = require("cors");
 const app = express();
 app.enable("trust proxy"); // Trust proxy headers from Render (like X-Forwarded-Proto)
 
-app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
+let allowedOrigins = ["*"];
+if (process.env.FRONTEND_URL) {
+  try {
+    allowedOrigins = [new URL(process.env.FRONTEND_URL).origin, "http://localhost:5500", "http://127.0.0.1:5500"];
+  } catch (err) {
+    allowedOrigins = [process.env.FRONTEND_URL, "http://localhost:5500", "http://127.0.0.1:5500"];
+  }
+}
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json());
 
 mongoose
