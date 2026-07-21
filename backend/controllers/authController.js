@@ -18,14 +18,16 @@ async function generateUniqueUsername(email) {
 // Redirects
 exports.googleLogin = (req, res) => {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-  const redirectUri = `${process.env.API_URL || 'http://localhost:5000'}/api/auth/google/callback`;
+  const backendUrl = req.protocol + '://' + req.get('host');
+  const redirectUri = `${backendUrl}/api/auth/google/callback`;
   const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=profile email`;
   res.redirect(url);
 };
 
 exports.githubLogin = (req, res) => {
   const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-  const redirectUri = `${process.env.API_URL || 'http://localhost:5000'}/api/auth/github/callback`;
+  const backendUrl = req.protocol + '://' + req.get('host');
+  const redirectUri = `${backendUrl}/api/auth/github/callback`;
   const url = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
   res.redirect(url);
 };
@@ -34,7 +36,8 @@ exports.githubLogin = (req, res) => {
 exports.googleCallback = async (req, res) => {
   try {
     const { code } = req.query;
-    const redirectUri = `${process.env.API_URL || 'http://localhost:5000'}/api/auth/google/callback`;
+    const backendUrl = req.protocol + '://' + req.get('host');
+    const redirectUri = `${backendUrl}/api/auth/google/callback`;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
     const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
@@ -104,7 +107,8 @@ exports.googleCallback = async (req, res) => {
 exports.githubCallback = async (req, res) => {
   try {
     const { code } = req.query;
-    const redirectUri = `${process.env.API_URL || 'http://localhost:5000'}/api/auth/github/callback`;
+    const backendUrl = req.protocol + '://' + req.get('host');
+    const redirectUri = `${backendUrl}/api/auth/github/callback`;
     const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
     const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
     const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
