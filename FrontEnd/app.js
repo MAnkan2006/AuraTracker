@@ -234,6 +234,7 @@ const elements = {
   routineModal: document.getElementById("routine-modal"),
   routineForm: document.getElementById("routine-form"),
   routineTitle: document.getElementById("routine-title"),
+  routineCode: document.getElementById("routine-code"),
   routineFaculty: document.getElementById("routine-faculty"),
   routineRoom: document.getElementById("routine-room"),
   routineType: document.getElementById("routine-type"),
@@ -2454,6 +2455,7 @@ function setupRoutineHandlers() {
 
   elements.addRoutineBtn.addEventListener("click", () => {
     elements.routineTitle.value = "";
+    if (elements.routineCode) elements.routineCode.value = "";
     elements.routineDay.value = state.activeRoutineDay;
     elements.routineType.value = "class";
     elements.routineTag.value = "study";
@@ -2524,6 +2526,7 @@ function setupRoutineHandlers() {
 
   window.openRoutineEditModal = function(item) {
     elements.routineTitle.value = item.title;
+    if (elements.routineCode) elements.routineCode.value = item.code || "";
     if (elements.routineFaculty) elements.routineFaculty.value = item.faculty || "";
     if (elements.routineRoom) elements.routineRoom.value = item.room || "";
     if (item.isSpecial) {
@@ -2565,10 +2568,43 @@ function setupRoutineHandlers() {
     });
   }
 
+  const handleAutocomplete = (e) => {
+    const val = e.target.value.trim().toLowerCase();
+    if (!val) return;
+    
+    const match = state.routine.find(r => 
+      (r.title && r.title.toLowerCase() === val) || 
+      (r.code && r.code.toLowerCase() === val)
+    );
+    
+    if (match) {
+      if (elements.routineTitle && !elements.routineTitle.value) {
+        elements.routineTitle.value = match.title || "";
+      }
+      if (elements.routineCode && !elements.routineCode.value) {
+        elements.routineCode.value = match.code || "";
+      }
+      if (elements.routineFaculty && !elements.routineFaculty.value) {
+        elements.routineFaculty.value = match.faculty || "";
+      }
+      if (elements.routineRoom && !elements.routineRoom.value) {
+        elements.routineRoom.value = match.room || "";
+      }
+    }
+  };
+
+  if (elements.routineTitle) {
+    elements.routineTitle.addEventListener("input", handleAutocomplete);
+  }
+  if (elements.routineCode) {
+    elements.routineCode.addEventListener("input", handleAutocomplete);
+  }
+
   elements.routineForm.addEventListener("submit", (e) => {
     e.preventDefault();
 
     const title = elements.routineTitle.value.trim();
+    const code = elements.routineCode ? elements.routineCode.value.trim() : "";
     const faculty = elements.routineFaculty ? elements.routineFaculty.value.trim() : "";
     const room = elements.routineRoom ? elements.routineRoom.value.trim() : "";
     const type = elements.routineType.value;
@@ -2609,7 +2645,7 @@ function setupRoutineHandlers() {
           const oldTitle = state.routine[index].title;
           state.routine[index] = {
             ...state.routine[index],
-            type, day, title, start, end, tag, isSpecial, date, faculty, room
+            type, day, title, code, start, end, tag, isSpecial, date, faculty, room
           };
           
           // Optionally update other slots of the same class if user wants to sync faculty/room for a subject code
@@ -2631,6 +2667,7 @@ function setupRoutineHandlers() {
           type,
           day,
           title,
+          code,
           start,
           end,
           tag,
