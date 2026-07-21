@@ -3829,8 +3829,19 @@ function renderOverviewUpNext() {
   const listEl = document.getElementById("overview-up-next-list");
   if (!listEl) return;
   
-  const currentDay = new Date().getDay();
-  const todayClasses = state.routine.filter((r) => r.day === currentDay);
+  const today = new Date();
+  const currentDay = today.getDay();
+  const todayDateKey = getFormattedDateKey(today);
+  
+  const todayClasses = state.routine.filter((r) => {
+    if (r.day !== currentDay) return false;
+    
+    const logs = state.attendance[r.title] || {};
+    const logKey = `${todayDateKey}_${r.id}`;
+    if (logs[logKey] === "Cancelled") return false;
+    
+    return true;
+  });
   
   todayClasses.sort((a, b) => {
     const timeA = (a.start || "00:00").split(":").map(Number);
