@@ -3821,6 +3821,70 @@ function renderOverviewTab() {
   renderOverviewClassBarsChart();
   renderOverviewTaskDonutChart();
   renderOverviewHeatmap();
+  renderOverviewUpNext();
+  renderOverviewDueSoon();
+}
+
+function renderOverviewUpNext() {
+  const listEl = document.getElementById("overview-up-next-list");
+  if (!listEl) return;
+  
+  const currentDay = new Date().getDay();
+  const todayClasses = state.routine.filter((r) => r.day === currentDay);
+  
+  todayClasses.sort((a, b) => {
+    const timeA = (a.start || "00:00").split(":").map(Number);
+    const timeB = (b.start || "00:00").split(":").map(Number);
+    return timeA[0] * 60 + timeA[1] - (timeB[0] * 60 + timeB[1]);
+  });
+  
+  if (todayClasses.length === 0) {
+    listEl.innerHTML = `<div class="empty-state-text">No classes scheduled for today.</div>`;
+  } else {
+    listEl.innerHTML = "";
+    todayClasses.forEach((cls) => {
+      const item = document.createElement("div");
+      item.className = `weekly-slot-card type-${cls.type} tag-${cls.tag || "study"}`;
+      item.style.marginBottom = "8px";
+      const timeStr = (cls.start || "") + " - " + (cls.end || "");
+      item.innerHTML = `
+        <span class="weekly-slot-title">${escapeHTML(cls.title)}</span>
+        <span class="weekly-slot-time">${timeStr}</span>
+        <span class="weekly-slot-badge">${escapeHTML(cls.room || cls.type || "Event")}</span>
+      `;
+      listEl.appendChild(item);
+    });
+  }
+}
+
+function renderOverviewDueSoon() {
+  const listEl = document.getElementById("overview-due-soon-list");
+  if (!listEl) return;
+  
+  const pendingTasks = state.todos.filter(t => !t.completed);
+  const currentDay = new Date().getDay();
+  
+  // Show today's tasks first, if none, show any pending tasks
+  let dueTasks = pendingTasks.filter(t => t.day === currentDay);
+  if (dueTasks.length === 0) dueTasks = pendingTasks;
+  
+  dueTasks = dueTasks.slice(0, 5); // Take max 5 tasks
+  
+  if (dueTasks.length === 0) {
+    listEl.innerHTML = `<div class="empty-state-text">No pending tasks due soon.</div>`;
+  } else {
+    listEl.innerHTML = "";
+    dueTasks.forEach((t) => {
+      const item = document.createElement("div");
+      item.className = `weekly-slot-card type-todo tag-${t.category || "study"}`;
+      item.style.marginBottom = "8px";
+      item.innerHTML = `
+        <span class="weekly-slot-title">${escapeHTML(t.text)}</span>
+        <span class="weekly-slot-time">Task pending</span>
+      `;
+      listEl.appendChild(item);
+    });
+  }
 }
 
 // --- First-Time User Onboarding Tour ---
