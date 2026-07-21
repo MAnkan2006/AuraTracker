@@ -501,7 +501,6 @@ async function checkAuthSession() {
 
     await syncStateFromBackend(token);
     loadUserScopedData();
-    await syncRoutineFromBackend(token);
     showDashboard();
   } catch (err) {
     console.error("Session check failed:", err);
@@ -845,7 +844,6 @@ function setupAuthHandlers() {
 
       await syncStateFromBackend(data.token);
       loadUserScopedData();
-      await syncRoutineFromBackend(data.token);
       showDashboard();
     } catch (err) {
       console.error(err);
