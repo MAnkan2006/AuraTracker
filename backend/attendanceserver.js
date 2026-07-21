@@ -7,6 +7,7 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const app = express();
+app.enable("trust proxy"); // Trust proxy headers from Render (like X-Forwarded-Proto)
 
 app.use(cors({ origin: process.env.FRONTEND_URL || "*" }));
 app.use(express.json());
