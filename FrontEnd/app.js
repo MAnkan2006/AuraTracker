@@ -2196,6 +2196,9 @@ function renderWeeklyScopeGrid() {
     addBtn.addEventListener("click", (e) => {
       e.stopPropagation();
       elements.routineTitle.value = "";
+      if (elements.routineCode) elements.routineCode.value = "";
+      if (elements.routineFaculty) elements.routineFaculty.value = "";
+      if (elements.routineRoom) elements.routineRoom.value = "";
       elements.routineDay.value = dayIndex;
       elements.routineType.value = "class";
       elements.routineTag.value = "study";
@@ -2454,6 +2457,8 @@ function setupRoutineHandlers() {
   elements.addRoutineBtn.addEventListener("click", () => {
     elements.routineTitle.value = "";
     if (elements.routineCode) elements.routineCode.value = "";
+    if (elements.routineFaculty) elements.routineFaculty.value = "";
+    if (elements.routineRoom) elements.routineRoom.value = "";
     elements.routineDay.value = state.activeRoutineDay;
     elements.routineType.value = "class";
     elements.routineTag.value = "study";
