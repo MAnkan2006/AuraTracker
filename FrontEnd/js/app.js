@@ -3858,9 +3858,18 @@ function renderOverviewUpNext() {
   const today = new Date();
   const currentDay = today.getDay();
   const todayDateKey = getFormattedDateKey(today);
+  const currentMinutes = today.getHours() * 60 + today.getMinutes();
   
   const todayClasses = state.routine.filter((r) => {
     if (r.day !== currentDay) return false;
+    
+    if (r.end) {
+      const endParts = r.end.split(":").map(Number);
+      if (endParts[0] * 60 + endParts[1] <= currentMinutes) return false;
+    } else if (r.start) {
+      const startParts = r.start.split(":").map(Number);
+      if (startParts[0] * 60 + startParts[1] + 60 <= currentMinutes) return false;
+    }
     
     const logs = state.attendance[r.title] || {};
     const logKey = `${todayDateKey}_${r.id}`;
