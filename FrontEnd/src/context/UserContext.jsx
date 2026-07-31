@@ -54,6 +54,26 @@ export const UserProvider = ({ children }) => {
     localStorage.setItem('token', token);
     setIsAuthenticated(true);
     // Ideally refetch user profile here
+    window.location.href = '/app';
+  };
+
+  const loginWithCredentials = async (username, password) => {
+    try {
+      const response = await api.post('/login', { username, password });
+      if (response.data.success && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        setIsAuthenticated(true);
+        // Sync local guest state to new backend account
+        await api.post('/sync', { state: {} }); // Basic sync ping
+        
+        window.location.href = '/app';
+        return { success: true };
+      }
+      return { success: false, message: response.data.message || 'Login failed' };
+    } catch (error) {
+      console.error("Error during manual login:", error);
+      return { success: false, message: error.response?.data?.message || 'Server error during login' };
+    }
   };
 
   const convertGuestAccount = async (credentials, appState) => {
@@ -84,7 +104,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, convertGuestAccount, logout }}>
+    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, loginWithCredentials, convertGuestAccount, logout }}>
       {children}
     </UserContext.Provider>
   );

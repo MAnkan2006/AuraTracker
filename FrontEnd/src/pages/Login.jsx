@@ -4,7 +4,7 @@ import { UserContext } from '../context/UserContext';
 import { Eye, EyeOff, Moon, Sun, ArrowLeft } from 'lucide-react';
 
 const Login = ({ defaultIsLogin = true }) => {
-  const { isAuthenticated, login } = useContext(UserContext);
+  const { isAuthenticated, login, loginWithCredentials } = useContext(UserContext);
   const [isLoginView, setIsLoginView] = useState(defaultIsLogin);
   const [isLightMode, setIsLightMode] = useState(() => {
     return localStorage.getItem('aura_isLightMode') === 'true';
@@ -25,11 +25,10 @@ const Login = ({ defaultIsLogin = true }) => {
 
     if (token) {
       login(token);
-      navigate('/app', { replace: true });
     } else if (urlError) {
       setError(urlError.replace(/_/g, ' '));
     }
-  }, [location.search, login, navigate]);
+  }, [location.search, login]);
 
   useEffect(() => {
     localStorage.setItem('aura_isLightMode', isLightMode);
@@ -57,7 +56,14 @@ const Login = ({ defaultIsLogin = true }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('Manual login is pending backend integration. Please use OAuth.');
+    if (isLoginView) {
+      const result = await loginWithCredentials(username, password);
+      if (!result.success) {
+        setError(result.message);
+      }
+    } else {
+      setError('Registration is currently handled via the dashboard for guest accounts, or via OAuth.');
+    }
   };
 
   return (
