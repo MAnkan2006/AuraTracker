@@ -45,13 +45,15 @@ const Login = ({ defaultIsLogin = true }) => {
   }
 
   const handleGoogleLogin = () => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-    window.location.href = `${baseUrl}/auth/google`;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://auratacker-backend.onrender.com/api' : 'http://localhost:5000/api');
+    const state = encodeURIComponent(window.location.origin);
+    window.location.href = `${baseUrl}/auth/google?state=${state}`;
   };
 
   const handleGithubLogin = () => {
-    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-    window.location.href = `${baseUrl}/auth/github`;
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.PROD ? 'https://auratacker-backend.onrender.com/api' : 'http://localhost:5000/api');
+    const state = encodeURIComponent(window.location.origin);
+    window.location.href = `${baseUrl}/auth/github?state=${state}`;
   };
 
   const handleSubmit = async (e) => {

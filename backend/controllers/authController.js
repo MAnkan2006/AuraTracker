@@ -20,7 +20,8 @@ exports.googleLogin = (req, res) => {
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
   const backendUrl = req.protocol + '://' + req.get('host');
   const redirectUri = `${backendUrl}/api/auth/google/callback`;
-  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=profile email`;
+  const state = req.query.state || '';
+  const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${redirectUri}&response_type=code&scope=profile%20email&state=${state}`;
   res.redirect(url);
 };
 
@@ -28,19 +29,33 @@ exports.githubLogin = (req, res) => {
   const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
   const backendUrl = req.protocol + '://' + req.get('host');
   const redirectUri = `${backendUrl}/api/auth/github/callback`;
-  const url = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email`;
+  const state = req.query.state || '';
+  const url = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CLIENT_ID}&redirect_uri=${redirectUri}&scope=user:email&state=${state}`;
   res.redirect(url);
 };
 
 // Callbacks
 exports.googleCallback = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const backendUrl = req.protocol + '://' + req.get('host');
     const redirectUri = `${backendUrl}/api/auth/google/callback`;
     const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
     const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    
+    let targetUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    if (state) {
+      try {
+        const decodedState = decodeURIComponent(state);
+        if (decodedState.startsWith('http://localhost') || decodedState.startsWith('http://127.0.0.1') || decodedState.includes('vercel.app')) {
+          targetUrl = `${decodedState}/login`;
+        }
+      } catch (e) {
+        console.error("Invalid state:", e);
+      }
+    } else if (!targetUrl.endsWith('.html') && !targetUrl.endsWith('/login')) {
+      targetUrl = `${targetUrl}/login`;
+    }
 
     // Exchange code for token
     const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
@@ -56,7 +71,7 @@ exports.googleCallback = async (req, res) => {
     });
     const tokenData = await tokenRes.json();
     if (!tokenData.access_token) {
-      return res.redirect(`${FRONTEND_URL}?error=google_auth_failed`);
+      return res.redirect(`${targetUrl}?error=google_auth_failed`);
     }
 
     // Fetch user profile
@@ -66,7 +81,7 @@ exports.googleCallback = async (req, res) => {
     const profile = await profileRes.json();
 
     if (!profile.id) {
-      return res.redirect(`${FRONTEND_URL}?error=google_profile_failed`);
+      return res.redirect(`${targetUrl}?error=google_profile_failed`);
     }
 
     let user = await User.findOne({ $or: [{ googleId: profile.id }, { email: profile.email }] });
@@ -97,21 +112,38 @@ exports.googleCallback = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.redirect(`${FRONTEND_URL}?token=${jwtToken}`);
+    res.redirect(`${targetUrl}?token=${jwtToken}`);
   } catch (err) {
     console.error("Google Auth Error:", err);
-    res.redirect(`${process.env.FRONTEND_URL || "http://127.0.0.1:5500"}?error=server_error`);
+    let errorTarget = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    if (!errorTarget.endsWith('.html') && !errorTarget.endsWith('/login')) {
+      errorTarget = `${errorTarget}/login`;
+    }
+    res.redirect(`${errorTarget}?error=server_error`);
   }
 };
 
 exports.githubCallback = async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, state } = req.query;
     const backendUrl = req.protocol + '://' + req.get('host');
     const redirectUri = `${backendUrl}/api/auth/github/callback`;
     const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
     const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
-    const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    
+    let targetUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    if (state) {
+      try {
+        const decodedState = decodeURIComponent(state);
+        if (decodedState.startsWith('http://localhost') || decodedState.startsWith('http://127.0.0.1') || decodedState.includes('vercel.app')) {
+          targetUrl = `${decodedState}/login`;
+        }
+      } catch (e) {
+        console.error("Invalid state:", e);
+      }
+    } else if (!targetUrl.endsWith('.html') && !targetUrl.endsWith('/login')) {
+      targetUrl = `${targetUrl}/login`;
+    }
 
     // Exchange code for token
     const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
@@ -129,7 +161,7 @@ exports.githubCallback = async (req, res) => {
     });
     const tokenData = await tokenRes.json();
     if (!tokenData.access_token) {
-      return res.redirect(`${FRONTEND_URL}?error=github_auth_failed`);
+      return res.redirect(`${targetUrl}?error=github_auth_failed`);
     }
 
     // Fetch user profile
@@ -142,7 +174,7 @@ exports.githubCallback = async (req, res) => {
     const profile = await profileRes.json();
 
     if (!profile.id) {
-      return res.redirect(`${FRONTEND_URL}?error=github_profile_failed`);
+      return res.redirect(`${targetUrl}?error=github_profile_failed`);
     }
 
     let email = profile.email;
@@ -192,9 +224,13 @@ exports.githubCallback = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.redirect(`${FRONTEND_URL}?token=${jwtToken}`);
+    res.redirect(`${targetUrl}?token=${jwtToken}`);
   } catch (err) {
     console.error("GitHub Auth Error:", err);
-    res.redirect(`${process.env.FRONTEND_URL || "http://127.0.0.1:5500"}?error=server_error`);
+    let errorTarget = process.env.FRONTEND_URL || "http://127.0.0.1:5500";
+    if (!errorTarget.endsWith('.html') && !errorTarget.endsWith('/login')) {
+      errorTarget = `${errorTarget}/login`;
+    }
+    res.redirect(`${errorTarget}?error=server_error`);
   }
 };
