@@ -1,0 +1,267 @@
+import React, { useContext, useState, useRef, useEffect } from 'react';
+import { UserContext } from '../../context/UserContext';
+import { useNavigate } from 'react-router-dom';
+import { useAttendance } from '../../hooks/useAttendance';
+import { Bell, Search, Sun, Moon, ChevronDown, Menu, CheckCircle2, AlertCircle, Clock, Settings, User, LogOut, Palette, ChevronRight, Coffee } from 'lucide-react';
+import Dropdown from '../ui/Dropdown';
+
+const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTheme, font, setFont }) => {
+  const { user, logout } = useContext(UserContext);
+  const navigate = useNavigate();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const notificationRef = useRef(null);
+  const profileRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setIsNotificationsOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const { getStats } = useAttendance();
+  const stats = getStats();
+
+  const notifications = [];
+  let notifId = 1;
+
+  if (user && user.username?.toLowerCase() !== 'guest' && (!user.name || user.name === '')) {
+    notifications.push({ id: notifId++, type: 'info', title: 'Profile Incomplete', message: 'Please update your full name to personalize your experience.', time: 'Just now', unread: true });
+  }
+
+  if (user && stats.total > 0 && stats.percentage < (user.targetGoal || 75)) {
+    notifications.push({ id: notifId++, type: 'alert', title: 'Low Attendance', message: `Your overall attendance (${stats.percentage}%) is below your target of ${user.targetGoal || 75}%.`, time: 'Recently', unread: true });
+  }
+
+  const dummyNotifications = notifications;
+  const hasUnread = dummyNotifications.some(n => n.unread);
+
+  return (
+    <header className="h-[72px] shrink-0 bg-white/5 group-data-[scheme=light]:bg-white/40 backdrop-blur-md border-b border-white/10 group-data-[scheme=light]:border-black/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.1)] group-data-[scheme=light]:shadow-sm flex items-center justify-between px-6 z-10 sticky top-0 transition-all duration-300">
+      
+      {/* Left: Greeting + Search */}
+      <div className="flex items-center gap-4 lg:gap-6">
+        <button 
+          className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-black/[0.08] text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 shadow-sm transition-all hover:bg-white/10 active:scale-95"
+          onClick={() => setIsMobileMenuOpen(true)}
+        >
+          <Menu className="w-5 h-5" />
+        </button>
+
+        <div className="hidden md:flex flex-col">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">Welcome back</span>
+          <span className="text-[15px] font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight">
+            {user ? user.name.split(' ')[0] : 'Student'}
+          </span>
+        </div>
+        
+        <div className="relative group/search hidden sm:block">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 group-hover/search:text-[var(--accent)] transition-colors" />
+          <input 
+            type="text" 
+            placeholder="Search classes, tasks..." 
+            className="w-64 bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-black/[0.08] rounded-xl pl-9 pr-12 py-2 text-sm text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 placeholder-[var(--text-muted)] group-data-[scheme=light]:placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 focus:bg-white/10 group-data-[scheme=light]:focus:bg-white transition-all shadow-inner group-data-[scheme=light]:shadow-sm"
+          />
+          <kbd className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:inline-flex items-center justify-center px-1.5 h-5 text-[10px] font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 bg-white/5 group-data-[scheme=light]:bg-gray-100 border border-white/10 group-data-[scheme=light]:border-black/[0.08] rounded">
+            ⌘K
+          </kbd>
+        </div>
+      </div>
+
+      {/* Right: Actions + Profile */}
+      <div className="flex items-center gap-3 relative">
+        <div className="relative" ref={notificationRef}>
+          <button 
+            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+            className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all active:scale-95 shadow-sm ${isNotificationsOpen ? 'bg-white/10 border-white/20 text-[var(--text-primary)] group-data-[scheme=light]:bg-gray-100 group-data-[scheme=light]:border-gray-300 group-data-[scheme=light]:text-gray-900' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-black/[0.08] text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900'}`}
+          >
+            <Bell className="w-5 h-5" />
+            {hasUnread && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-[var(--sidebar-bg)] group-data-[scheme=light]:border-white shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>}
+          </button>
+
+          {isNotificationsOpen && (
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[var(--card-bg)] group-data-[scheme=light]:bg-white backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] group-data-[scheme=light]:shadow-xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+              <div className="flex items-center justify-between p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
+                <h3 className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Notifications</h3>
+                <button className="text-xs font-bold text-[var(--accent)] hover:underline">Mark all as read</button>
+              </div>
+              <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
+                {dummyNotifications.length === 0 ? (
+                  <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
+                    <div className="w-12 h-12 rounded-full bg-white/5 group-data-[scheme=light]:bg-gray-100 flex items-center justify-center text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-1">
+                      <Coffee size={24} />
+                    </div>
+                    <span className="font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">You're all caught up!</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col">
+                    {dummyNotifications.map(notif => (
+                      <div key={notif.id} className={`p-4 border-b border-white/5 group-data-[scheme=light]:border-gray-100 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-50 transition-colors cursor-pointer relative ${notif.unread ? 'bg-white/[0.02] group-data-[scheme=light]:bg-blue-50/50' : ''}`}>
+                        {notif.unread && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--accent)] rounded-r-full"></div>}
+                        <div className="flex gap-3 pl-2">
+                          <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${notif.type === 'alert' ? 'bg-red-500/10 text-red-500' : notif.type === 'success' ? 'bg-green-500/10 text-green-500' : notif.type === 'info' ? 'bg-blue-500/10 text-blue-500' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}`}>
+                            {notif.type === 'alert' ? <AlertCircle size={16} /> : notif.type === 'success' ? <CheckCircle2 size={16} /> : notif.type === 'info' ? <User size={16} /> : <Clock size={16} />}
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className={`text-sm font-bold ${notif.unread ? 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600'}`}>{notif.title}</span>
+                            <span className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 leading-snug">{notif.message}</span>
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-1 uppercase tracking-wider">{notif.time}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-white/10 group-data-[scheme=light]:border-gray-100 bg-white/5 group-data-[scheme=light]:bg-gray-50 text-center">
+                <button className="text-xs font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--accent)] transition-colors">View All Notifications</button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <button 
+          onClick={() => setIsLightMode(!isLightMode)} 
+          className="flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-black/[0.08] text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900 transition-all shadow-sm"
+          title="Toggle Light/Dark Mode"
+        >
+          {isLightMode ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+        </button>
+
+        <div className="w-px h-6 bg-white/10 group-data-[scheme=light]:bg-black/[0.08] mx-1"></div>
+
+        <div className="relative" ref={profileRef} data-tour="theme">
+          <button 
+            onClick={() => setIsProfileOpen(!isProfileOpen)}
+            className={`flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full transition-all active:scale-95 shadow-sm border ${isProfileOpen ? 'bg-white/10 border-white/20 group-data-[scheme=light]:bg-gray-100 group-data-[scheme=light]:border-gray-300' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-black/[0.08] hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50'}`}
+          >
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-inner">
+               {user ? user.username.charAt(0).toUpperCase() : 'U'}
+            </div>
+            <div className="hidden sm:flex flex-col items-start">
+              <span className="text-xs font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-none">
+                {user ? user.name : 'Student'}
+              </span>
+            </div>
+            <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 ml-1 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isProfileOpen && (
+            <div className="absolute right-0 mt-3 w-56 bg-[var(--card-bg)] group-data-[scheme=light]:bg-white backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] group-data-[scheme=light]:shadow-xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+              <div className="p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
+                <div className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 truncate">{user ? user.name : 'Student'}</div>
+                <div className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 truncate">@{user ? user.username : 'student'}</div>
+              </div>
+              
+              <div className="p-2 flex flex-col gap-1">
+                <button 
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    navigate('/app/profile');
+                  }}
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl text-left text-sm font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-100 transition-colors"
+                >
+                  <User size={16} />
+                  My Profile
+                </button>
+                <div className="flex flex-col">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsAppearanceOpen(!isAppearanceOpen);
+                    }}
+                    className="flex items-center justify-between w-full p-2.5 rounded-xl text-left text-sm font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Palette size={16} />
+                      Appearance
+                    </div>
+                    <ChevronRight size={14} className={`transition-transform duration-200 ${isAppearanceOpen ? 'rotate-90' : ''}`} />
+                  </button>
+                  
+                  {isAppearanceOpen && (
+                    <div className="px-2 pb-2 pt-1 flex flex-col gap-3 animate-in slide-in-from-top-2 duration-200">
+
+                      
+                      <div className="flex flex-col gap-1.5 px-2">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase">Theme</span>
+                        <Dropdown
+                          value={theme}
+                          onChange={(val) => {
+                            setTheme(val);
+                          }}
+                          options={[
+                            { value: 'classic-obsidian', label: 'Classic Obsidian' },
+                            { value: 'cyberpunk-onyx', label: 'Cyberpunk Onyx' },
+                            { value: 'emerald-deep', label: 'Emerald Deep' },
+                            { value: 'nebula-cosmic', label: 'Nebula Cosmic' },
+                            { value: 'sunset-crimson', label: 'Sunset Crimson' },
+                            { value: 'nordic-frost', label: 'Nordic Frost' },
+                            { value: 'amber-gold', label: 'Amber Gold' }
+                          ]}
+                        />
+                      </div>
+                      
+                      <div className="flex flex-col gap-1.5 px-2">
+                        <span className="text-xs font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase">Font</span>
+                        <Dropdown
+                          value={font}
+                          onChange={(val) => {
+                            setFont(val);
+                          }}
+                          options={[
+                            { value: 'font-modern', label: 'Modern Sans' },
+                            { value: 'font-clean', label: 'Geometric' },
+                            { value: 'font-cyber', label: 'Cyber Sora' },
+                            { value: 'font-minimalist', label: 'Minimalist Pop' },
+                            { value: 'font-funky', label: 'Trendy Bricolage' },
+                            { value: 'font-tech', label: 'Tech Mono' },
+                            { value: 'font-elegant', label: 'Classic Serif' }
+                          ]}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    navigate('/app/profile');
+                  }}
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl text-left text-sm font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-100 transition-colors"
+                >
+                  <Settings size={16} />
+                  Settings
+                </button>
+              </div>
+              
+              <div className="p-2 border-t border-white/10 group-data-[scheme=light]:border-gray-100">
+                <button 
+                  onClick={() => {
+                    setIsProfileOpen(false);
+                    if (logout) logout();
+                  }}
+                  className="flex items-center gap-3 w-full p-2.5 rounded-xl text-left text-sm font-bold text-red-400 group-data-[scheme=light]:text-red-600 hover:bg-red-400/10 group-data-[scheme=light]:hover:bg-red-50 transition-colors"
+                >
+                  <LogOut size={16} />
+                  Log Out
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+    </header>
+  );
+};
+
+export default Topbar;
