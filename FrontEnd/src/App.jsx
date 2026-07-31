@@ -23,6 +23,9 @@ function App() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      
+      {/* Legacy Route Fallback for Backend OAuth Redirects */}
+      <Route path="/app.html" element={<Login />} />
 
       {/* Protected Routes (Dashboard) */}
       <Route path="/app" element={<ProtectedRoute />}>
