@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
 import { Eye, EyeOff, Moon, Sun, ArrowLeft } from 'lucide-react';
 
@@ -13,6 +13,23 @@ const Login = ({ defaultIsLogin = true }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // OAuth Token Handling from URL
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    const urlError = params.get('error');
+
+    if (token) {
+      login(token);
+      navigate('/app', { replace: true });
+    } else if (urlError) {
+      setError(urlError.replace(/_/g, ' '));
+    }
+  }, [location.search, login, navigate]);
 
   useEffect(() => {
     localStorage.setItem('aura_isLightMode', isLightMode);
