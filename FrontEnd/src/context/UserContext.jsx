@@ -87,12 +87,33 @@ export const UserProvider = ({ children }) => {
         // Sync local guest state to new backend account
         await api.post('/sync', { state: appState });
         
+        // Remove legacy guest localStorage key only after successful cloud sync
+        localStorage.removeItem('auratracker_user_Guest_data');
+
         return { success: true };
       }
       return { success: false, message: response.data.message || 'Registration failed' };
     } catch (error) {
       console.error("Error converting guest:", error);
       return { success: false, message: error.response?.data?.message || 'Server error during conversion' };
+    }
+  };
+
+  const updateProfile = async (updates) => {
+    try {
+      const response = await api.post('/profile', updates);
+      if (response.data.success) {
+        setUser((prev) => ({
+          ...prev,
+          ...updates,
+          ...(response.data.user || {})
+        }));
+        return { success: true, message: response.data.message || 'Profile updated successfully' };
+      }
+      return { success: false, message: response.data.message || 'Failed to update profile' };
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      return { success: false, message: error.response?.data?.message || 'Server error while updating profile' };
     }
   };
 
@@ -104,7 +125,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, loginWithCredentials, convertGuestAccount, logout }}>
+    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, loginWithCredentials, convertGuestAccount, updateProfile, logout }}>
       {children}
     </UserContext.Provider>
   );

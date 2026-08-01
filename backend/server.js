@@ -178,7 +178,7 @@ app.get("/api/profile", verifyToken, async (req, res) => {
 
 app.post("/api/profile", verifyToken, async (req, res) => {
   try {
-    const { email, avatar, bio, targetGoal, name } = req.body;
+    const { email, avatar, bio, targetGoal, name, academicProfile } = req.body;
     const user = await User.findById(req.user.userId);
 
     if (!user) {
@@ -193,12 +193,27 @@ app.post("/api/profile", verifyToken, async (req, res) => {
     if (bio !== undefined) user.bio = bio;
     if (targetGoal !== undefined) user.targetGoal = targetGoal;
     if (name !== undefined) user.name = name;
+    if (academicProfile !== undefined) {
+      user.academicProfile = {
+        ...(user.academicProfile || {}),
+        ...academicProfile
+      };
+    }
 
     await user.save();
 
     res.json({
       success: true,
       message: "Profile updated successfully",
+      user: {
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        bio: user.bio,
+        targetGoal: user.targetGoal,
+        academicProfile: user.academicProfile,
+      }
     });
   } catch (err) {
     res.status(500).json({

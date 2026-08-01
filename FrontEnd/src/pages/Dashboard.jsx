@@ -1,26 +1,11 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
 import { useTasks } from '../hooks/useTasks';
-import { Target, CheckSquare, Flame, CalendarClock, AlertCircle } from 'lucide-react';
+import { UserContext } from '../context/UserContext';
+import { Target, CheckSquare, Flame, CalendarClock, AlertCircle, BarChart2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import ClockWidget from '../components/ui/ClockWidget';
-
-const mockPerformanceData = [
-  { subject: 'Mathematics', attendance: 85, color: '#3b82f6' },
-  { subject: 'Physics', attendance: 92, color: '#10b981' },
-  { subject: 'Computer Sci', attendance: 78, color: '#f59e0b' },
-  { subject: 'History', attendance: 65, color: '#ef4444' }
-];
-
-const mockHeatmapData = Array.from({ length: 35 }).map((_, i) => {
-  const rand = Math.random();
-  if (rand > 0.8) return 'empty';
-  if (rand > 0.6) return 'p';
-  if (rand > 0.4) return 'a';
-  if (rand > 0.2) return 'l';
-  return 'e';
-});
 
 const getHeatmapColor = (status) => {
   switch (status) {
@@ -33,13 +18,18 @@ const getHeatmapColor = (status) => {
 };
 
 const Dashboard = () => {
-  const { getStats } = useAttendance();
+  const { getStats, getSubjectBreakdown, getRecentHistory, getStreak } = useAttendance();
   const { getTodayClasses } = useRoutine();
   const { tasks } = useTasks();
+  const { user } = useContext(UserContext);
 
   const stats = getStats();
   const todayClasses = getTodayClasses();
   const pendingTasks = tasks.filter(t => !t.completed).slice(0, 5);
+  const targetGoal = user?.targetGoal ?? 75;
+  const performanceData = getSubjectBreakdown();
+  const heatmapData = getRecentHistory(35);
+  const streak = getStreak();
 
   const glassPanelClass = "group bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2)] group-data-[scheme=light]:hover:shadow-md cursor-pointer";
 
@@ -69,7 +59,7 @@ const Dashboard = () => {
           </div>
           <div className="flex justify-between items-end">
             <span className="text-4xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{stats.percentage}%</span>
-            <span className="text-sm font-semibold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 mb-1">Target: 75%</span>
+            <span className="text-sm font-semibold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 mb-1">Target: {targetGoal}%</span>
           </div>
           <div className="w-full bg-white/10 group-data-[scheme=light]:bg-gray-200 rounded-full h-2.5 mt-5 shadow-inner">
             <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2.5 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000" style={{ width: `${stats.percentage}%` }}></div>
@@ -102,10 +92,12 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Momentum</h3>
           </div>
           <div className="flex justify-between items-end">
-            <span className="text-4xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">12<span className="text-xl text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 font-medium ml-1">Days</span></span>
+            <span className="text-4xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{streak}<span className="text-xl text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 font-medium ml-1">Days</span></span>
             <span className="text-sm font-semibold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 mb-1">Streak</span>
           </div>
-          <p className="mt-5 text-sm font-medium text-orange-400 group-data-[scheme=light]:text-orange-500">You're on fire! Keep it up!</p>
+          <p className="mt-5 text-sm font-medium text-orange-400 group-data-[scheme=light]:text-orange-500">
+            {streak > 0 ? "You're on fire! Keep it up!" : "Log class presence to build your streak!"}
+          </p>
         </div>
 
       </div>
@@ -177,23 +169,30 @@ const Dashboard = () => {
           <div className="mb-6">
             <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Class Performance Breakdown</h3>
           </div>
-          <div className="h-64 w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={mockPerformanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10 group-data-[scheme=light]:opacity-20 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400" vertical={false} />
-                <XAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                <Tooltip 
-                  cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                  contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', borderRadius: '12px', color: 'var(--text-primary)' }} 
-                />
-                <Bar dataKey="attendance" radius={[6, 6, 0, 0]}>
-                  {mockPerformanceData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
+          <div className="h-64 w-full flex items-center justify-center">
+            {performanceData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center p-6">
+                <BarChart2 size={36} className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-3 opacity-40" />
+                <p className="text-sm font-medium text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">No subject attendance recorded yet.</p>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10 group-data-[scheme=light]:opacity-20 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400" vertical={false} />
+                  <XAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                  <Tooltip 
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
+                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', borderRadius: '12px', color: 'var(--text-primary)' }} 
+                  />
+                  <Bar dataKey="attendance" radius={[6, 6, 0, 0]}>
+                    {performanceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
 
@@ -204,7 +203,7 @@ const Dashboard = () => {
           </div>
           <div className="flex-1 flex flex-col justify-center gap-6">
             <div className="grid grid-cols-7 gap-2 md:gap-3">
-              {mockHeatmapData.map((status, idx) => (
+              {heatmapData.map((status, idx) => (
                 <div 
                   key={idx} 
                   className={`aspect-square rounded-md sm:rounded-xl transition-all duration-300 hover:scale-110 ${getHeatmapColor(status)}`}

@@ -19,22 +19,48 @@ export const AppProvider = ({ children }) => {
   const [loadingState, setLoadingState] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const fetchAppState = async () => {
-      try {
-        const response = await api.get('/sync');
-        if (response.data.success && response.data.state) {
-          setAppState(response.data.state);
+    if (isAuthenticated) {
+      const fetchAppState = async () => {
+        try {
+          const response = await api.get('/sync');
+          if (response.data.success && response.data.state) {
+            setAppState(response.data.state);
+          }
+        } catch (error) {
+          console.error("Error fetching app state:", error);
+        } finally {
+          setLoadingState(false);
         }
-      } catch (error) {
-        console.error("Error fetching app state:", error);
+      };
+
+      fetchAppState();
+    } else {
+      // For unauthenticated / guest users, read legacy guest data if present in localStorage.
+      // NOTE: We do NOT remove `auratracker_user_Guest_data` here automatically to prevent data loss.
+      // It is safely retained until `convertGuestAccount` successfully syncs the state to the backend.
+      try {
+        const legacyGuestDataStr = localStorage.getItem('auratracker_user_Guest_data');
+        if (legacyGuestDataStr) {
+          const parsed = JSON.parse(legacyGuestDataStr);
+          if (parsed && typeof parsed === 'object') {
+            setAppState((prev) => ({
+              ...prev,
+              todos: Array.isArray(parsed.todos) ? parsed.todos : prev.todos,
+              attendance: (parsed.attendance && typeof parsed.attendance === 'object') ? parsed.attendance : prev.attendance,
+              routine: Array.isArray(parsed.routine) ? parsed.routine : prev.routine,
+              selectedTheme: parsed.selectedTheme || prev.selectedTheme,
+              selectedFont: parsed.selectedFont || prev.selectedFont,
+              routineView: parsed.routineView || prev.routineView,
+              activeRoutineDay: parsed.activeRoutineDay !== undefined ? parsed.activeRoutineDay : prev.activeRoutineDay,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing legacy guest data from localStorage:", err);
       } finally {
         setLoadingState(false);
       }
-    };
-
-    fetchAppState();
+    }
   }, [isAuthenticated]);
 
   const updateAppState = (newState) => {

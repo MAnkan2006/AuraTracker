@@ -3,30 +3,27 @@ import { UserContext } from '../context/UserContext';
 import { useOutletContext } from 'react-router-dom';
 import { useAttendance } from '../hooks/useAttendance';
 import { AppContext } from '../context/AppContext';
+import { useToast } from '../context/ToastContext';
+import { getAvatarUrl, DEFAULT_AVATAR_PRESETS } from '../utils/avatar';
 import { User, Mail, Settings, Target, CheckCircle2, Palette, Edit2, X, Save, TrendingUp, BarChart, Activity } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
 
 const Profile = () => {
-  const { user, setUser, convertGuestAccount } = useContext(UserContext);
+  const { user, setUser, updateProfile, convertGuestAccount } = useContext(UserContext);
   const { appState } = useContext(AppContext);
   const { theme, setTheme, font, setFont } = useOutletContext();
   const { getStats } = useAttendance();
+  const { addToast } = useToast();
   const stats = getStats();
 
-  const avatarPresets = [
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Jasper",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Mimi",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Oreo",
-    "https://api.dicebear.com/7.x/avataaars/svg?seed=Loki"
-  ];
+  const avatarPresets = DEFAULT_AVATAR_PRESETS;
 
-  const [selectedAvatar, setSelectedAvatar] = useState(user?.avatar || avatarPresets[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(getAvatarUrl(user?.avatar));
   const [targetGoal, setTargetGoal] = useState(user?.targetGoal || 75);
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [academicData, setAcademicData] = useState({
     university: user?.academicProfile?.university || '',
     program: user?.academicProfile?.program || '',
@@ -40,21 +37,26 @@ const Profile = () => {
 
   const glassPanelClass = "bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-8 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300";
 
-  const handleSave = () => {
-    if (user) {
-      setUser({ 
-        ...user, 
-        avatar: selectedAvatar,
-        targetGoal: parseInt(targetGoal),
-        academicProfile: academicData 
-      });
+  const handleSave = async () => {
+    setIsSaving(true);
+    const updates = { 
+      avatar: selectedAvatar,
+      targetGoal: parseInt(targetGoal),
+      academicProfile: academicData 
+    };
+    const result = await updateProfile(updates);
+    setIsSaving(false);
+    
+    if (result.success) {
+      setIsEditing(false);
+      setIsSuccessModalOpen(true);
+    } else {
+      addToast(result.message || 'Failed to save profile updates.', 'error');
     }
-    setIsEditing(false);
-    setIsSuccessModalOpen(true);
   };
 
   const handleCancel = () => {
-    setSelectedAvatar(user?.avatar || avatarPresets[0]);
+    setSelectedAvatar(getAvatarUrl(user?.avatar));
     setTargetGoal(user?.targetGoal || 75);
     setAcademicData({
       university: user?.academicProfile?.university || '',
@@ -174,7 +176,7 @@ const Profile = () => {
         <div className="flex flex-col items-center gap-4 relative z-10">
           <div className="w-32 h-32 rounded-full p-1 bg-gradient-to-br from-[var(--accent)] to-[var(--accent-hover)] shadow-[0_8px_30px_var(--accent-glow)] shrink-0">
             <img 
-              src={isEditing ? selectedAvatar : (user?.avatar || avatarPresets[0])} 
+              src={isEditing ? selectedAvatar : getAvatarUrl(user?.avatar)} 
               alt="Avatar" 
               className="w-full h-full rounded-full border-4 border-[var(--bg-base)] group-data-[scheme=light]:border-white object-cover"
             />
