@@ -31,7 +31,7 @@ const Profile = () => {
     section: user?.academicProfile?.section || ''
   });
   
-  const [convertData, setConvertData] = useState({ username: '', email: '', password: '' });
+  const [convertData, setConvertData] = useState({ name: '', username: '', email: '', password: '' });
   const [convertError, setConvertError] = useState('');
   const [isConverting, setIsConverting] = useState(false);
 
@@ -71,12 +71,12 @@ const Profile = () => {
     e.preventDefault();
     setConvertError('');
     if (!convertData.username || !convertData.email || !convertData.password) {
-      setConvertError('All fields are required.');
+      setConvertError('Username, Email, and Password are required.');
       return;
     }
     setIsConverting(true);
     const result = await convertGuestAccount(
-      { ...convertData, avatar: selectedAvatar },
+      { ...convertData, name: convertData.name || convertData.username, avatar: selectedAvatar },
       appState
     );
     setIsConverting(false);
@@ -137,6 +137,13 @@ const Profile = () => {
               </div>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <input 
+                type="text" 
+                placeholder="Full Name (optional)" 
+                className="w-full sm:col-span-2 px-4 py-3 bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-gray-300 rounded-xl text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 outline-none focus:border-[var(--accent)]"
+                value={convertData.name}
+                onChange={(e) => setConvertData({...convertData, name: e.target.value})}
+              />
               <input 
                 type="text" 
                 placeholder="New Username" 

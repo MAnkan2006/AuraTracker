@@ -4,13 +4,14 @@ import { UserContext } from '../context/UserContext';
 import { Eye, EyeOff, Moon, Sun, ArrowLeft } from 'lucide-react';
 
 const Login = ({ defaultIsLogin = true }) => {
-  const { isAuthenticated, login, loginWithCredentials } = useContext(UserContext);
+  const { isAuthenticated, login, loginWithCredentials, registerWithCredentials } = useContext(UserContext);
   const [isLoginView, setIsLoginView] = useState(defaultIsLogin);
   const [isLightMode, setIsLightMode] = useState(() => {
     return localStorage.getItem('aura_isLightMode') === 'true';
   });
   const [showPassword, setShowPassword] = useState(false);
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -58,13 +59,21 @@ const Login = ({ defaultIsLogin = true }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     if (isLoginView) {
       const result = await loginWithCredentials(username, password);
       if (!result.success) {
         setError(result.message);
       }
     } else {
-      setError('Registration is currently handled via the dashboard for guest accounts, or via OAuth.');
+      if (!email) {
+        setError('Email address is required for registration.');
+        return;
+      }
+      const result = await registerWithCredentials(username, email, password, username);
+      if (!result.success) {
+        setError(result.message);
+      }
     }
   };
 
@@ -146,6 +155,19 @@ const Login = ({ defaultIsLogin = true }) => {
               className="bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-black/[0.08] rounded-xl px-4 py-3 text-white group-data-[scheme=light]:text-gray-900 placeholder-gray-500 group-data-[scheme=light]:placeholder-gray-400 focus:outline-none focus:border-[var(--accent)] group-data-[scheme=light]:focus:border-[var(--accent)] focus:bg-white/10 group-data-[scheme=light]:focus:bg-white transition-all shadow-inner group-data-[scheme=light]:shadow-sm" 
             />
           </div>
+          {!isLoginView && (
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">Email Address</label>
+              <input 
+                type="email" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                placeholder="Enter your email" 
+                required 
+                className="bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-black/[0.08] rounded-xl px-4 py-3 text-white group-data-[scheme=light]:text-gray-900 placeholder-gray-500 group-data-[scheme=light]:placeholder-gray-400 focus:outline-none focus:border-[var(--accent)] group-data-[scheme=light]:focus:border-[var(--accent)] focus:bg-white/10 group-data-[scheme=light]:focus:bg-white transition-all shadow-inner group-data-[scheme=light]:shadow-sm" 
+              />
+            </div>
+          )}
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">Password</label>
             <div className="relative">

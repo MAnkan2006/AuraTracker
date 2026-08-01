@@ -96,8 +96,30 @@ const Routine = () => {
     return d === 0 ? 7 : d;
   };
 
-  const renderInlineAttendance = (subject) => {
-    const currentStatus = attendance[subject]?.[todayStr];
+  const isSpecialInCurrentWeek = (dateStr) => {
+    if (!dateStr) return false;
+    const targetDate = new Date(dateStr + "T00:00:00");
+    const today = new Date();
+    const currentDay = today.getDay(); // 0 = Sunday
+    const distToMonday = currentDay === 0 ? -6 : 1 - currentDay;
+    const monday = new Date(today);
+    monday.setDate(today.getDate() + distToMonday);
+    monday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+    sunday.setHours(23, 59, 59, 999);
+
+    return targetDate >= monday && targetDate <= sunday;
+  };
+
+  const isSpecialPast = (dateStr) => {
+    if (!dateStr) return false;
+    return dateStr < todayStr;
+  };
+
+  const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false) => {
+    const currentStatus = attendance[subject]?.[targetDate];
     
     const statuses = [
       { id: 'P', name: 'Present', color: 'text-green-500 hover:bg-green-500/20 group-data-[scheme=light]:text-green-600', activeBg: 'bg-green-500 text-white' },
@@ -107,6 +129,14 @@ const Routine = () => {
       { id: 'C', name: 'Cancelled', color: 'text-gray-400 hover:bg-gray-500/20 group-data-[scheme=light]:text-gray-500', activeBg: 'bg-gray-500 text-white' }
     ];
 
+    if (disabled) {
+      return (
+        <div className="mt-3 pt-3 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex justify-between items-center text-[11px] text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 italic">
+          <span>Attendance log available on {targetDate}</span>
+        </div>
+      );
+    }
+
     return (
       <div className="mt-3 pt-3 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex justify-between gap-1">
         {statuses.map(s => {
@@ -115,7 +145,7 @@ const Routine = () => {
             <button
               key={s.id}
               title={`Mark ${s.name}`}
-              onClick={() => markAttendance(subject, todayStr, s.name)}
+              onClick={() => markAttendance(subject, targetDate, s.name)}
               className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold transition-all ${isActive ? s.activeBg + ' shadow-md scale-110' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
             >
               {s.id}
@@ -138,11 +168,15 @@ const Routine = () => {
       addToast("Please select a date for your special class.", "error");
       return;
     }
+
+    const uniqueId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     
     if (newClass.day === 'special') {
-      addClass({ ...newClass, isSpecial: true, day: null });
+      addClass({ ...newClass, id: uniqueId, isSpecial: true, day: null });
     } else {
-      addClass({ ...newClass, isSpecial: false, day: parseInt(newClass.day) });
+      addClass({ ...newClass, id: uniqueId, isSpecial: false, day: parseInt(newClass.day) });
     }
     
     setIsAddClassOpen(false);
@@ -152,6 +186,27 @@ const Routine = () => {
 
   const inputClass = "w-full p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 rounded-2xl focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] outline-none transition-all placeholder-[var(--text-muted)] group-data-[scheme=light]:placeholder-gray-400";
   const labelClass = "block text-xs font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider mb-2";
+
+  const getWeeklySlotClasses = (weekdayNum) => {
+    return routine.filter(c => {
+      if (c.isSpecial) {
+        return getDayForSpecial(c.date) === weekdayNum && isSpecialInCurrentWeek(c.date);
+      }
+      return c.day === weekdayNum;
+    });
+  };
+
+  const getDailyTabClasses = (selectedTab) => {
+    if (selectedTab === 'special') {
+      return routine.filter(c => c.isSpecial);
+    }
+    return routine.filter(c => {
+      if (c.isSpecial) {
+        return getDayForSpecial(c.date) === selectedTab && isSpecialInCurrentWeek(c.date);
+      }
+      return c.day === selectedTab;
+    });
+  };
 
   return (
     <div className="space-y-6 pb-20">
@@ -242,51 +297,61 @@ const Routine = () => {
         {viewMode === 'weekly' ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {days.map((day, index) => (
-              <div 
-                key={day} 
-                className="animate-fade-in-up bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-inner flex flex-col md:h-[500px] h-auto min-h-[150px]"
-                style={{ animationDelay: `${index * 0.05}s` }}
-              >
-                <div className="bg-white/10 group-data-[scheme=light]:bg-gray-200/50 p-3 text-center border-b border-white/5 group-data-[scheme=light]:border-gray-200 font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm tracking-wide">
-                  {day}
-                </div>
-                <div className="flex-1 p-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-                  {routine.filter(c => c.isSpecial ? getDayForSpecial(c.date) === (index + 1) : c.day === (index + 1)).length === 0 ? (
-                    <div className="text-center text-sm text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium">Free day</div>
-                  ) : (
-                    routine.filter(c => c.isSpecial ? getDayForSpecial(c.date) === (index + 1) : c.day === (index + 1)).map((cls, idx) => (
-                      <div key={idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 group-data-[scheme=light]:hover:bg-blue-100'}`}>
-                        {isManageMode && (
-                          <div className="absolute top-2 right-2 flex items-center gap-2">
-                            <button 
-                              onClick={() => handleSingleDelete(cls)}
-                              className="text-red-500 hover:text-red-600 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                            <input 
-                              type="checkbox" 
-                              className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
-                              checked={selectedSlots.includes(cls.id || cls.title)}
-                              onChange={(e) => {
-                                if (e.target.checked) setSelectedSlots([...selectedSlots, cls.id || cls.title]);
-                                else setSelectedSlots(selectedSlots.filter(id => id !== (cls.id || cls.title)));
-                              }}
-                            />
+            {days.map((day, index) => {
+              const dayClasses = getWeeklySlotClasses(index + 1);
+              return (
+                <div 
+                  key={day} 
+                  className="animate-fade-in-up bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-inner flex flex-col md:h-[500px] h-auto min-h-[150px]"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                >
+                  <div className="bg-white/10 group-data-[scheme=light]:bg-gray-200/50 p-3 text-center border-b border-white/5 group-data-[scheme=light]:border-gray-200 font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm tracking-wide">
+                    {day}
+                  </div>
+                  <div className="flex-1 p-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                    {dayClasses.length === 0 ? (
+                      <div className="text-center text-sm text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium">Free day</div>
+                    ) : (
+                      dayClasses.map((cls, idx) => {
+                        const classKey = cls.id || cls.title;
+                        const isPast = cls.isSpecial && isSpecialPast(cls.date);
+                        return (
+                          <div key={cls.id || idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
+                            {isManageMode && (
+                              <div className="absolute top-2 right-2 flex items-center gap-2">
+                                <button 
+                                  onClick={() => handleSingleDelete(cls)}
+                                  className="text-red-500 hover:text-red-600 transition-colors"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                                <input 
+                                  type="checkbox" 
+                                  className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                                  checked={selectedSlots.includes(classKey)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                                    else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                                  }}
+                                />
+                              </div>
+                            )}
+                            <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-1 pr-6 flex items-center justify-between">
+                              <span>{cls.title}</span>
+                              {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
+                            </div>
+                            <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                            <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                            
+                            {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
                           </div>
-                        )}
-                        <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-1 pr-6">{cls.title}</div>
-                        <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
-                        <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                        
-                        {!isManageMode && renderInlineAttendance(cls.title)}
-                      </div>
-                    ))
-                  )}
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
           
           {routine.some(c => c.isSpecial) && (
@@ -296,39 +361,44 @@ const Routine = () => {
                 Special Classes
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {routine.filter(c => c.isSpecial).map((cls, idx) => (
-                  <div key={idx} className="relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-xl shadow-[0_2px_10px_rgba(168,85,247,0.15)] group-data-[scheme=light]:shadow-sm">
-                    {isManageMode && (
-                      <div className="absolute top-2 right-2 flex items-center gap-2">
-                        <button 
-                          onClick={() => handleSingleDelete(cls)}
-                          className="text-red-500 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                        <input 
-                          type="checkbox" 
-                          className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
-                          checked={selectedSlots.includes(cls.id || cls.title)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedSlots([...selectedSlots, cls.id || cls.title]);
-                            else setSelectedSlots(selectedSlots.filter(id => id !== (cls.id || cls.title)));
-                          }}
-                        />
+                {routine.filter(c => c.isSpecial).map((cls, idx) => {
+                  const classKey = cls.id || cls.title;
+                  const isPast = isSpecialPast(cls.date);
+                  return (
+                    <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-xl shadow-[0_2px_10px_rgba(168,85,247,0.15)] group-data-[scheme=light]:shadow-sm ${isPast ? 'opacity-65' : ''}`}>
+                      {isManageMode && (
+                        <div className="absolute top-2 right-2 flex items-center gap-2">
+                          <button 
+                            onClick={() => handleSingleDelete(cls)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                          <input 
+                            type="checkbox" 
+                            className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
+                            checked={selectedSlots.includes(classKey)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                              else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight pr-6">{cls.title}</div>
+                        {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
                       </div>
-                    )}
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight pr-6">{cls.title}</div>
+                      <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                      <div className="flex justify-between items-center">
+                        <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                        <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
+                      </div>
+                      
+                      {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
                     </div>
-                    <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
-                    <div className="flex justify-between items-center">
-                      <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                      <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
-                    </div>
-                    
-                    {!isManageMode && renderInlineAttendance(cls.title)}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -353,45 +423,52 @@ const Routine = () => {
               </button>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {routine.filter(c => selectedDay === 'special' ? c.isSpecial : (c.isSpecial ? getDayForSpecial(c.date) === selectedDay : c.day === selectedDay)).length === 0 ? (
+              {getDailyTabClasses(selectedDay).length === 0 ? (
                 <div className="col-span-full text-center text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium p-8 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-gray-200">
                   No classes scheduled.
                 </div>
               ) : (
-                routine.filter(c => selectedDay === 'special' ? c.isSpecial : (c.isSpecial ? getDayForSpecial(c.date) === selectedDay : c.day === selectedDay)).map((cls, idx) => (
-                  <div key={idx} className={`relative group p-6 border rounded-2xl transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 hover:bg-[var(--accent)]/20 group-data-[scheme=light]:hover:bg-blue-100'}`}>
-                    {isManageMode && (
-                      <div className="absolute top-4 right-4 flex items-center gap-2">
-                        <button 
-                          onClick={() => handleSingleDelete(cls)}
-                          className="text-red-500 hover:text-red-600 transition-colors"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                        <input 
-                          type="checkbox" 
-                          className="w-5 h-5 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
-                          checked={selectedSlots.includes(cls.id || cls.title)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedSlots([...selectedSlots, cls.id || cls.title]);
-                            else setSelectedSlots(selectedSlots.filter(id => id !== (cls.id || cls.title)));
-                          }}
-                        />
+                getDailyTabClasses(selectedDay).map((cls, idx) => {
+                  const classKey = cls.id || cls.title;
+                  const isPast = cls.isSpecial && isSpecialPast(cls.date);
+                  return (
+                    <div key={cls.id || idx} className={`relative group p-6 border rounded-2xl transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 hover:bg-[var(--accent)]/20 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
+                      {isManageMode && (
+                        <div className="absolute top-4 right-4 flex items-center gap-2">
+                          <button 
+                            onClick={() => handleSingleDelete(cls)}
+                            className="text-red-500 hover:text-red-600 transition-colors"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                          <input 
+                            type="checkbox" 
+                            className="w-5 h-5 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                            checked={selectedSlots.includes(classKey)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                              else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                            }}
+                          />
+                        </div>
+                      )}
+                      <div className="font-extrabold text-xl text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-2 pr-6 flex items-center justify-between">
+                        <span>{cls.title}</span>
+                        {isPast && <span className="text-xs font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
                       </div>
-                    )}
-                    <div className="font-extrabold text-xl text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-2 pr-6">{cls.title}</div>
-                    <div className="flex items-center gap-2 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-sm font-semibold mb-4">
-                      <Clock size={14} className="text-[var(--accent)]" />
-                      {cls.start} - {cls.end}
+                      <div className="flex items-center gap-2 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-sm font-semibold mb-4">
+                        <Clock size={14} className="text-[var(--accent)]" />
+                        {cls.start} - {cls.end}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="inline-block px-3 py-1.5 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-xs uppercase font-bold tracking-wider rounded-lg border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                        {cls.isSpecial && <span className="text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-3 py-1.5 rounded-lg">{cls.date}</span>}
+                      </div>
+                      
+                      {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="inline-block px-3 py-1.5 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-xs uppercase font-bold tracking-wider rounded-lg border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                      {cls.isSpecial && <span className="text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-3 py-1.5 rounded-lg">{cls.date}</span>}
-                    </div>
-                    
-                    {!isManageMode && renderInlineAttendance(cls.title)}
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </div>

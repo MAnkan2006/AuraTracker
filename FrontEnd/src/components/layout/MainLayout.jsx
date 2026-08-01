@@ -69,7 +69,7 @@ const MainLayout = () => {
           setFont={setFont}
         />
         
-        {user?.username === 'Guest' && (
+        {user?.username?.toLowerCase() === 'guest' && (
           <div className="mx-4 md:mx-6 lg:mx-8 mt-4 p-4 bg-amber-500/10 border border-amber-500/20 group-data-[scheme=light]:bg-amber-50 group-data-[scheme=light]:border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm animate-in fade-in slide-in-from-top-2 duration-500">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-amber-500/20 text-amber-500 rounded-lg shrink-0">
@@ -81,7 +81,7 @@ const MainLayout = () => {
               </div>
             </div>
             <button 
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/app/profile')}
               className="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 shadow-sm"
             >
               <UserPlus size={16} />

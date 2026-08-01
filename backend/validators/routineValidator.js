@@ -145,7 +145,12 @@ const validateRoutine = (data, knownSubjects = []) => {
       }
     }
 
+    const classId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
+      ? crypto.randomUUID() 
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
     normalizedClasses.push({
+      id: classId,
       day: normalizedDay,
       title: normalizedTitle,
       type: normalizedType,

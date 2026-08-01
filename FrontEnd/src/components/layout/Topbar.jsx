@@ -59,7 +59,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
         <div className="hidden md:flex flex-col">
           <span className="text-[11px] font-bold uppercase tracking-wider text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">Welcome back</span>
           <span className="text-[15px] font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight">
-            {user ? user.name.split(' ')[0] : 'Student'}
+            {user ? (user.name || user.username || 'Student').split(' ')[0] : 'Student'}
           </span>
         </div>
         
@@ -144,11 +144,11 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
             className={`flex items-center gap-2.5 pl-1.5 pr-3 py-1.5 rounded-full transition-all active:scale-95 shadow-sm border ${isProfileOpen ? 'bg-white/10 border-white/20 group-data-[scheme=light]:bg-gray-100 group-data-[scheme=light]:border-gray-300' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-black/[0.08] hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50'}`}
           >
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs shadow-inner">
-               {user ? user.username.charAt(0).toUpperCase() : 'U'}
+               {user ? (user.username || user.name || 'U').charAt(0).toUpperCase() : 'U'}
             </div>
             <div className="hidden sm:flex flex-col items-start">
               <span className="text-xs font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-none">
-                {user ? user.name : 'Student'}
+                {user ? (user.name || user.username || 'Student') : 'Student'}
               </span>
             </div>
             <ChevronDown className={`w-4 h-4 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 ml-1 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
@@ -157,7 +157,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
           {isProfileOpen && (
             <div className="absolute right-0 mt-3 w-56 bg-[var(--card-bg)] group-data-[scheme=light]:bg-white backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] group-data-[scheme=light]:shadow-xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
               <div className="p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
-                <div className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 truncate">{user ? user.name : 'Student'}</div>
+                <div className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 truncate">{user ? (user.name || user.username || 'Student') : 'Student'}</div>
                 <div className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 truncate">@{user ? user.username : 'student'}</div>
               </div>
               

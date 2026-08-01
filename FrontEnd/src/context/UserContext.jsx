@@ -117,6 +117,28 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  const registerWithCredentials = async (username, email, password, name) => {
+    try {
+      const response = await api.post('/register', {
+        username,
+        email,
+        password,
+        name: name || username
+      });
+      if (response.data.success && response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        setIsAuthenticated(true);
+        setUser(response.data.user);
+        window.location.href = '/app';
+        return { success: true };
+      }
+      return { success: false, message: response.data.message || 'Registration failed' };
+    } catch (error) {
+      console.error("Error during registration:", error);
+      return { success: false, message: error.response?.data?.message || 'Server error during registration' };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
@@ -125,7 +147,7 @@ export const UserProvider = ({ children }) => {
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, loginWithCredentials, convertGuestAccount, updateProfile, logout }}>
+    <UserContext.Provider value={{ user, setUser, loading, isAuthenticated, login, loginWithCredentials, registerWithCredentials, convertGuestAccount, updateProfile, logout }}>
       {children}
     </UserContext.Provider>
   );

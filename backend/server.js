@@ -67,7 +67,7 @@ app.post("/api/register", async (req, res) => {
     const user = new User({
       username,
       email,
-      name,
+      name: name && name.trim() !== "" ? name.trim() : username,
       avatar,
       bio: "Keep pushing, stay consistent!",
       targetGoal: 85,
