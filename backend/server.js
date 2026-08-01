@@ -49,7 +49,7 @@ app.use("/api/sync", syncRoutes);
 const authRoutes = require("./routes/authRoutes");
 app.use("/api/auth", authRoutes);
 
-app.post("/register", async (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
     const { username, email, name, avatar, password } = req.body;
 
@@ -76,9 +76,22 @@ app.post("/register", async (req, res) => {
 
     await user.save();
 
+    const token = jwt.sign(
+      { userId: user._id, username: user.username },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
     res.json({
       success: true,
       message: "Registration successful",
+      token,
+      user: {
+        username: user.username,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+      },
     });
   } catch (err) {
     res.status(500).json({
@@ -88,7 +101,7 @@ app.post("/register", async (req, res) => {
   }
 });
 
-app.post("/login", async (req, res) => {
+app.post("/api/login", async (req, res) => {
   try {
     const { username, password } = req.body;
 
@@ -133,7 +146,7 @@ app.post("/login", async (req, res) => {
   }
 });
 
-app.get("/profile", verifyToken, async (req, res) => {
+app.get("/api/profile", verifyToken, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
 
@@ -163,7 +176,7 @@ app.get("/profile", verifyToken, async (req, res) => {
   }
 });
 
-app.post("/profile", verifyToken, async (req, res) => {
+app.post("/api/profile", verifyToken, async (req, res) => {
   try {
     const { email, avatar, bio, targetGoal, name } = req.body;
     const user = await User.findById(req.user.userId);
