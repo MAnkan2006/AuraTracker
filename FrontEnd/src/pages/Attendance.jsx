@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
-import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Check, Eye, EyeOff, Layers } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Check, Eye, EyeOff, Layers, ArrowRight } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
 
@@ -25,6 +25,8 @@ const Attendance = () => {
   const [showRecordedToday, setShowRecordedToday] = useState(false);
 
   const currentDate = new Date();
+  const currentHour = currentDate.getHours(); // 0 - 23 (4 PM is 16)
+  
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
   
@@ -36,6 +38,18 @@ const Attendance = () => {
   const dayStr = String(currentDate.getDate()).padStart(2, '0');
   const todayStr = `${yearStr}-${monthStr}-${dayStr}`;
   const todayDayNum = currentDate.getDay() === 0 ? 7 : currentDate.getDay(); // 1=Mon .. 7=Sun
+
+  // Format tomorrow's date string YYYY-MM-DD
+  const tomorrowDateObj = new Date(currentDate);
+  tomorrowDateObj.setDate(currentDate.getDate() + 1);
+  const tomorrowYearStr = tomorrowDateObj.getFullYear();
+  const tomorrowMonthStr = String(tomorrowDateObj.getMonth() + 1).padStart(2, '0');
+  const tomorrowDayStr = String(tomorrowDateObj.getDate()).padStart(2, '0');
+  const tomorrowStr = `${tomorrowYearStr}-${tomorrowMonthStr}-${tomorrowDayStr}`;
+  const tomorrowDayNum = tomorrowDateObj.getDay() === 0 ? 7 : tomorrowDateObj.getDay();
+
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const tomorrowDayName = dayNames[tomorrowDayNum - 1];
   
   // Extract unique subjects from routine
   const subjects = Array.from(new Set(routine.map(c => c.title))).filter(Boolean);
@@ -45,7 +59,7 @@ const Attendance = () => {
   // --- Today's Classes Logic for 'mark' tab ---
   const todayClasses = routine.filter(c => {
     if (c.isSpecial) return c.date === todayStr;
-    return c.day === todayDayNum;
+    return Number(c.day) === todayDayNum;
   });
 
   // Sort today's classes chronologically by start time
@@ -66,8 +80,28 @@ const Attendance = () => {
     return Boolean(status);
   });
 
-  // Default focus: first class in time-sorted order among pending
-  const primaryPendingClass = pendingTodayClasses[0] || null;
+  // --- Tomorrow's Classes Logic ---
+  const tomorrowClasses = routine.filter(c => {
+    if (c.isSpecial) return c.date === tomorrowStr;
+    return Number(c.day) === tomorrowDayNum;
+  });
+
+  const sortedTomorrowClasses = [...tomorrowClasses].sort((a, b) => {
+    const timeA = a.start || '00:00';
+    const timeB = b.start || '00:00';
+    return timeA.localeCompare(timeB);
+  });
+
+  // Condition to switch Up Next to Tomorrow:
+  // After 4 PM (>=16) AND no remaining unrecorded classes today AND classes exist for tomorrow
+  const isAfter4PM = currentHour >= 16;
+  const noPendingToday = pendingTodayClasses.length === 0;
+  const showTomorrowUpNext = isAfter4PM && noPendingToday && sortedTomorrowClasses.length > 0;
+
+  // Active target date and classes to display in Up Next hero card
+  const activeClassList = showTomorrowUpNext ? sortedTomorrowClasses : pendingTodayClasses;
+  const primaryPendingClass = activeClassList[0] || null;
+  const targetMarkDate = showTomorrowUpNext ? tomorrowStr : todayStr;
 
   // --- Subject Register Stats Logic for 'register' tab ---
   const getSubjectStats = (subject) => {
@@ -91,13 +125,16 @@ const Attendance = () => {
 
   const getDaysForSubject = (subj) => {
     if (!subj) return [];
-    const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const dayNamesList = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const daysSet = new Set();
     routine.filter(c => c.title === subj).forEach(c => {
       if (c.isSpecial) {
         daysSet.add('Special Dates');
-      } else if (c.day >= 1 && c.day <= 7) {
-        daysSet.add(dayNames[c.day - 1]);
+      } else {
+        const dayNum = Number(c.day);
+        if (dayNum >= 1 && dayNum <= 7) {
+          daysSet.add(dayNamesList[dayNum - 1]);
+        }
       }
     });
     return Array.from(daysSet);
@@ -113,19 +150,19 @@ const Attendance = () => {
       if (c.isSpecial) {
         return c.date === dateStr;
       }
-      return c.day === dayOfWeek;
+      return Number(c.day) === dayOfWeek;
     });
   };
 
-  const handleMarkTodayClass = (subject, status) => {
-    if (isBeforeSessionStart(todayStr)) {
-      setAlertMessage(`Cannot mark attendance for today (${todayStr}) as it is prior to your Session Start Date (${sessionStartDateStr}). You can update your Session Start Date in Profile settings.`);
+  const handleMarkClass = (subject, dateKey, status) => {
+    if (isBeforeSessionStart(dateKey)) {
+      setAlertMessage(`Cannot mark attendance for ${dateKey} as it is prior to your Session Start Date (${sessionStartDateStr}). You can update your Session Start Date in Profile settings.`);
       setIsAlertOpen(true);
       return;
     }
 
-    markAttendance(subject, todayStr, status);
-    setAlertMessage(`Marked ${subject} as ${status} for today (${todayStr})!`);
+    markAttendance(subject, dateKey, status);
+    setAlertMessage(`Marked ${subject} as ${status} for ${dateKey}!`);
     setIsAlertOpen(true);
   };
 
@@ -263,7 +300,7 @@ const Attendance = () => {
         </button>
       </div>
 
-      {/* TAB 1: MARK ATTENDANCE (Today's Logger) */}
+      {/* TAB 1: MARK ATTENDANCE (Today / Tomorrow Logger) */}
       {activeTab === 'mark' && (
         <div className="space-y-6">
           {isBeforeSessionStart(todayStr) ? (
@@ -278,8 +315,44 @@ const Attendance = () => {
             </div>
           ) : (
             <>
-              {/* If no classes scheduled for today */}
-              {sortedTodayClasses.length === 0 ? (
+              {/* After 4 PM Tomorrow Banner Notice */}
+              {showTomorrowUpNext && (
+                <div className="p-4 bg-purple-500/10 border border-purple-500/20 group-data-[scheme=light]:bg-purple-50 group-data-[scheme=light]:border-purple-200 rounded-2xl flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <Calendar size={22} className="text-purple-400 group-data-[scheme=light]:text-purple-600 shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-purple-400 group-data-[scheme=light]:text-purple-700 text-sm flex items-center gap-2">
+                        Today's Classes Complete &bull; Up Next Tomorrow ({tomorrowDayName}, {tomorrowStr})
+                      </h4>
+                      <p className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">
+                        It's after 4:00 PM and all today's classes are logged. Previewing tomorrow's time-sorted schedule.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Today Completed Banner (when not showing tomorrow) */}
+              {!showTomorrowUpNext && pendingTodayClasses.length === 0 && sortedTodayClasses.length > 0 && (
+                <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 group-data-[scheme=light]:bg-emerald-50 group-data-[scheme=light]:border-emerald-200 rounded-3xl flex items-center justify-between shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 size={28} className="text-emerald-500 shrink-0" />
+                    <div>
+                      <h4 className="font-bold text-emerald-500 text-lg">All Classes Recorded for Today!</h4>
+                      <p className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">You have logged all {sortedTodayClasses.length} scheduled classes for today ({todayStr}).</p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => setShowRecordedToday(!showRecordedToday)}
+                    className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 group-data-[scheme=light]:text-emerald-700 font-bold rounded-xl text-xs transition-colors"
+                  >
+                    {showRecordedToday ? 'Hide Recorded' : 'View Recorded'}
+                  </button>
+                </div>
+              )}
+
+              {/* No classes scheduled today or tomorrow empty state */}
+              {!primaryPendingClass && sortedTodayClasses.length === 0 && (
                 <div className={glassPanelClass}>
                   <div className="p-12 text-center flex flex-col items-center justify-center">
                     <Sparkles size={40} className="text-[var(--accent)] mb-4 animate-bounce opacity-80" />
@@ -289,192 +362,171 @@ const Attendance = () => {
                     </p>
                   </div>
                 </div>
-              ) : (
-                <>
-                  {/* All Today Classes Completed Banner */}
-                  {pendingTodayClasses.length === 0 && (
-                    <div className="p-6 bg-emerald-500/10 border border-emerald-500/20 group-data-[scheme=light]:bg-emerald-50 group-data-[scheme=light]:border-emerald-200 rounded-3xl flex items-center justify-between shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <CheckCircle2 size={28} className="text-emerald-500 shrink-0" />
-                        <div>
-                          <h4 className="font-bold text-emerald-500 text-lg">All Classes Recorded for Today!</h4>
-                          <p className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">You have logged all {sortedTodayClasses.length} scheduled classes for today ({todayStr}).</p>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => setShowRecordedToday(!showRecordedToday)}
-                        className="px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-500 group-data-[scheme=light]:text-emerald-700 font-bold rounded-xl text-xs transition-colors"
-                      >
-                        {showRecordedToday ? 'Hide Recorded' : 'View Recorded'}
-                      </button>
-                    </div>
-                  )}
+              )}
 
-                  {/* Primary / First Pending Class in Time Sorted Order */}
-                  {primaryPendingClass && (
-                    <div className={`${glassPanelClass} relative overflow-hidden border-l-4 border-l-[var(--accent)]`}>
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="px-2.5 py-0.5 text-[10px] uppercase tracking-wider font-extrabold bg-[var(--accent)] text-white rounded-full">
-                              First Class (Next Up)
-                            </span>
-                            <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 flex items-center gap-1">
-                              <Clock size={13} /> {primaryPendingClass.start} &ndash; {primaryPendingClass.end}
-                            </span>
-                          </div>
-                          <h3 className="text-2xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-[var(--font-heading)]">
-                            {primaryPendingClass.title}
-                          </h3>
-                          <p className="text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-1">
-                            Room: <span className="text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800">{primaryPendingClass.room || 'Default Room'}</span>
-                          </p>
-                        </div>
-                        
-                        <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 italic">
-                          Click status to mark & record
+              {/* Primary Featured Class (Next Up Today or Next Up Tomorrow) */}
+              {primaryPendingClass && (
+                <div className={`${glassPanelClass} relative overflow-hidden ${showTomorrowUpNext ? 'border-l-4 border-l-purple-500' : 'border-l-4 border-l-[var(--accent)]'}`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`px-2.5 py-0.5 text-[10px] uppercase tracking-wider font-extrabold text-white rounded-full ${showTomorrowUpNext ? 'bg-purple-600' : 'bg-[var(--accent)]'}`}>
+                          {showTomorrowUpNext ? `Up Next Tomorrow (${tomorrowDayName})` : 'Up Next Today'}
+                        </span>
+                        <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 flex items-center gap-1">
+                          <Clock size={13} /> {primaryPendingClass.start} &ndash; {primaryPendingClass.end}
                         </span>
                       </div>
-
-                      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                        <button 
-                          className="group flex flex-col items-center justify-center p-5 bg-green-500/10 group-data-[scheme=light]:bg-green-50 text-green-500 group-data-[scheme=light]:text-green-700 rounded-2xl border border-green-500/20 group-data-[scheme=light]:border-green-200 hover:bg-green-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Present')}
-                        >
-                          <CheckCircle2 size={30} className="mb-2 transition-transform group-hover:scale-110" />
-                          <span className="font-bold text-sm">Present</span>
-                        </button>
-                        
-                        <button 
-                          className="group flex flex-col items-center justify-center p-5 bg-red-500/10 group-data-[scheme=light]:bg-red-50 text-red-500 group-data-[scheme=light]:text-red-700 rounded-2xl border border-red-500/20 group-data-[scheme=light]:border-red-200 hover:bg-red-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Absent')}
-                        >
-                          <XCircle size={30} className="mb-2 transition-transform group-hover:scale-110" />
-                          <span className="font-bold text-sm">Absent</span>
-                        </button>
-                        
-                        <button 
-                          className="group flex flex-col items-center justify-center p-5 bg-yellow-500/10 group-data-[scheme=light]:bg-yellow-50 text-yellow-400 group-data-[scheme=light]:text-yellow-700 rounded-2xl border border-yellow-500/20 group-data-[scheme=light]:border-yellow-200 hover:bg-yellow-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Late')}
-                        >
-                          <Clock size={30} className="mb-2 transition-transform group-hover:scale-110" />
-                          <span className="font-bold text-sm">Late</span>
-                        </button>
-                        
-                        <button 
-                          className="group flex flex-col items-center justify-center p-5 bg-blue-500/10 group-data-[scheme=light]:bg-blue-50 text-blue-500 group-data-[scheme=light]:text-blue-700 rounded-2xl border border-blue-500/20 group-data-[scheme=light]:border-blue-200 hover:bg-blue-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Excused')}
-                        >
-                          <FileWarning size={30} className="mb-2 transition-transform group-hover:scale-110" />
-                          <span className="font-bold text-sm">Excused</span>
-                        </button>
-                        
-                        <button 
-                          className="group flex flex-col items-center justify-center p-5 bg-gray-500/10 group-data-[scheme=light]:bg-gray-100 text-gray-400 group-data-[scheme=light]:text-gray-600 rounded-2xl border border-gray-500/20 group-data-[scheme=light]:border-gray-300 hover:bg-gray-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Cancelled')}
-                        >
-                          <Ban size={30} className="mb-2 transition-transform group-hover:scale-110" />
-                          <span className="font-bold text-sm">Cancelled</span>
-                        </button>
-                      </div>
+                      <h3 className="text-2xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-[var(--font-heading)]">
+                        {primaryPendingClass.title}
+                      </h3>
+                      <p className="text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-1">
+                        Room: <span className="text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800">{primaryPendingClass.room || 'Default Room'}</span>
+                      </p>
                     </div>
-                  )}
+                    
+                    <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 italic">
+                      Click status to record ({targetMarkDate})
+                    </span>
+                  </div>
 
-                  {/* Remaining Pending Classes in Time Sorted Order */}
-                  {pendingTodayClasses.length > 1 && (
-                    <div className="space-y-4">
-                      <h4 className="text-sm font-extrabold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">
-                        Remaining Classes Today ({pendingTodayClasses.length - 1})
-                      </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <button 
+                      className="group flex flex-col items-center justify-center p-5 bg-green-500/10 group-data-[scheme=light]:bg-green-50 text-green-500 group-data-[scheme=light]:text-green-700 rounded-2xl border border-green-500/20 group-data-[scheme=light]:border-green-200 hover:bg-green-500/20 hover:scale-[1.02] transition-all"
+                      onClick={() => handleMarkClass(primaryPendingClass.title, targetMarkDate, 'Present')}
+                    >
+                      <CheckCircle2 size={30} className="mb-2 transition-transform group-hover:scale-110" />
+                      <span className="font-bold text-sm">Present</span>
+                    </button>
+                    
+                    <button 
+                      className="group flex flex-col items-center justify-center p-5 bg-red-500/10 group-data-[scheme=light]:bg-red-50 text-red-500 group-data-[scheme=light]:text-red-700 rounded-2xl border border-red-500/20 group-data-[scheme=light]:border-red-200 hover:bg-red-500/20 hover:scale-[1.02] transition-all"
+                      onClick={() => handleMarkClass(primaryPendingClass.title, targetMarkDate, 'Absent')}
+                    >
+                      <XCircle size={30} className="mb-2 transition-transform group-hover:scale-110" />
+                      <span className="font-bold text-sm">Absent</span>
+                    </button>
+                    
+                    <button 
+                      className="group flex flex-col items-center justify-center p-5 bg-yellow-500/10 group-data-[scheme=light]:bg-yellow-50 text-yellow-400 group-data-[scheme=light]:text-yellow-700 rounded-2xl border border-yellow-500/20 group-data-[scheme=light]:border-yellow-200 hover:bg-yellow-500/20 hover:scale-[1.02] transition-all"
+                      onClick={() => handleMarkClass(primaryPendingClass.title, targetMarkDate, 'Late')}
+                    >
+                      <Clock size={30} className="mb-2 transition-transform group-hover:scale-110" />
+                      <span className="font-bold text-sm">Late</span>
+                    </button>
+                    
+                    <button 
+                      className="group flex flex-col items-center justify-center p-5 bg-blue-500/10 group-data-[scheme=light]:bg-blue-50 text-blue-500 group-data-[scheme=light]:text-blue-700 rounded-2xl border border-blue-500/20 group-data-[scheme=light]:border-blue-200 hover:bg-blue-500/20 hover:scale-[1.02] transition-all"
+                      onClick={() => handleMarkClass(primaryPendingClass.title, targetMarkDate, 'Excused')}
+                    >
+                      <FileWarning size={30} className="mb-2 transition-transform group-hover:scale-110" />
+                      <span className="font-bold text-sm">Excused</span>
+                    </button>
+                    
+                    <button 
+                      className="group flex flex-col items-center justify-center p-5 bg-gray-500/10 group-data-[scheme=light]:bg-gray-100 text-gray-400 group-data-[scheme=light]:text-gray-600 rounded-2xl border border-gray-500/20 group-data-[scheme=light]:border-gray-300 hover:bg-gray-500/20 hover:scale-[1.02] transition-all"
+                      onClick={() => handleMarkClass(primaryPendingClass.title, targetMarkDate, 'Cancelled')}
+                    >
+                      <Ban size={30} className="mb-2 transition-transform group-hover:scale-110" />
+                      <span className="font-bold text-sm">Cancelled</span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {pendingTodayClasses.slice(1).map((cls, idx) => (
-                          <div key={cls.id || idx} className={`${glassPanelClass} flex flex-col justify-between gap-4`}>
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <span className="text-[11px] font-bold text-[var(--accent)] flex items-center gap-1 mb-1">
-                                  <Clock size={12} /> {cls.start} &ndash; {cls.end}
-                                </span>
-                                <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight">
-                                  {cls.title}
-                                </h4>
-                              </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-md text-[var(--text-muted)]">
-                                {cls.room || 'Class'}
+              {/* Remaining Classes List (for Today or Tomorrow) */}
+              {activeClassList.length > 1 && (
+                <div className="space-y-4">
+                  <h4 className="text-sm font-extrabold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">
+                    {showTomorrowUpNext ? `Remaining Tomorrow (${activeClassList.length - 1})` : `Remaining Today (${activeClassList.length - 1})`}
+                  </h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activeClassList.slice(1).map((cls, idx) => (
+                      <div key={cls.id || idx} className={`${glassPanelClass} flex flex-col justify-between gap-4`}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="text-[11px] font-bold text-[var(--accent)] flex items-center gap-1 mb-1">
+                              <Clock size={12} /> {cls.start} &ndash; {cls.end}
+                            </span>
+                            <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight">
+                              {cls.title}
+                            </h4>
+                          </div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-md text-[var(--text-muted)]">
+                            {cls.room || 'Class'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-white/5 group-data-[scheme=light]:border-gray-100">
+                          {[
+                            { id: 'Present', label: 'P', color: 'bg-green-500/10 text-green-500 hover:bg-green-500/20' },
+                            { id: 'Absent', label: 'A', color: 'bg-red-500/10 text-red-500 hover:bg-red-500/20' },
+                            { id: 'Late', label: 'L', color: 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20' },
+                            { id: 'Excused', label: 'E', color: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20' },
+                            { id: 'Cancelled', label: 'C', color: 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20' }
+                          ].map(s => (
+                            <button
+                              key={s.id}
+                              title={`Mark ${s.id}`}
+                              onClick={() => handleMarkClass(cls.title, targetMarkDate, s.id)}
+                              className={`py-2 rounded-xl text-xs font-black transition-all ${s.color}`}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recorded Today Classes Toggleable Section */}
+              {recordedTodayClasses.length > 0 && (
+                <div className="pt-4 border-t border-white/10 group-data-[scheme=light]:border-gray-200">
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-xs font-extrabold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider flex items-center gap-2">
+                      <CheckCircle2 size={16} className="text-emerald-500" />
+                      Recorded Today ({recordedTodayClasses.length})
+                    </span>
+                    <button 
+                      onClick={() => setShowRecordedToday(!showRecordedToday)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"
+                    >
+                      {showRecordedToday ? <EyeOff size={14} /> : <Eye size={14} />}
+                      <span>{showRecordedToday ? 'Hide Recorded Classes' : 'Show Recorded Classes'}</span>
+                    </button>
+                  </div>
+
+                  {showRecordedToday && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {recordedTodayClasses.map((cls, idx) => {
+                        const status = attendance[cls.title]?.[todayStr];
+                        return (
+                          <div key={cls.id || idx} className="p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl flex items-center justify-between">
+                            <div>
+                              <div className="text-xs font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{cls.title}</div>
+                              <div className="text-[10px] font-medium text-[var(--text-muted)]">{cls.start} &ndash; {cls.end}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="px-3 py-1 text-xs font-extrabold rounded-lg bg-emerald-500/20 text-emerald-500 group-data-[scheme=light]:text-emerald-700">
+                                {status}
                               </span>
-                            </div>
-
-                            <div className="grid grid-cols-5 gap-1.5 pt-2 border-t border-white/5 group-data-[scheme=light]:border-gray-100">
-                              {[
-                                { id: 'Present', label: 'P', color: 'bg-green-500/10 text-green-500 hover:bg-green-500/20' },
-                                { id: 'Absent', label: 'A', color: 'bg-red-500/10 text-red-500 hover:bg-red-500/20' },
-                                { id: 'Late', label: 'L', color: 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20' },
-                                { id: 'Excused', label: 'E', color: 'bg-blue-500/10 text-blue-500 hover:bg-blue-500/20' },
-                                { id: 'Cancelled', label: 'C', color: 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20' }
-                              ].map(s => (
-                                <button
-                                  key={s.id}
-                                  title={`Mark ${s.id}`}
-                                  onClick={() => handleMarkTodayClass(cls.title, s.id)}
-                                  className={`py-2 rounded-xl text-xs font-black transition-all ${s.color}`}
-                                >
-                                  {s.label}
-                                </button>
-                              ))}
+                              <button 
+                                onClick={() => markAttendance(cls.title, todayStr, null)}
+                                className="text-[10px] font-bold text-red-400 hover:underline"
+                                title="Undo / Clear attendance"
+                              >
+                                Undo
+                              </button>
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        );
+                      })}
                     </div>
                   )}
-
-                  {/* Recorded Today Classes Toggleable Section */}
-                  {recordedTodayClasses.length > 0 && (
-                    <div className="pt-4 border-t border-white/10 group-data-[scheme=light]:border-gray-200">
-                      <div className="flex justify-between items-center mb-4">
-                        <span className="text-xs font-extrabold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider flex items-center gap-2">
-                          <CheckCircle2 size={16} className="text-emerald-500" />
-                          Recorded Today ({recordedTodayClasses.length})
-                        </span>
-                        <button 
-                          onClick={() => setShowRecordedToday(!showRecordedToday)}
-                          className="flex items-center gap-1.5 text-xs font-bold text-[var(--accent)] hover:underline"
-                        >
-                          {showRecordedToday ? <EyeOff size={14} /> : <Eye size={14} />}
-                          <span>{showRecordedToday ? 'Hide Recorded Classes' : 'Show Recorded Classes'}</span>
-                        </button>
-                      </div>
-
-                      {showRecordedToday && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                          {recordedTodayClasses.map((cls, idx) => {
-                            const status = attendance[cls.title]?.[todayStr];
-                            return (
-                              <div key={cls.id || idx} className="p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl flex items-center justify-between">
-                                <div>
-                                  <div className="text-xs font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{cls.title}</div>
-                                  <div className="text-[10px] font-medium text-[var(--text-muted)]">{cls.start} &ndash; {cls.end}</div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="px-3 py-1 text-xs font-extrabold rounded-lg bg-emerald-500/20 text-emerald-500 group-data-[scheme=light]:text-emerald-700">
-                                    {status}
-                                  </span>
-                                  <button 
-                                    onClick={() => markAttendance(cls.title, todayStr, null)}
-                                    className="text-[10px] font-bold text-red-400 hover:underline"
-                                    title="Undo / Clear attendance"
-                                  >
-                                    Undo
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </>
+                </div>
               )}
             </>
           )}
