@@ -88,7 +88,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[var(--card-bg)] group-data-[scheme=light]:bg-white backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] group-data-[scheme=light]:shadow-xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
                 <h3 className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Notifications</h3>
                 <button className="text-xs font-bold text-[var(--accent)] hover:underline">Mark all as read</button>
@@ -155,7 +155,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-[var(--card-bg)] group-data-[scheme=light]:bg-white backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.3)] group-data-[scheme=light]:shadow-xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+            <div className="absolute right-0 mt-3 w-56 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
               <div className="p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
                 <div className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 truncate">{user ? (user.name || user.username || 'Student') : 'Student'}</div>
                 <div className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 truncate">@{user ? user.username : 'student'}</div>
