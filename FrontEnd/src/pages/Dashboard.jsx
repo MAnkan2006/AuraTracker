@@ -9,11 +9,32 @@ import ClockWidget from '../components/ui/ClockWidget';
 
 const getHeatmapColor = (status) => {
   switch (status) {
-    case 'p': return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]';
-    case 'a': return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]';
-    case 'l': return 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.4)]';
-    case 'e': return 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]';
-    default: return 'bg-white/5 group-data-[scheme=light]:bg-gray-100 border border-white/10 group-data-[scheme=light]:border-gray-200';
+    case 'all_attended': 
+    case 'p': 
+      return 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]';
+    case 'partially_attended': 
+    case 'l': 
+      return 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]';
+    case 'none_attended': 
+    case 'a': 
+      return 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.4)]';
+    case 'e': 
+      return 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]';
+    default: 
+      return 'bg-white/5 group-data-[scheme=light]:bg-gray-100 border border-white/10 group-data-[scheme=light]:border-gray-200';
+  }
+};
+
+const getHeatmapLabel = (status) => {
+  switch (status) {
+    case 'all_attended': return 'All Classes Attended';
+    case 'partially_attended': return 'Partially Attended';
+    case 'none_attended': return 'None Attended (All Missed)';
+    case 'p': return 'Present';
+    case 'a': return 'Absent';
+    case 'l': return 'Late';
+    case 'e': return 'Excused';
+    default: return 'No Attendance Logs';
   }
 };
 
@@ -296,15 +317,14 @@ const Dashboard = () => {
                 <div 
                   key={idx} 
                   className={`aspect-square rounded-md sm:rounded-xl transition-all duration-300 hover:scale-110 ${getHeatmapColor(status)}`}
-                  title={`Status: ${status === 'empty' ? 'Inactive' : status.toUpperCase()}`}
+                  title={`Day Status: ${getHeatmapLabel(status)}`}
                 ></div>
               ))}
             </div>
             <div className="flex flex-wrap justify-center gap-4 text-xs font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider mt-2">
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span> Present</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span> Absent</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-yellow-500 shadow-[0_0_5px_rgba(234,179,8,0.5)]"></span> Late</div>
-              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-blue-500 shadow-[0_0_5px_rgba(59,130,246,0.5)]"></span> Excused</div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-green-500 shadow-[0_0_5px_rgba(34,197,94,0.5)]"></span> All Attended</div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]"></span> Partially Attended</div>
+              <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-red-500 shadow-[0_0_5px_rgba(239,68,68,0.5)]"></span> None Attended</div>
               <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-white/10 group-data-[scheme=light]:bg-gray-200 border border-white/20"></span> Inactive</div>
             </div>
           </div>

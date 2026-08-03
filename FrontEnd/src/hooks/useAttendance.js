@@ -118,18 +118,25 @@ export const useAttendance = () => {
 
       Object.values(attendance).forEach(subjectRecords => {
         Object.entries(subjectRecords || {}).forEach(([key, status]) => {
-          if (key === dateStr || key.startsWith(`${dateStr}_`)) {
+          if ((key === dateStr || key.startsWith(`${dateStr}_`)) && status) {
             statuses.push(status);
           }
         });
       });
 
       if (statuses.length > 0) {
-        if (statuses.some(s => s === 'Present' || s === 'p')) dayStatus = 'p';
-        else if (statuses.some(s => s === 'Absent' || s === 'a')) dayStatus = 'a';
-        else if (statuses.some(s => s === 'Late' || s === 'l')) dayStatus = 'l';
-        else if (statuses.some(s => s === 'Excused' || s === 'e')) dayStatus = 'e';
-        else dayStatus = 'empty';
+        const attendedCount = statuses.filter(s => s === 'Present' || s === 'p' || s === 'Late' || s === 'l' || s === 'Excused' || s === 'e').length;
+        const absentCount = statuses.filter(s => s === 'Absent' || s === 'a').length;
+
+        if (attendedCount > 0 && absentCount === 0) {
+          dayStatus = 'all_attended';
+        } else if (attendedCount > 0 && absentCount > 0) {
+          dayStatus = 'partially_attended';
+        } else if (attendedCount === 0 && absentCount > 0) {
+          dayStatus = 'none_attended';
+        } else {
+          dayStatus = 'empty';
+        }
       }
 
       history.push(dayStatus);
