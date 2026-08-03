@@ -17,7 +17,7 @@ const getLocalDateStr = (d = new Date()) => {
 
 const Routine = () => {
   const { routine, addClass, importClasses, removeClass, removeMultipleClasses } = useRoutine();
-  const { attendance, markAttendance } = useAttendance();
+  const { attendance, markAttendance, isBeforeSessionStart, sessionStartDateStr } = useAttendance();
   const { addToast } = useToast();
   
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
@@ -125,7 +125,6 @@ const Routine = () => {
 
   const isSpecialInCurrentWeek = (dateStr) => {
     if (!dateStr) return false;
-    const targetDate = new Date(dateStr + "T00:00:00");
     const now = new Date();
     const currentDay = now.getDay() === 0 ? 7 : now.getDay();
     const mondayDate = new Date(now);
