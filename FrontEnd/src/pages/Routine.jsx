@@ -340,7 +340,7 @@ const Routine = () => {
         {viewMode === 'weekly' ? (
           <>
             {/* Desktop Weekly View: 7 Columns Grid with Horizontal Scroll support */}
-            <div className="hidden md:block overflow-x-auto pb-2 [&::-webkit-scrollbar]:h-2 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+            <div className="hidden md:block overflow-x-auto pb-2 custom-scrollbar">
               <div className="grid grid-cols-7 gap-3.5 min-w-[1260px]">
                 {days.map((day, index) => {
                   const dayClasses = getWeeklySlotClasses(index + 1);

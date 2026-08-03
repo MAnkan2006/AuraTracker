@@ -243,10 +243,18 @@ const Attendance = () => {
         )}
       </div>
 
-      {/* Sub-tab Switcher (Mark Attendance vs Attendance Register) */}
-      <div className="flex items-center bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-2xl p-1.5 border border-white/10 group-data-[scheme=light]:border-gray-200 shadow-sm w-fit">
-        <button 
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'mark' ? 'bg-[var(--card-bg)] group-data-[scheme=light]:bg-white text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 shadow-sm border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-800'}`}
+      {/* Sub-tab Switcher — Sliding Pill Indicator */}
+      <div className="relative flex items-center bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-2xl p-1.5 border border-white/10 group-data-[scheme=light]:border-gray-200 shadow-sm w-fit">
+        {/* Sliding pill background */}
+        <div
+          className="absolute top-1.5 h-[calc(100%-12px)] rounded-xl bg-[var(--card-bg)] group-data-[scheme=light]:bg-white shadow-sm border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]"
+          style={{
+            width: '50%',
+            left: activeTab === 'mark' ? '6px' : 'calc(50%)',
+          }}
+        />
+        <button
+          className={`relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === 'mark' ? 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-800'}`}
           onClick={() => setActiveTab('mark')}
         >
           <Clock size={18} />
@@ -257,8 +265,8 @@ const Attendance = () => {
             </span>
           )}
         </button>
-        <button 
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'register' ? 'bg-[var(--card-bg)] group-data-[scheme=light]:bg-white text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 shadow-sm border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-800'}`}
+        <button
+          className={`relative z-10 flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-sm transition-colors duration-200 ${activeTab === 'register' ? 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-800'}`}
           onClick={() => setActiveTab('register')}
         >
           <BookOpen size={18} />

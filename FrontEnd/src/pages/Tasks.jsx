@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useTasks } from '../hooks/useTasks';
-import { CheckSquare, Plus, Circle, CheckCircle2, Trash2 } from 'lucide-react';
+import { CheckSquare, Plus, Circle, CheckCircle2, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 const Tasks = () => {
   const { tasks, addTask, toggleTask, deleteTask } = useTasks();
   const [newTaskText, setNewTaskText] = useState('');
+  const [showCompleted, setShowCompleted] = useState(false);
   
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [taskToDelete, setTaskToDelete] = useState(null);
@@ -34,6 +35,10 @@ const Tasks = () => {
 
   const glassPanelClass = "bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300";
 
+  const pendingTasks = tasks.filter(t => !t.completed);
+  const completedTasks = tasks.filter(t => t.completed);
+  const completionPercent = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+
   return (
     <div className="space-y-6 pb-20 max-w-4xl mx-auto">
       <div className="flex justify-between items-end mb-8">
@@ -42,6 +47,37 @@ const Tasks = () => {
           <p className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-1">Manage and prioritize your to-dos.</p>
         </div>
       </div>
+
+      {/* Summary Stats */}
+      {tasks.length > 0 && (
+        <div className={glassPanelClass}>
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+            <div className="flex items-center gap-6">
+              <div className="flex flex-col">
+                <span className="text-2xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{tasks.length}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">Total</span>
+              </div>
+              <div className="w-px h-10 bg-white/10 group-data-[scheme=light]:bg-gray-200"></div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-extrabold text-green-400 group-data-[scheme=light]:text-green-600">{completedTasks.length}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">Done</span>
+              </div>
+              <div className="w-px h-10 bg-white/10 group-data-[scheme=light]:bg-gray-200"></div>
+              <div className="flex flex-col">
+                <span className="text-2xl font-extrabold text-[var(--accent)] group-data-[scheme=light]:text-[var(--accent-hover)]">{pendingTasks.length}</span>
+                <span className="text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">Pending</span>
+              </div>
+            </div>
+            <span className="text-sm font-extrabold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">{completionPercent}% Complete</span>
+          </div>
+          <div className="w-full bg-white/10 group-data-[scheme=light]:bg-gray-200 rounded-full h-2.5">
+            <div
+              className="h-2.5 rounded-full bg-gradient-to-r from-[var(--accent)] to-green-400 shadow-[0_0_10px_var(--accent-glow)] transition-all duration-700"
+              style={{ width: `${completionPercent}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
 
       <div className={glassPanelClass}>
         <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row gap-3 mb-8">
@@ -53,7 +89,7 @@ const Tasks = () => {
             onChange={(e) => setNewTaskText(e.target.value)}
           />
           <button type="submit" className="px-6 py-4 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] text-white rounded-2xl hover:-translate-y-0.5 active:scale-95 transition-all shadow-[0_4px_15px_var(--accent-glow)] flex items-center justify-center gap-2 font-bold whitespace-nowrap">
-            <Plus size={20} className="transition-transform group-hover:rotate-90" />
+            <Plus size={20} />
             <span>Add Task</span>
           </button>
         </form>
@@ -65,38 +101,82 @@ const Tasks = () => {
               <p className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 font-medium">No tasks right now. You're all caught up!</p>
             </div>
           ) : (
-            tasks.map((task, index) => (
-              <div 
-                key={task.id} 
-                className={`animate-fade-in-up group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer hover:-translate-y-1 ${
-                  task.completed 
-                    ? 'bg-white/5 border-white/5 group-data-[scheme=light]:bg-gray-50 group-data-[scheme=light]:border-transparent opacity-60' 
-                    : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-gray-200 hover:border-[var(--accent)]/50 group-data-[scheme=light]:hover:border-[var(--accent)] hover:shadow-[0_4px_20px_var(--accent-glow)]'
-                }`}
-                style={{ animationDelay: `${index * 0.05}s` }}
-                onClick={() => toggleTask(task.id)}
-              >
-                <div className={`transition-all duration-300 transform group-hover:scale-110 active:scale-90 ${task.completed ? 'text-green-500 animate-pop' : 'text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 group-hover:text-[var(--accent)]'}`}>
-                  {task.completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+            <>
+              {/* Pending Tasks */}
+              {pendingTasks.length === 0 && (
+                <div className="flex items-center gap-3 p-4 bg-green-500/10 border border-green-500/20 group-data-[scheme=light]:bg-green-50 group-data-[scheme=light]:border-green-200 rounded-2xl">
+                  <CheckCircle2 size={20} className="text-green-400 group-data-[scheme=light]:text-green-600 shrink-0" />
+                  <span className="font-bold text-green-400 group-data-[scheme=light]:text-green-700">All tasks completed! Great work! 🎉</span>
                 </div>
-                <span className={`flex-1 transition-colors duration-300 ${task.completed ? 'line-through text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400' : 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-bold'}`}>
-                  {task.text}
-                </span>
-                <div className="flex items-center gap-3">
-                  {!task.completed && (
-                    <span className="opacity-0 group-hover:opacity-100 text-xs font-bold text-[var(--accent)] tracking-wider uppercase transition-opacity duration-300">
+              )}
+              {pendingTasks.map((task, index) => (
+                <div 
+                  key={task.id} 
+                  className="animate-fade-in-up group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer hover:-translate-y-1 bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-gray-200 hover:border-[var(--accent)]/50 group-data-[scheme=light]:hover:border-[var(--accent)] hover:shadow-[0_4px_20px_var(--accent-glow)]"
+                  style={{ animationDelay: `${index * 0.05}s` }}
+                  onClick={() => toggleTask(task.id)}
+                >
+                  <div className="transition-all duration-300 transform group-hover:scale-110 active:scale-90 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 group-hover:text-[var(--accent)]">
+                    <Circle size={24} />
+                  </div>
+                  <span className="flex-1 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-bold">
+                    {task.text}
+                  </span>
+                  {/* Always visible on touch, hover-reveal on desktop */}
+                  <div className="flex items-center gap-2">
+                    <span className="hidden sm:block opacity-0 group-hover:opacity-100 text-xs font-bold text-[var(--accent)] tracking-wider uppercase transition-opacity duration-300">
                       Complete
                     </span>
-                  )}
-                  <button 
-                    onClick={(e) => confirmDelete(task, e)}
-                    className="p-2 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 hover:text-red-500 hover:bg-red-500/10 group-data-[scheme=light]:hover:bg-red-50 rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300"
-                  >
-                    <Trash2 size={18} />
-                  </button>
+                    <button 
+                      onClick={(e) => confirmDelete(task, e)}
+                      className="p-2 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 hover:text-red-500 hover:bg-red-500/10 group-data-[scheme=light]:hover:bg-red-50 rounded-xl transition-all duration-300
+                        sm:opacity-0 sm:group-hover:opacity-100 opacity-100"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+
+              {/* Completed Tasks — collapsible */}
+              {completedTasks.length > 0 && (
+                <div className="mt-6">
+                  <button
+                    onClick={() => setShowCompleted(v => !v)}
+                    className="flex items-center gap-2 text-sm font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-secondary)] transition-colors mb-3 px-2"
+                  >
+                    {showCompleted ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                    Completed ({completedTasks.length})
+                  </button>
+                  {showCompleted && (
+                    <div className="space-y-3">
+                      {completedTasks.map((task, index) => (
+                        <div 
+                          key={task.id} 
+                          className="animate-fade-in-up group flex items-center gap-4 p-4 rounded-2xl border transition-all duration-300 cursor-pointer bg-white/5 border-white/5 group-data-[scheme=light]:bg-gray-50 group-data-[scheme=light]:border-transparent opacity-60 hover:opacity-80"
+                          style={{ animationDelay: `${index * 0.03}s` }}
+                          onClick={() => toggleTask(task.id)}
+                        >
+                          <div className="text-green-500 animate-pop">
+                            <CheckCircle2 size={24} />
+                          </div>
+                          <span className="flex-1 line-through text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400">
+                            {task.text}
+                          </span>
+                          <button 
+                            onClick={(e) => confirmDelete(task, e)}
+                            className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all duration-300
+                              sm:opacity-0 sm:group-hover:opacity-100 opacity-100"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

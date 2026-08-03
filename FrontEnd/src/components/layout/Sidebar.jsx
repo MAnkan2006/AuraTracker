@@ -14,6 +14,15 @@ const Sidebar = ({ isLightMode, isOpen, setIsOpen }) => {
   ];
 
   return (
+    <>
+    {/* Mobile backdrop overlay */}
+    {isOpen && (
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+        onClick={() => setIsOpen && setIsOpen(false)}
+        aria-hidden="true"
+      />
+    )}
     <aside className={`fixed inset-y-0 left-0 z-50 transform ${isOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 w-[280px] h-[100dvh] flex flex-col bg-[var(--bg-base)]/95 group-data-[scheme=light]:bg-white/95 backdrop-blur-xl border-r border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] transition-transform duration-300 shadow-2xl md:shadow-none pb-safe`}>
       
       {/* Brand Header */}
@@ -89,6 +98,7 @@ const Sidebar = ({ isLightMode, isOpen, setIsOpen }) => {
         </div>
       </div>
     </aside>
+    </>
   );
 };
 

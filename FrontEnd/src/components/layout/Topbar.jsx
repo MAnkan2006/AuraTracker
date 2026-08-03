@@ -17,8 +17,11 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isAppearanceOpen, setIsAppearanceOpen] = useState(false);
+  const [bellRing, setBellRing] = useState(false);
   const notificationRef = useRef(null);
   const profileRef = useRef(null);
+  const searchRef = useRef(null);
+  const prevUnreadCount = useRef(0);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -31,6 +34,18 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Ctrl+K / Cmd+K to focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
   const { getStats, getStreak } = useAttendance();
@@ -117,6 +132,16 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
   const unreadCount = notificationsWithRead.filter(n => n.unread).length;
   const hasUnread = unreadCount > 0;
 
+  // Ring bell animation when unread count increases
+  useEffect(() => {
+    if (unreadCount > prevUnreadCount.current) {
+      setBellRing(true);
+      const t = setTimeout(() => setBellRing(false), 700);
+      return () => clearTimeout(t);
+    }
+    prevUnreadCount.current = unreadCount;
+  }, [unreadCount]);
+
   const handleMarkAllRead = () => {
     setReadNotifIds(generatedNotifications.map(n => n.id));
   };
@@ -164,6 +189,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
         <div className="relative group/search hidden sm:block">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 group-hover/search:text-[var(--accent)] transition-colors" />
           <input 
+            ref={searchRef}
             type="text" 
             placeholder="Search classes, tasks..." 
             className="w-64 bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-black/[0.08] rounded-xl pl-9 pr-12 py-2 text-sm text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 placeholder-[var(--text-muted)] group-data-[scheme=light]:placeholder-gray-400 outline-none focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent)]/20 focus:bg-white/10 group-data-[scheme=light]:focus:bg-white transition-all shadow-inner group-data-[scheme=light]:shadow-sm"
@@ -181,7 +207,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
             className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all active:scale-95 shadow-sm ${isNotificationsOpen ? 'bg-white/10 border-white/20 text-[var(--text-primary)] group-data-[scheme=light]:bg-gray-100 group-data-[scheme=light]:border-gray-300 group-data-[scheme=light]:text-gray-900' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-black/[0.08] text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900'}`}
           >
-            <Bell className="w-5 h-5" />
+            <Bell className={`w-5 h-5 ${bellRing ? 'animate-[bell-ring_0.6s_ease-in-out]' : ''}`} />
             {hasUnread && (
               <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)] border-2 border-[var(--bg-base)] group-data-[scheme=light]:border-white">
                 {unreadCount}
