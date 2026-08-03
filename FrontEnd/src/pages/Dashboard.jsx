@@ -19,17 +19,66 @@ const getHeatmapColor = (status) => {
 
 const Dashboard = () => {
   const { getStats, getSubjectBreakdown, getRecentHistory, getStreak } = useAttendance();
-  const { getTodayClasses } = useRoutine();
+  const { routine } = useRoutine();
   const { tasks } = useTasks();
   const { user } = useContext(UserContext);
 
   const stats = getStats();
-  const todayClasses = getTodayClasses().slice().sort((a, b) => (a.start || '').localeCompare(b.start || ''));
   const pendingTasks = tasks.filter(t => !t.completed).slice(0, 5);
   const targetGoal = user?.targetGoal ?? 75;
   const performanceData = getSubjectBreakdown();
   const heatmapData = getRecentHistory(35);
   const streak = getStreak();
+
+  // --- Date & Up Next Class Calculations ---
+  const currentDate = new Date();
+  const nowHour = currentDate.getHours();
+  const nowMin = currentDate.getMinutes();
+  const nowHHMM = `${String(nowHour).padStart(2, '0')}:${String(nowMin).padStart(2, '0')}`;
+
+  const todayDayNum = currentDate.getDay() === 0 ? 7 : currentDate.getDay();
+  const yearStr = currentDate.getFullYear();
+  const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const dayStr = String(currentDate.getDate()).padStart(2, '0');
+  const todayStr = `${yearStr}-${monthStr}-${dayStr}`;
+
+  // Tomorrow Date & Day
+  const tomorrowDateObj = new Date(currentDate);
+  tomorrowDateObj.setDate(currentDate.getDate() + 1);
+  const tomorrowYearStr = tomorrowDateObj.getFullYear();
+  const tomorrowMonthStr = String(tomorrowDateObj.getMonth() + 1).padStart(2, '0');
+  const tomorrowDayStr = String(tomorrowDateObj.getDate()).padStart(2, '0');
+  const tomorrowStr = `${tomorrowYearStr}-${tomorrowMonthStr}-${tomorrowDayStr}`;
+  const tomorrowDayNum = tomorrowDateObj.getDay() === 0 ? 7 : tomorrowDateObj.getDay();
+
+  const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+  const tomorrowDayName = dayNames[tomorrowDayNum - 1];
+
+  // Today's classes sorted chronologically
+  const todayClasses = routine
+    .filter(c => c.isSpecial ? c.date === todayStr : Number(c.day) === todayDayNum)
+    .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+
+  // Today's remaining classes (end time > current HH:MM)
+  const remainingTodayClasses = todayClasses.filter(c => {
+    const endTime = c.end || c.start || '23:59';
+    return endTime > nowHHMM;
+  });
+
+  // Tomorrow's classes sorted chronologically
+  const tomorrowClasses = routine
+    .filter(c => c.isSpecial ? c.date === tomorrowStr : Number(c.day) === tomorrowDayNum)
+    .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+
+  // Condition to switch Overview Up Next to Tomorrow:
+  // (After 4 PM (>=16) OR no remaining classes today) AND tomorrow has scheduled classes
+  const isAfter4PM = nowHour >= 16;
+  const noRemainingToday = remainingTodayClasses.length === 0;
+  const showTomorrowUpNext = (isAfter4PM || noRemainingToday) && tomorrowClasses.length > 0;
+
+  const displayedUpNextClasses = showTomorrowUpNext 
+    ? tomorrowClasses 
+    : (remainingTodayClasses.length > 0 ? remainingTodayClasses : todayClasses);
 
   const glassPanelClass = "group bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2)] group-data-[scheme=light]:hover:shadow-md cursor-pointer";
 
@@ -105,21 +154,34 @@ const Dashboard = () => {
       {/* Today's Hub */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
         
+        {/* Dynamic Up Next Card (Today or Tomorrow after 4 PM) */}
         <div className={`${glassPanelClass} flex flex-col h-full`}>
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2.5 bg-white/10 group-data-[scheme=light]:bg-blue-50 rounded-xl text-[var(--accent)] group-data-[scheme=light]:text-blue-600">
+            <div className={`p-2.5 rounded-xl ${showTomorrowUpNext ? 'bg-purple-500/10 text-purple-400 group-data-[scheme=light]:bg-purple-50 group-data-[scheme=light]:text-purple-600' : 'bg-white/10 text-[var(--accent)] group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:text-blue-600'}`}>
               <CalendarClock size={22} />
             </div>
-            <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Up Next Today</h3>
+            <div>
+              <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">
+                {showTomorrowUpNext ? `Up Next Tomorrow (${tomorrowDayName})` : 'Up Next Today'}
+              </h3>
+              {showTomorrowUpNext && (
+                <p className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 font-medium mt-0.5">
+                  Today's classes completed &bull; Showing tomorrow ({tomorrowStr})
+                </p>
+              )}
+            </div>
           </div>
+
           <div className="space-y-3 flex-1">
-            {todayClasses.length === 0 ? (
+            {displayedUpNextClasses.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-40 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-black/[0.04]">
                 <CalendarClock size={32} className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-3 opacity-50" />
-                <p className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 font-medium">No classes scheduled.</p>
+                <p className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 font-medium">
+                  {showTomorrowUpNext ? `No classes scheduled for tomorrow (${tomorrowDayName}).` : 'No classes scheduled.'}
+                </p>
               </div>
             ) : (
-              todayClasses.map((cls, idx) => (
+              displayedUpNextClasses.map((cls, idx) => (
                 <div key={idx} className="flex justify-between items-center p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-black/[0.08] hover:border-[var(--accent)]/50 group-data-[scheme=light]:hover:border-blue-200 transition-colors group/item">
                   <div className="flex flex-col">
                     <h4 className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 group-hover/item:text-[var(--accent)] transition-colors">{cls.title}</h4>
@@ -134,6 +196,7 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Due Soon Tasks */}
         <div className={`${glassPanelClass} flex flex-col h-full`}>
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2.5 bg-white/10 group-data-[scheme=light]:bg-red-50 rounded-xl text-red-400 group-data-[scheme=light]:text-red-500">
