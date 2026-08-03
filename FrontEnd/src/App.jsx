@@ -13,7 +13,6 @@ import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
 import Routine from './pages/Routine';
 import Tasks from './pages/Tasks';
-import Map from './pages/Map';
 import Profile from './pages/Profile';
 
 function App() {
@@ -34,7 +33,6 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="routine" element={<Routine />} />
           <Route path="tasks" element={<Tasks />} />
-          <Route path="map" element={<Map />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Route>

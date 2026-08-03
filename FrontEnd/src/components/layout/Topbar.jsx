@@ -2,7 +2,13 @@ import React, { useContext, useState, useRef, useEffect } from 'react';
 import { UserContext } from '../../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { useAttendance } from '../../hooks/useAttendance';
-import { Bell, Search, Sun, Moon, ChevronDown, Menu, CheckCircle2, AlertCircle, Clock, Settings, User, LogOut, Palette, ChevronRight, Coffee } from 'lucide-react';
+import { useTasks } from '../../hooks/useTasks';
+import { useRoutine } from '../../hooks/useRoutine';
+import { 
+  Bell, Search, Sun, Moon, ChevronDown, Menu, CheckCircle2, 
+  AlertCircle, Clock, Settings, User, LogOut, Palette, ChevronRight, 
+  Coffee, Flame, BookOpen, CheckSquare 
+} from 'lucide-react';
 import Dropdown from '../ui/Dropdown';
 
 const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTheme, font, setFont }) => {
@@ -27,25 +33,117 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const { getStats } = useAttendance();
+  const { getStats, getStreak } = useAttendance();
+  const { tasks } = useTasks();
+  const { routine } = useRoutine();
+
   const stats = getStats();
+  const streak = getStreak();
+  const pendingTasks = tasks.filter(t => !t.completed);
 
-  const notifications = [];
-  let notifId = 1;
+  // Today's classes
+  const currentDate = new Date();
+  const todayDayNum = currentDate.getDay() === 0 ? 7 : currentDate.getDay();
+  const yearStr = currentDate.getFullYear();
+  const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const dayStr = String(currentDate.getDate()).padStart(2, '0');
+  const todayStr = `${yearStr}-${monthStr}-${dayStr}`;
 
-  if (user && user.username?.toLowerCase() !== 'guest' && (!user.name || user.name === '')) {
-    notifications.push({ id: notifId++, type: 'info', title: 'Profile Incomplete', message: 'Please update your full name to personalize your experience.', time: 'Just now', unread: true });
-  }
+  const todayClasses = routine
+    .filter(c => c.isSpecial ? c.date === todayStr : Number(c.day) === todayDayNum)
+    .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+
+  // State for read notifications
+  const [readNotifIds, setReadNotifIds] = useState([]);
+
+  // Generate real-time notifications list
+  const generatedNotifications = [];
 
   if (user && stats.total > 0 && stats.percentage < (user.targetGoal || 75)) {
-    notifications.push({ id: notifId++, type: 'alert', title: 'Low Attendance', message: `Your overall attendance (${stats.percentage}%) is below your target of ${user.targetGoal || 75}%.`, time: 'Recently', unread: true });
+    generatedNotifications.push({
+      id: 'low-attendance',
+      type: 'alert',
+      title: 'Low Attendance Alert',
+      message: `Your overall attendance is currently ${stats.percentage}%, below your ${user.targetGoal || 75}% target.`,
+      time: 'Attention needed'
+    });
   }
 
-  const dummyNotifications = notifications;
-  const hasUnread = dummyNotifications.some(n => n.unread);
+  if (streak >= 3) {
+    generatedNotifications.push({
+      id: 'streak-active',
+      type: 'success',
+      title: `🔥 ${streak}-Day Streak Active!`,
+      message: `Great job! You've logged attendance for ${streak} consecutive active days.`,
+      time: 'Active now'
+    });
+  }
+
+  if (todayClasses.length > 0) {
+    generatedNotifications.push({
+      id: 'today-classes',
+      type: 'schedule',
+      title: `${todayClasses.length} Class${todayClasses.length > 1 ? 'es' : ''} Today`,
+      message: `First class: ${todayClasses[0].title} (${todayClasses[0].start} - ${todayClasses[0].end})`,
+      time: 'Today'
+    });
+  }
+
+  if (pendingTasks.length > 0) {
+    generatedNotifications.push({
+      id: 'pending-tasks',
+      type: 'info',
+      title: `${pendingTasks.length} Pending Task${pendingTasks.length > 1 ? 's' : ''}`,
+      message: `Next task due: "${pendingTasks[0].text}"`,
+      time: 'Due soon'
+    });
+  }
+
+  if (user && user.username?.toLowerCase() !== 'guest' && (!user.name || user.name === '')) {
+    generatedNotifications.push({
+      id: 'incomplete-profile',
+      type: 'info',
+      title: 'Complete Profile',
+      message: 'Update your name in settings to personalize your tracker experience.',
+      time: 'System'
+    });
+  }
+
+  const notificationsWithRead = generatedNotifications.map(n => ({
+    ...n,
+    unread: !readNotifIds.includes(n.id)
+  }));
+
+  const unreadCount = notificationsWithRead.filter(n => n.unread).length;
+  const hasUnread = unreadCount > 0;
+
+  const handleMarkAllRead = () => {
+    setReadNotifIds(generatedNotifications.map(n => n.id));
+  };
+
+  const handleToggleRead = (id) => {
+    if (readNotifIds.includes(id)) {
+      setReadNotifIds(readNotifIds.filter(i => i !== id));
+    } else {
+      setReadNotifIds([...readNotifIds, id]);
+    }
+  };
+
+  const getNotifIcon = (type) => {
+    switch (type) {
+      case 'alert':
+        return <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-red-500/10 text-red-500"><AlertCircle size={16} /></div>;
+      case 'success':
+        return <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-green-500/10 text-green-500"><Flame size={16} /></div>;
+      case 'schedule':
+        return <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-purple-500/10 text-purple-400"><BookOpen size={16} /></div>;
+      default:
+        return <div className="mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center bg-blue-500/10 text-blue-500"><CheckSquare size={16} /></div>;
+    }
+  };
 
   return (
-    <header className="h-[72px] shrink-0 bg-white/5 group-data-[scheme=light]:bg-white/40 backdrop-blur-md border-b border-white/10 group-data-[scheme=light]:border-black/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.1)] group-data-[scheme=light]:shadow-sm flex items-center justify-between px-6 z-10 sticky top-0 transition-all duration-300">
+    <header className="h-[72px] shrink-0 bg-white/5 group-data-[scheme=light]:bg-white/40 backdrop-blur-md border-b border-white/10 group-data-[scheme=light]:border-black/[0.08] shadow-[0_4px_30px_rgba(0,0,0,0.1)] group-data-[scheme=light]:shadow-sm flex items-center justify-between px-6 z-40 sticky top-0 transition-all duration-300">
       
       {/* Left: Greeting + Search */}
       <div className="flex items-center gap-4 lg:gap-6">
@@ -84,36 +182,63 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
             className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all active:scale-95 shadow-sm ${isNotificationsOpen ? 'bg-white/10 border-white/20 text-[var(--text-primary)] group-data-[scheme=light]:bg-gray-100 group-data-[scheme=light]:border-gray-300 group-data-[scheme=light]:text-gray-900' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-black/[0.08] text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-900'}`}
           >
             <Bell className="w-5 h-5" />
-            {hasUnread && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-[var(--sidebar-bg)] group-data-[scheme=light]:border-white shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>}
+            {hasUnread && (
+              <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] font-black rounded-full shadow-[0_0_8px_rgba(239,68,68,0.8)] border-2 border-[var(--bg-base)] group-data-[scheme=light]:border-white">
+                {unreadCount}
+              </span>
+            )}
           </button>
 
           {isNotificationsOpen && (
-            <div className="fixed inset-x-4 top-16 sm:absolute sm:top-auto sm:inset-auto sm:right-0 sm:mt-3 sm:w-96 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+            <div 
+              style={{ backgroundColor: 'var(--popover-bg)' }}
+              className="fixed inset-x-4 top-16 sm:absolute sm:top-auto sm:inset-auto sm:right-0 sm:mt-3 sm:w-96 group-data-[scheme=light]:!bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200"
+            >
               <div className="flex items-center justify-between p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
-                <h3 className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Notifications</h3>
-                <button className="text-xs font-bold text-[var(--accent)] hover:underline">Mark all as read</button>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Notifications</h3>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 text-[10px] font-extrabold bg-[var(--accent)]/20 text-[var(--accent)] rounded-full">
+                      {unreadCount} new
+                    </span>
+                  )}
+                </div>
+                {hasUnread && (
+                  <button onClick={handleMarkAllRead} className="text-xs font-bold text-[var(--accent)] hover:underline">
+                    Mark all as read
+                  </button>
+                )}
               </div>
               <div className="max-h-[400px] overflow-y-auto custom-scrollbar">
-                {dummyNotifications.length === 0 ? (
+                {notificationsWithRead.length === 0 ? (
                   <div className="p-8 text-center flex flex-col items-center justify-center gap-2">
                     <div className="w-12 h-12 rounded-full bg-white/5 group-data-[scheme=light]:bg-gray-100 flex items-center justify-center text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-1">
                       <Coffee size={24} />
                     </div>
                     <span className="font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">You're all caught up!</span>
+                    <span className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400">No active alerts or reminders right now.</span>
                   </div>
                 ) : (
                   <div className="flex flex-col">
-                    {dummyNotifications.map(notif => (
-                      <div key={notif.id} className={`p-4 border-b border-white/5 group-data-[scheme=light]:border-gray-100 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-50 transition-colors cursor-pointer relative ${notif.unread ? 'bg-white/[0.02] group-data-[scheme=light]:bg-blue-50/50' : ''}`}>
+                    {notificationsWithRead.map(notif => (
+                      <div 
+                        key={notif.id} 
+                        onClick={() => handleToggleRead(notif.id)}
+                        className={`p-4 border-b border-white/5 group-data-[scheme=light]:border-gray-100 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-50 transition-colors cursor-pointer relative ${notif.unread ? 'bg-white/[0.03] group-data-[scheme=light]:bg-blue-50/50' : 'opacity-70'}`}
+                      >
                         {notif.unread && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-[var(--accent)] rounded-r-full"></div>}
                         <div className="flex gap-3 pl-2">
-                          <div className={`mt-0.5 shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${notif.type === 'alert' ? 'bg-red-500/10 text-red-500' : notif.type === 'success' ? 'bg-green-500/10 text-green-500' : notif.type === 'info' ? 'bg-blue-500/10 text-blue-500' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}`}>
-                            {notif.type === 'alert' ? <AlertCircle size={16} /> : notif.type === 'success' ? <CheckCircle2 size={16} /> : notif.type === 'info' ? <User size={16} /> : <Clock size={16} />}
-                          </div>
-                          <div className="flex flex-col gap-1">
-                            <span className={`text-sm font-bold ${notif.unread ? 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600'}`}>{notif.title}</span>
-                            <span className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 leading-snug">{notif.message}</span>
-                            <span className="text-[10px] font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-1 uppercase tracking-wider">{notif.time}</span>
+                          {getNotifIcon(notif.type)}
+                          <div className="flex flex-col gap-1 pr-2">
+                            <span className={`text-sm font-bold ${notif.unread ? 'text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600'}`}>
+                              {notif.title}
+                            </span>
+                            <span className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 leading-snug">
+                              {notif.message}
+                            </span>
+                            <span className="text-[10px] font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-1 uppercase tracking-wider">
+                              {notif.time}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -121,8 +246,15 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
                   </div>
                 )}
               </div>
-              <div className="p-3 border-t border-white/10 group-data-[scheme=light]:border-gray-100 bg-white/5 group-data-[scheme=light]:bg-gray-50 text-center">
-                <button className="text-xs font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--accent)] transition-colors">View All Notifications</button>
+              <div className="p-3 border-t border-white/10 group-data-[scheme=light]:border-gray-100 bg-white/5 group-data-[scheme=light]:bg-gray-50 text-center flex justify-between items-center px-4">
+                <span className="text-[11px] font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">
+                  {notificationsWithRead.length} Total Alerts
+                </span>
+                {hasUnread && (
+                  <button onClick={handleMarkAllRead} className="text-xs font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--accent)] transition-colors">
+                    Dismiss Unread
+                  </button>
+                )}
               </div>
             </div>
           )}
@@ -155,7 +287,10 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
           </button>
 
           {isProfileOpen && (
-            <div className="absolute right-0 mt-3 w-56 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+            <div 
+              style={{ backgroundColor: 'var(--popover-bg)' }}
+              className="absolute right-0 mt-3 w-56 group-data-[scheme=light]:!bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 transform origin-top-right animate-in fade-in zoom-in-95 duration-200"
+            >
               <div className="p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
                 <div className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 truncate">{user ? (user.name || user.username || 'Student') : 'Student'}</div>
                 <div className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 truncate">@{user ? user.username : 'student'}</div>

@@ -43,7 +43,10 @@ const Dropdown = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 left-0 w-full mt-2 py-2 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white border border-white/20 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl backdrop-blur-2xl group-data-[scheme=light]:shadow-[0_12px_40px_rgba(0,0,0,0.2)] origin-top animate-in fade-in zoom-in-95 duration-200 max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+        <div 
+          style={{ backgroundColor: 'var(--popover-bg)' }}
+          className="absolute z-50 left-0 w-full mt-2 py-2 group-data-[scheme=light]:!bg-white border border-white/20 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl backdrop-blur-2xl group-data-[scheme=light]:shadow-[0_12px_40px_rgba(0,0,0,0.2)] origin-top animate-in fade-in zoom-in-95 duration-200 max-h-60 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
           {options.map((opt, idx) => {
             const optValue = typeof opt === 'object' ? opt.value : opt;
             const optLabel = typeof opt === 'object' ? opt.label : opt;
