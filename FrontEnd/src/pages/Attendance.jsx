@@ -80,6 +80,18 @@ const Attendance = () => {
     return Boolean(status);
   });
 
+  const nowHour = currentDate.getHours(); // 0 - 23 (4 PM is 16)
+  const nowMin = currentDate.getMinutes();
+  const nowHHMM = `${String(nowHour).padStart(2, '0')}:${String(nowMin).padStart(2, '0')}`;
+
+  // Unrecorded today classes whose scheduled end time has not passed yet
+  const remainingTodayClasses = sortedTodayClasses.filter(c => {
+    const isMarked = Boolean(attendance[c.title]?.[todayStr]);
+    const endTime = c.end || c.start || '23:59';
+    const isTimePassed = endTime <= nowHHMM;
+    return !isMarked && !isTimePassed;
+  });
+
   // --- Tomorrow's Classes Logic ---
   const tomorrowClasses = routine.filter(c => {
     if (c.isSpecial) return c.date === tomorrowStr;
@@ -93,13 +105,21 @@ const Attendance = () => {
   });
 
   // Condition to switch Up Next to Tomorrow:
-  // After 4 PM (>=16) AND no remaining unrecorded classes today AND classes exist for tomorrow
-  const isAfter4PM = currentHour >= 16;
-  const noPendingToday = pendingTodayClasses.length === 0;
-  const showTomorrowUpNext = isAfter4PM && noPendingToday && sortedTomorrowClasses.length > 0;
+  // (After 4 PM (>=16) OR no remaining unrecorded classes for today) AND classes exist for tomorrow
+  const isAfter4PM = nowHour >= 16;
+  const noRemainingToday = remainingTodayClasses.length === 0;
+  const showTomorrowUpNext = (isAfter4PM || noRemainingToday) && sortedTomorrowClasses.length > 0;
 
   // Active target date and classes to display in Up Next hero card
-  const activeClassList = showTomorrowUpNext ? sortedTomorrowClasses : pendingTodayClasses;
+  let activeClassList = [];
+  if (showTomorrowUpNext) {
+    activeClassList = sortedTomorrowClasses;
+  } else if (remainingTodayClasses.length > 0) {
+    activeClassList = remainingTodayClasses;
+  } else {
+    activeClassList = pendingTodayClasses;
+  }
+
   const primaryPendingClass = activeClassList[0] || null;
   const targetMarkDate = showTomorrowUpNext ? tomorrowStr : todayStr;
 
