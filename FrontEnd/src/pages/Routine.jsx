@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useRoutine } from '../hooks/useRoutine';
 import { useAttendance } from '../hooks/useAttendance';
 import { useToast } from '../context/ToastContext';
-import { CalendarRange, Plus, UploadCloud, ListChecks, Trash2, Clock, CheckCircle2, XCircle, FileWarning, Ban, Loader2 } from 'lucide-react';
+import { CalendarRange, Plus, UploadCloud, ListChecks, Trash2, Clock, CheckCircle2, XCircle, FileWarning, Ban, Loader2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import TimePickerModal from '../components/ui/TimePickerModal';
 import DatePickerModal from '../components/ui/DatePickerModal';
@@ -60,8 +60,30 @@ const Routine = () => {
     }
   };
 
+  const todayDayNum = new Date().getDay() === 0 ? 7 : new Date().getDay();
   const [viewMode, setViewMode] = useState('daily');
-  const [selectedDay, setSelectedDay] = useState(new Date().getDay() || 7); // Default to today (1-7)
+  const [selectedDay, setSelectedDay] = useState(todayDayNum); // Default to today (1-7)
+  const [expandedDays, setExpandedDays] = useState([todayDayNum]);
+
+  const toggleExpandDay = (dayKey) => {
+    setExpandedDays(prev => 
+      prev.includes(dayKey) ? prev.filter(d => d !== dayKey) : [...prev, dayKey]
+    );
+  };
+
+  const dailyOptions = [1, 2, 3, 4, 5, 6, 7, 'special'];
+  const currentOptIndex = dailyOptions.indexOf(selectedDay);
+
+  const handlePrevDay = () => {
+    const nextIdx = (currentOptIndex - 1 + dailyOptions.length) % dailyOptions.length;
+    setSelectedDay(dailyOptions[nextIdx]);
+  };
+
+  const handleNextDay = () => {
+    const nextIdx = (currentOptIndex + 1) % dailyOptions.length;
+    setSelectedDay(dailyOptions[nextIdx]);
+  };
+
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState([]);
   
@@ -296,116 +318,258 @@ const Routine = () => {
       <div className={glassPanelClass}>
         {viewMode === 'weekly' ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-7 gap-4">
-            {days.map((day, index) => {
-              const dayClasses = getWeeklySlotClasses(index + 1);
-              return (
-                <div 
-                  key={day} 
-                  className="animate-fade-in-up bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-inner flex flex-col md:h-[500px] h-auto min-h-[150px]"
-                  style={{ animationDelay: `${index * 0.05}s` }}
-                >
-                  <div className="bg-white/10 group-data-[scheme=light]:bg-gray-200/50 p-3 text-center border-b border-white/5 group-data-[scheme=light]:border-gray-200 font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm tracking-wide">
-                    {day}
-                  </div>
-                  <div className="flex-1 p-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
-                    {dayClasses.length === 0 ? (
-                      <div className="text-center text-sm text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium">Free day</div>
-                    ) : (
-                      dayClasses.map((cls, idx) => {
-                        const classKey = cls.id || cls.title;
-                        const isPast = cls.isSpecial && isSpecialPast(cls.date);
-                        return (
-                          <div key={cls.id || idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
-                            {isManageMode && (
-                              <div className="absolute top-2 right-2 flex items-center gap-2">
-                                <button 
-                                  onClick={() => handleSingleDelete(cls)}
-                                  className="text-red-500 hover:text-red-600 transition-colors"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                                <input 
-                                  type="checkbox" 
-                                  className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
-                                  checked={selectedSlots.includes(classKey)}
-                                  onChange={(e) => {
-                                    if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
-                                    else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
-                                  }}
-                                />
+            {/* Desktop Weekly View: 7 Columns Grid */}
+            <div className="hidden md:grid md:grid-cols-7 gap-4">
+              {days.map((day, index) => {
+                const dayClasses = getWeeklySlotClasses(index + 1);
+                return (
+                  <div 
+                    key={day} 
+                    className="animate-fade-in-up bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-inner flex flex-col h-[500px]"
+                    style={{ animationDelay: `${index * 0.05}s` }}
+                  >
+                    <div className="bg-white/10 group-data-[scheme=light]:bg-gray-200/50 p-3 text-center border-b border-white/5 group-data-[scheme=light]:border-gray-200 font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm tracking-wide flex items-center justify-center gap-1.5">
+                      <span>{day}</span>
+                      {index + 1 === todayDayNum && (
+                        <span className="w-2 h-2 rounded-full bg-[var(--accent)] animate-ping" title="Today"></span>
+                      )}
+                    </div>
+                    <div className="flex-1 p-3 space-y-3 overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:bg-white/20 group-data-[scheme=light]:[&::-webkit-scrollbar-thumb]:bg-gray-300 [&::-webkit-scrollbar-thumb]:rounded-full">
+                      {dayClasses.length === 0 ? (
+                        <div className="text-center text-sm text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium">Free day</div>
+                      ) : (
+                        dayClasses.map((cls, idx) => {
+                          const classKey = cls.id || cls.title;
+                          const isPast = cls.isSpecial && isSpecialPast(cls.date);
+                          return (
+                            <div key={cls.id || idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
+                              {isManageMode && (
+                                <div className="absolute top-2 right-2 flex items-center gap-2">
+                                  <button 
+                                    onClick={() => handleSingleDelete(cls)}
+                                    className="text-red-500 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                                    checked={selectedSlots.includes(classKey)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                                      else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-1 pr-6 flex items-center justify-between">
+                                <span>{cls.title}</span>
+                                {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
                               </div>
-                            )}
-                            <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-1 pr-6 flex items-center justify-between">
-                              <span>{cls.title}</span>
-                              {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
+                              <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                              <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                              
+                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
                             </div>
-                            <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
-                            <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                            
-                            {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Mobile Weekly View: Collapsible Accordion */}
+            <div className="md:hidden space-y-3">
+              {days.map((day, index) => {
+                const weekdayNum = index + 1;
+                const isToday = weekdayNum === todayDayNum;
+                const isExpanded = expandedDays.includes(weekdayNum);
+                const dayClasses = getWeeklySlotClasses(weekdayNum);
+
+                return (
+                  <div 
+                    key={day} 
+                    className="bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
+                  >
+                    <button
+                      onClick={() => toggleExpandDay(weekdayNum)}
+                      className="w-full flex items-center justify-between p-4 bg-white/10 group-data-[scheme=light]:bg-gray-100 text-left font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 transition-colors"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">{day}</span>
+                        {isToday && (
+                          <span className="px-2 py-0.5 text-[10px] bg-[var(--accent)] text-white font-extrabold rounded-full tracking-wider uppercase">
+                            Today
+                          </span>
+                        )}
+                        <span className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 font-medium">
+                          • {dayClasses.length} {dayClasses.length === 1 ? 'class' : 'classes'}
+                        </span>
+                      </div>
+                      {isExpanded ? <ChevronUp size={20} className="text-[var(--accent)]" /> : <ChevronDown size={20} className="text-[var(--text-muted)]" />}
+                    </button>
+
+                    <div className={`transition-all duration-300 ease-in-out overflow-hidden ${isExpanded ? 'max-h-[1500px] opacity-100 p-3 space-y-3 border-t border-white/5 group-data-[scheme=light]:border-gray-200' : 'max-h-0 opacity-0 p-0'}`}>
+                      {dayClasses.length === 0 ? (
+                        <div className="text-center text-sm text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 py-4 italic font-medium">Free day &mdash; No classes scheduled</div>
+                      ) : (
+                        dayClasses.map((cls, idx) => {
+                          const classKey = cls.id || cls.title;
+                          const isPast = cls.isSpecial && isSpecialPast(cls.date);
+                          return (
+                            <div key={cls.id || idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
+                              {isManageMode && (
+                                <div className="absolute top-2 right-2 flex items-center gap-2">
+                                  <button 
+                                    onClick={() => handleSingleDelete(cls)}
+                                    className="text-red-500 hover:text-red-600 transition-colors"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                  <input 
+                                    type="checkbox" 
+                                    className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
+                                    checked={selectedSlots.includes(classKey)}
+                                    onChange={(e) => {
+                                      if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                                      else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                                    }}
+                                  />
+                                </div>
+                              )}
+                              <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight mb-1 pr-6 flex items-center justify-between">
+                                <span>{cls.title}</span>
+                                {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
+                              </div>
+                              <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                              <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                              
+                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Special Classes accordion item if present */}
+              {routine.some(c => c.isSpecial) && (
+                <div className="bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-300">
+                  <button
+                    onClick={() => toggleExpandDay('special')}
+                    className="w-full flex items-center justify-between p-4 bg-purple-500/20 group-data-[scheme=light]:bg-purple-100 text-left font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-purple-900 transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <CalendarRange size={18} className="text-purple-400" />
+                      <span className="text-base font-bold text-purple-400 group-data-[scheme=light]:text-purple-800">Special Classes</span>
+                      <span className="text-xs text-purple-400/80 group-data-[scheme=light]:text-purple-700 font-medium">
+                        • {routine.filter(c => c.isSpecial).length} events
+                      </span>
+                    </div>
+                    {expandedDays.includes('special') ? <ChevronUp size={20} className="text-purple-400" /> : <ChevronDown size={20} className="text-purple-400" />}
+                  </button>
+
+                  <div className={`transition-all duration-300 ease-in-out overflow-hidden ${expandedDays.includes('special') ? 'max-h-[1500px] opacity-100 p-3 space-y-3 border-t border-purple-500/20' : 'max-h-0 opacity-0 p-0'}`}>
+                    {routine.filter(c => c.isSpecial).map((cls, idx) => {
+                      const classKey = cls.id || cls.title;
+                      const isPast = isSpecialPast(cls.date);
+                      return (
+                        <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-100/50 border border-purple-500/20 rounded-xl shadow-sm ${isPast ? 'opacity-65' : ''}`}>
+                          {isManageMode && (
+                            <div className="absolute top-2 right-2 flex items-center gap-2">
+                              <button 
+                                onClick={() => handleSingleDelete(cls)}
+                                className="text-red-500 hover:text-red-600 transition-colors"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                              <input 
+                                type="checkbox" 
+                                className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
+                                checked={selectedSlots.includes(classKey)}
+                                onChange={(e) => {
+                                  if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                                  else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                                }}
+                              />
+                            </div>
+                          )}
+                          <div className="flex justify-between items-start mb-1">
+                            <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight pr-6">{cls.title}</div>
+                            {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
                           </div>
-                        );
-                      })
-                    )}
+                          <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                          <div className="flex justify-between items-center">
+                            <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                            <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
+                          </div>
+                          
+                          {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-          
-          {routine.some(c => c.isSpecial) && (
-            <div className="mt-8 pt-8 border-t border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">
-              <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-4 flex items-center gap-2">
-                <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-500"><CalendarRange size={18} /></span>
-                Special Classes
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {routine.filter(c => c.isSpecial).map((cls, idx) => {
-                  const classKey = cls.id || cls.title;
-                  const isPast = isSpecialPast(cls.date);
-                  return (
-                    <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-xl shadow-[0_2px_10px_rgba(168,85,247,0.15)] group-data-[scheme=light]:shadow-sm ${isPast ? 'opacity-65' : ''}`}>
-                      {isManageMode && (
-                        <div className="absolute top-2 right-2 flex items-center gap-2">
-                          <button 
-                            onClick={() => handleSingleDelete(cls)}
-                            className="text-red-500 hover:text-red-600 transition-colors"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                          <input 
-                            type="checkbox" 
-                            className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
-                            checked={selectedSlots.includes(classKey)}
-                            onChange={(e) => {
-                              if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
-                              else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="flex justify-between items-start mb-1">
-                        <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight pr-6">{cls.title}</div>
-                        {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
-                      </div>
-                      <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
-                      <div className="flex justify-between items-center">
-                        <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                        <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
-                      </div>
-                      
-                      {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
-                    </div>
-                  );
-                })}
-              </div>
+              )}
             </div>
-          )}
+          
+            {routine.some(c => c.isSpecial) && (
+              <div className="hidden md:block mt-8 pt-8 border-t border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">
+                <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-4 flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-purple-500/20 text-purple-500"><CalendarRange size={18} /></span>
+                  Special Classes
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {routine.filter(c => c.isSpecial).map((cls, idx) => {
+                    const classKey = cls.id || cls.title;
+                    const isPast = isSpecialPast(cls.date);
+                    return (
+                      <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-xl shadow-[0_2px_10px_rgba(168,85,247,0.15)] group-data-[scheme=light]:shadow-sm ${isPast ? 'opacity-65' : ''}`}>
+                        {isManageMode && (
+                          <div className="absolute top-2 right-2 flex items-center gap-2">
+                            <button 
+                              onClick={() => handleSingleDelete(cls)}
+                              className="text-red-500 hover:text-red-600 transition-colors"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                            <input 
+                              type="checkbox" 
+                              className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
+                              checked={selectedSlots.includes(classKey)}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedSlots([...selectedSlots, classKey]);
+                                else setSelectedSlots(selectedSlots.filter(id => id !== classKey));
+                              }}
+                            />
+                          </div>
+                        )}
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight pr-6">{cls.title}</div>
+                          {isPast && <span className="text-[10px] font-bold text-gray-400 bg-gray-500/20 px-2 py-0.5 rounded-md">Past</span>}
+                        </div>
+                        <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
+                        <div className="flex justify-between items-center">
+                          <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
+                          <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
+                        </div>
+                        
+                        {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </>
         ) : (
           <div className="flex flex-col">
-            <div className="flex justify-between md:justify-start overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
+            {/* Desktop Tabs */}
+            <div className="hidden md:flex justify-start overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
               {days.map((day, idx) => (
                 <button 
                   key={day}
@@ -422,6 +586,40 @@ const Routine = () => {
                 Special Classes
               </button>
             </div>
+
+            {/* Mobile Arrow Switcher */}
+            <div className="md:hidden flex items-center justify-between bg-white/5 group-data-[scheme=light]:bg-gray-100 p-3 rounded-2xl border border-white/10 group-data-[scheme=light]:border-gray-200 mb-6 shadow-sm">
+              <button 
+                onClick={handlePrevDay}
+                className="p-2.5 rounded-xl bg-white/10 group-data-[scheme=light]:bg-white hover:bg-white/20 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 transition-all active:scale-95 shadow-sm"
+                aria-label="Previous Day"
+              >
+                <ChevronLeft size={22} />
+              </button>
+
+              <div className="text-center">
+                <div className="text-lg font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 flex items-center gap-2 justify-center">
+                  <span>{selectedDay === 'special' ? 'Special Classes' : days[selectedDay - 1]}</span>
+                  {selectedDay === todayDayNum && (
+                    <span className="px-2 py-0.5 text-[10px] bg-[var(--accent)] text-white font-black rounded-full uppercase tracking-wider">
+                      Today
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-0.5">
+                  {getDailyTabClasses(selectedDay).length} {getDailyTabClasses(selectedDay).length === 1 ? 'class' : 'classes'} scheduled
+                </div>
+              </div>
+
+              <button 
+                onClick={handleNextDay}
+                className="p-2.5 rounded-xl bg-white/10 group-data-[scheme=light]:bg-white hover:bg-white/20 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 transition-all active:scale-95 shadow-sm"
+                aria-label="Next Day"
+              >
+                <ChevronRight size={22} />
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {getDailyTabClasses(selectedDay).length === 0 ? (
                 <div className="col-span-full text-center text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mt-8 italic font-medium p-8 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-gray-200">

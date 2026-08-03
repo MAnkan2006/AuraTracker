@@ -2,16 +2,26 @@ import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import api from '../services/api';
 
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export const useAttendance = () => {
   const { appState, updateAppState } = useContext(AppContext);
   const attendance = appState.attendance || {};
+  const routine = appState.routine || [];
 
   const markAttendance = async (subject, dateKey, status) => {
-    // Logic to mark attendance
-    // e.g. update local state, then push to backend
     const updatedAttendance = { ...attendance };
     if (!updatedAttendance[subject]) updatedAttendance[subject] = {};
-    updatedAttendance[subject][dateKey] = status;
+    if (status === null || status === undefined) {
+      delete updatedAttendance[subject][dateKey];
+    } else {
+      updatedAttendance[subject][dateKey] = status;
+    }
     
     updateAppState({ attendance: updatedAttendance });
   };
@@ -20,7 +30,7 @@ export const useAttendance = () => {
     let present = 0, absent = 0, late = 0, excused = 0, cancelled = 0;
     
     Object.values(attendance).forEach(subjectRecords => {
-      Object.values(subjectRecords).forEach(status => {
+      Object.values(subjectRecords || {}).forEach(status => {
         if (status === 'Present' || status === 'p') present++;
         else if (status === 'Absent' || status === 'a') absent++;
         else if (status === 'Late' || status === 'l') late++;
@@ -38,7 +48,9 @@ export const useAttendance = () => {
   const COLOR_PALETTE = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
   const getSubjectBreakdown = () => {
-    const subjects = Object.keys(attendance);
+    const routineSubjects = routine.map(c => c.title).filter(Boolean);
+    const attendanceSubjects = Object.keys(attendance);
+    const subjects = Array.from(new Set([...routineSubjects, ...attendanceSubjects]));
     const breakdown = [];
 
     subjects.forEach((subject, idx) => {
@@ -50,14 +62,16 @@ export const useAttendance = () => {
         else if (status === 'Late' || status === 'l') late++;
       });
       const total = present + absent + late;
-      if (total > 0) {
-        const percentage = Math.round(((present + late) / total) * 100);
-        breakdown.push({
-          subject,
-          attendance: percentage,
-          color: COLOR_PALETTE[idx % COLOR_PALETTE.length]
-        });
-      }
+      const percentage = total > 0 ? Math.round(((present + late) / total) * 100) : 0;
+      breakdown.push({
+        subject,
+        attendance: percentage,
+        total,
+        present,
+        absent,
+        late,
+        color: COLOR_PALETTE[idx % COLOR_PALETTE.length]
+      });
     });
 
     return breakdown;
@@ -70,7 +84,7 @@ export const useAttendance = () => {
     for (let i = days - 1; i >= 0; i--) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
 
       let dayStatus = 'empty';
       const statuses = [];
@@ -104,19 +118,24 @@ export const useAttendance = () => {
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
 
       const statuses = [];
       Object.values(attendance).forEach(subjectRecords => {
         Object.entries(subjectRecords || {}).forEach(([key, status]) => {
           if (key === dateStr || key.startsWith(`${dateStr}_`)) {
-            statuses.push(status);
+            if (status) statuses.push(status);
           }
         });
       });
 
       if (statuses.length === 0) {
         if (i === 0) continue;
+        const dayOfWeek = d.getDay() === 0 ? 7 : d.getDay();
+        const isScheduled = routine.some(c => c.isSpecial ? c.date === dateStr : c.day === dayOfWeek);
+        if (!isScheduled) {
+          continue;
+        }
         break;
       }
 

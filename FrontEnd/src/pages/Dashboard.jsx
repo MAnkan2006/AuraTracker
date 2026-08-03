@@ -24,7 +24,7 @@ const Dashboard = () => {
   const { user } = useContext(UserContext);
 
   const stats = getStats();
-  const todayClasses = getTodayClasses();
+  const todayClasses = getTodayClasses().slice().sort((a, b) => (a.start || '').localeCompare(b.start || ''));
   const pendingTasks = tasks.filter(t => !t.completed).slice(0, 5);
   const targetGoal = user?.targetGoal ?? 75;
   const performanceData = getSubjectBreakdown();
@@ -169,21 +169,47 @@ const Dashboard = () => {
           <div className="mb-6">
             <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Class Performance Breakdown</h3>
           </div>
-          <div className="h-64 w-full flex items-center justify-center">
+          <div className="h-72 w-full flex items-center justify-center">
             {performanceData.length === 0 ? (
               <div className="flex flex-col items-center justify-center text-center p-6">
                 <BarChart2 size={36} className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-3 opacity-40" />
-                <p className="text-sm font-medium text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">No subject attendance recorded yet.</p>
+                <p className="text-sm font-medium text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">No subjects scheduled or attendance recorded yet.</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={performanceData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={performanceData} margin={{ top: 15, right: 10, left: -20, bottom: 40 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="currentColor" className="opacity-10 group-data-[scheme=light]:opacity-20 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400" vertical={false} />
-                  <XAxis dataKey="subject" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={false} tickLine={false} domain={[0, 100]} />
+                  <XAxis 
+                    dataKey="subject" 
+                    interval={0}
+                    axisLine={false} 
+                    tickLine={false}
+                    tick={({ x, y, payload }) => {
+                      const text = payload.value || '';
+                      const truncated = text.length > 10 ? text.substring(0, 8) + '…' : text;
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text 
+                            x={0} 
+                            y={0} 
+                            dy={12} 
+                            textAnchor="end" 
+                            fill="var(--text-secondary)" 
+                            fontSize={11}
+                            transform="rotate(-35)"
+                            className="font-semibold"
+                          >
+                            {truncated}
+                          </text>
+                        </g>
+                      );
+                    }}
+                  />
+                  <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
                   <Tooltip 
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', borderRadius: '12px', color: 'var(--text-primary)' }} 
+                    formatter={(value, name, item) => [`${value}% (${item.payload.present || 0} Present / ${item.payload.total || 0} Logs)`, 'Attendance']}
+                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', borderRadius: '12px', color: 'var(--text-primary)', fontWeight: 'bold' }} 
                   />
                   <Bar dataKey="attendance" radius={[6, 6, 0, 0]}>
                     {performanceData.map((entry, index) => (
