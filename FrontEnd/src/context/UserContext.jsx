@@ -16,9 +16,15 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
+      let savedGuestProfile = null;
+      try {
+        const stored = localStorage.getItem('auratracker_guest_profile');
+        if (stored) savedGuestProfile = JSON.parse(stored);
+      } catch (e) {}
+
       if (token === 'dev-mock-token') {
         // Bypass for UI Development
-        setUser({ name: 'Guest Explorer', username: 'guest', email: 'guest@auratracker.app' });
+        setUser(savedGuestProfile || { name: 'Guest Explorer', username: 'guest', email: 'guest@auratracker.app' });
         setIsAuthenticated(true);
         setLoading(false);
         return;
@@ -31,13 +37,14 @@ export const UserProvider = ({ children }) => {
           setIsAuthenticated(true);
         } else {
           localStorage.removeItem('token');
+          if (savedGuestProfile) setUser(savedGuestProfile);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
         // Fallback for UI development if backend is not running
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === 'development' || !token) {
           console.log("Mocking user for UI development");
-          setUser({ name: 'Dev User', username: 'developer', email: 'dev@auratracker.app' });
+          setUser(savedGuestProfile || { name: 'Dev User', username: 'developer', email: 'dev@auratracker.app' });
           setIsAuthenticated(true);
         } else {
           localStorage.removeItem('token');
@@ -100,20 +107,56 @@ export const UserProvider = ({ children }) => {
   };
 
   const updateProfile = async (updates) => {
+    // If guest user or no token, update local user state directly
+    const isGuest = !localStorage.getItem('token') || user?.username?.toLowerCase() === 'guest';
+    if (isGuest) {
+      setUser((prev) => {
+        const updatedUser = {
+          ...(prev || {}),
+          ...updates,
+          academicProfile: {
+            ...(prev?.academicProfile || {}),
+            ...(updates.academicProfile || {})
+          }
+        };
+        try {
+          localStorage.setItem('auratracker_guest_profile', JSON.stringify(updatedUser));
+        } catch (e) {
+          console.error("Failed to save guest profile to localStorage", e);
+        }
+        return updatedUser;
+      });
+      return { success: true, message: 'Profile updated successfully' };
+    }
+
     try {
       const response = await api.post('/profile', updates);
       if (response.data.success) {
         setUser((prev) => ({
           ...prev,
           ...updates,
-          ...(response.data.user || {})
+          ...(response.data.user || {}),
+          academicProfile: {
+            ...(prev?.academicProfile || {}),
+            ...(updates.academicProfile || {}),
+            ...(response.data.user?.academicProfile || {})
+          }
         }));
         return { success: true, message: response.data.message || 'Profile updated successfully' };
       }
       return { success: false, message: response.data.message || 'Failed to update profile' };
     } catch (error) {
       console.error("Error updating profile:", error);
-      return { success: false, message: error.response?.data?.message || 'Server error while updating profile' };
+      // Fallback for offline/guest updates
+      setUser((prev) => ({
+        ...(prev || {}),
+        ...updates,
+        academicProfile: {
+          ...(prev?.academicProfile || {}),
+          ...(updates.academicProfile || {})
+        }
+      }));
+      return { success: true, message: 'Profile updated locally' };
     }
   };
 

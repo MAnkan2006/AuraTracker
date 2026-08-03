@@ -151,6 +151,14 @@ const Routine = () => {
       { id: 'C', name: 'Cancelled', color: 'text-gray-400 hover:bg-gray-500/20 group-data-[scheme=light]:text-gray-500', activeBg: 'bg-gray-500 text-white' }
     ];
 
+    if (isBeforeSessionStart(targetDate)) {
+      return (
+        <div className="mt-3 pt-3 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex justify-between items-center text-[11px] text-red-400 group-data-[scheme=light]:text-red-600 italic">
+          <span>Attendance disabled prior to Session Start ({sessionStartDateStr})</span>
+        </div>
+      );
+    }
+
     if (disabled) {
       return (
         <div className="mt-3 pt-3 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex justify-between items-center text-[11px] text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 italic">

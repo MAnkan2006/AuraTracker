@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
-import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
 
 const Attendance = () => {
-  const { attendance, markAttendance, getStats } = useAttendance();
+  const { attendance, markAttendance, getStats, sessionStartDateStr, isBeforeSessionStart } = useAttendance();
   const [selectedSubject, setSelectedSubject] = useState('');
   const [isAlertOpen, setIsAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
@@ -86,6 +86,12 @@ const Attendance = () => {
     const day = String(currentDate.getDate()).padStart(2, '0');
     const todayStr = `${year}-${month}-${day}`;
 
+    if (isBeforeSessionStart(todayStr)) {
+      setAlertMessage(`Cannot mark attendance for today (${todayStr}) as it is prior to your Session Start Date (${sessionStartDateStr}). You can update your Session Start Date in Profile settings.`);
+      setIsAlertOpen(true);
+      return;
+    }
+
     markAttendance(selectedSubject, todayStr, status);
     
     setAlertMessage(`Successfully marked as ${status} for ${selectedSubject}!`);
@@ -113,6 +119,7 @@ const Attendance = () => {
       const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
       
       const hasClassToday = isClassDayForSubject(selectedSubject, dateKey);
+      const isPriorToSessionStart = isBeforeSessionStart(dateKey);
       const status = selectedSubject && attendance[selectedSubject] ? attendance[selectedSubject][dateKey] : null;
       
       let statusClass = "bg-white/5 group-data-[scheme=light]:bg-gray-50 border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900";
@@ -131,6 +138,17 @@ const Attendance = () => {
             className="p-2 md:p-4 rounded-xl border border-white/5 group-data-[scheme=light]:border-gray-200/50 flex items-center justify-center bg-white/[0.02] group-data-[scheme=light]:bg-gray-100/40 text-[var(--text-muted)] opacity-30 cursor-not-allowed select-none"
           >
             {i}
+          </div>
+        );
+      } else if (isPriorToSessionStart) {
+        days.push(
+          <div 
+            key={`day-${i}`} 
+            title={`Attendance disabled prior to Session Start Date (${sessionStartDateStr})`}
+            className="p-2 md:p-4 rounded-xl border border-red-500/10 group-data-[scheme=light]:border-red-200/50 flex flex-col items-center justify-center bg-red-500/5 group-data-[scheme=light]:bg-red-50/30 text-red-400/70 group-data-[scheme=light]:text-red-600/70 opacity-50 cursor-not-allowed select-none"
+          >
+            <span className="font-bold">{i}</span>
+            <Ban size={12} className="text-red-400 mt-1" />
           </div>
         );
       } else {
@@ -177,11 +195,17 @@ const Attendance = () => {
     <div className="space-y-6 pb-20 max-w-5xl mx-auto">
       
       {/* Header */}
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
         <div>
           <h2 className="text-3xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-[var(--font-heading)]">Class Attendance</h2>
           <p className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-1">Log and track your subject-wise presence.</p>
         </div>
+        {sessionStartDateStr && (
+          <div className="flex items-center gap-2.5 px-4 py-2 bg-blue-500/10 group-data-[scheme=light]:bg-blue-50 border border-blue-500/20 group-data-[scheme=light]:border-blue-200 text-blue-400 group-data-[scheme=light]:text-blue-700 rounded-2xl text-xs font-bold shadow-sm">
+            <Calendar size={16} />
+            <span>Session Start: <strong className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">{sessionStartDateStr}</strong></span>
+          </div>
+        )}
       </div>
 
       <div className={glassPanelClass}>

@@ -1,5 +1,6 @@
 import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
+import { UserContext } from '../context/UserContext';
 import api from '../services/api';
 
 const getLocalDateStr = (d = new Date()) => {
@@ -11,10 +12,35 @@ const getLocalDateStr = (d = new Date()) => {
 
 export const useAttendance = () => {
   const { appState, updateAppState } = useContext(AppContext);
+  const { user } = useContext(UserContext);
   const attendance = appState.attendance || {};
   const routine = appState.routine || [];
 
+  const rawStartDate = user?.academicProfile?.termStartDate;
+  let sessionStartDateStr = null;
+  if (rawStartDate) {
+    const d = new Date(rawStartDate);
+    if (!isNaN(d.getTime())) {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      sessionStartDateStr = `${year}-${month}-${day}`;
+    } else if (typeof rawStartDate === 'string') {
+      sessionStartDateStr = rawStartDate.split('T')[0];
+    }
+  }
+
+  const isBeforeSessionStart = (dateStr) => {
+    if (!sessionStartDateStr || !dateStr) return false;
+    return dateStr < sessionStartDateStr;
+  };
+
   const markAttendance = async (subject, dateKey, status) => {
+    if (isBeforeSessionStart(dateKey)) {
+      console.warn(`Cannot mark attendance prior to session start date (${sessionStartDateStr})`);
+      return { success: false, message: `Cannot mark attendance prior to Session Start Date (${sessionStartDateStr})` };
+    }
+
     const updatedAttendance = { ...attendance };
     if (!updatedAttendance[subject]) updatedAttendance[subject] = {};
     if (status === null || status === undefined) {
@@ -24,6 +50,7 @@ export const useAttendance = () => {
     }
     
     updateAppState({ attendance: updatedAttendance });
+    return { success: true };
   };
 
   const getStats = () => {
@@ -152,5 +179,14 @@ export const useAttendance = () => {
     return streak;
   };
 
-  return { attendance, markAttendance, getStats, getSubjectBreakdown, getRecentHistory, getStreak };
+  return { 
+    attendance, 
+    markAttendance, 
+    getStats, 
+    getSubjectBreakdown, 
+    getRecentHistory, 
+    getStreak,
+    sessionStartDateStr,
+    isBeforeSessionStart
+  };
 };

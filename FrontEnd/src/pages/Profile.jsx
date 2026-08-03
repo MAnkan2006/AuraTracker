@@ -24,12 +24,35 @@ const Profile = () => {
   const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const formatDateForInput = (dStr) => {
+    if (!dStr) return '';
+    const d = new Date(dStr);
+    if (isNaN(d.getTime())) return typeof dStr === 'string' ? dStr.split('T')[0] : '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const [academicData, setAcademicData] = useState({
     university: user?.academicProfile?.university || '',
     program: user?.academicProfile?.program || '',
     semester: user?.academicProfile?.semester || '',
-    section: user?.academicProfile?.section || ''
+    section: user?.academicProfile?.section || '',
+    termStartDate: formatDateForInput(user?.academicProfile?.termStartDate)
   });
+
+  React.useEffect(() => {
+    if (user?.academicProfile) {
+      setAcademicData({
+        university: user.academicProfile.university || '',
+        program: user.academicProfile.program || '',
+        semester: user.academicProfile.semester || '',
+        section: user.academicProfile.section || '',
+        termStartDate: formatDateForInput(user.academicProfile.termStartDate)
+      });
+    }
+  }, [user]);
   
   const [convertData, setConvertData] = useState({ name: '', username: '', email: '', password: '' });
   const [convertError, setConvertError] = useState('');
@@ -62,7 +85,8 @@ const Profile = () => {
       university: user?.academicProfile?.university || '',
       program: user?.academicProfile?.program || '',
       semester: user?.academicProfile?.semester || '',
-      section: user?.academicProfile?.section || ''
+      section: user?.academicProfile?.section || '',
+      termStartDate: formatDateForInput(user?.academicProfile?.termStartDate)
     });
     setIsEditing(false);
   };
@@ -312,24 +336,29 @@ const Profile = () => {
           
           <div className="space-y-3">
             {[
-              { label: 'University', key: 'university' },
-              { label: 'Program', key: 'program' },
-              { label: 'Semester', key: 'semester' },
-              { label: 'Section', key: 'section' },
+              { label: 'University', key: 'university', type: 'text' },
+              { label: 'Program', key: 'program', type: 'text' },
+              { label: 'Semester', key: 'semester', type: 'text' },
+              { label: 'Section', key: 'section', type: 'text' },
+              { label: 'Session Start Date', key: 'termStartDate', type: 'date' },
             ].map((item, i) => (
               <div key={i} className="flex flex-col sm:flex-row sm:items-center py-3 px-3 border-b border-white/5 group-data-[scheme=light]:border-gray-100 last:border-0 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-50 rounded-lg transition-colors min-h-[56px]">
                 <span className="font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 text-sm mb-1 sm:mb-0 w-1/3">{item.label}</span>
                 <div className="w-full sm:w-2/3 flex justify-end">
                   {isEditing ? (
                     <input 
-                      type="text" 
+                      type={item.type || "text"} 
                       className="w-full sm:w-[90%] px-3 py-1.5 bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-gray-300 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 rounded-lg outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-[var(--accent)] font-bold text-sm shadow-inner group-data-[scheme=light]:shadow-sm transition-all"
-                      value={academicData[item.key]}
+                      value={academicData[item.key] || ''}
                       onChange={(e) => setAcademicData({...academicData, [item.key]: e.target.value})}
                       placeholder={`Enter ${item.label}`}
                     />
                   ) : (
-                    <span className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm sm:text-right">{user?.academicProfile?.[item.key] || "Not set"}</span>
+                    <span className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 text-sm sm:text-right">
+                      {item.key === 'termStartDate' 
+                        ? (academicData[item.key] || (user?.academicProfile?.termStartDate ? formatDateForInput(user.academicProfile.termStartDate) : "Not set"))
+                        : (user?.academicProfile?.[item.key] || "Not set")}
+                    </span>
                   )}
                 </div>
               </div>
