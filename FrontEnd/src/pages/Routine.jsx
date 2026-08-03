@@ -121,23 +121,32 @@ const Routine = () => {
   const isSpecialInCurrentWeek = (dateStr) => {
     if (!dateStr) return false;
     const targetDate = new Date(dateStr + "T00:00:00");
-    const today = new Date();
-    const currentDay = today.getDay(); // 0 = Sunday
-    const distToMonday = currentDay === 0 ? -6 : 1 - currentDay;
-    const monday = new Date(today);
-    monday.setDate(today.getDate() + distToMonday);
-    monday.setHours(0, 0, 0, 0);
+    const now = new Date();
+    const currentDay = now.getDay() === 0 ? 7 : now.getDay();
+    const mondayDate = new Date(now);
+    mondayDate.setDate(now.getDate() - (currentDay - 1));
+    const sundayDate = new Date(mondayDate);
+    sundayDate.setDate(mondayDate.getDate() + 6);
 
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
-    sunday.setHours(23, 59, 59, 999);
+    const monday = getLocalDateStr(mondayDate);
+    const sunday = getLocalDateStr(sundayDate);
 
-    return targetDate >= monday && targetDate <= sunday;
+    return dateStr >= monday && dateStr <= sunday;
   };
 
   const isSpecialPast = (dateStr) => {
     if (!dateStr) return false;
     return dateStr < todayStr;
+  };
+
+  const getDateForWeekdayOfCurrentWeek = (weekdayNum) => {
+    if (!weekdayNum || weekdayNum === 'special') return todayStr;
+    const now = new Date();
+    const currentDay = now.getDay() === 0 ? 7 : now.getDay(); // 1=Mon .. 7=Sun
+    const diff = weekdayNum - currentDay;
+    const d = new Date(now);
+    d.setDate(now.getDate() + diff);
+    return getLocalDateStr(d);
   };
 
   const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false) => {
@@ -174,8 +183,8 @@ const Routine = () => {
           return (
             <button
               key={s.id}
-              title={`Mark ${s.name}`}
-              onClick={() => markAttendance(subject, targetDate, s.name)}
+              title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
+              onClick={() => markAttendance(subject, targetDate, isActive ? null : s.name)}
               className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-extrabold transition-all ${isActive ? s.activeBg + ' shadow-md scale-110' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
             >
               {s.id}
@@ -377,7 +386,7 @@ const Routine = () => {
                               <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
                               <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                               
-                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
+                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(index + 1))}
                             </div>
                           );
                         })
@@ -454,7 +463,7 @@ const Routine = () => {
                               <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
                               <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                               
-                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
+                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(weekdayNum))}
                             </div>
                           );
                         })
@@ -671,7 +680,7 @@ const Routine = () => {
                         {cls.isSpecial && <span className="text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-3 py-1.5 rounded-lg">{cls.date}</span>}
                       </div>
                       
-                      {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : todayStr, cls.isSpecial && cls.date !== todayStr)}
+                      {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(selectedDay))}
                     </div>
                   );
                 })
