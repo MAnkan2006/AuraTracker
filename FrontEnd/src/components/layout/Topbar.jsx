@@ -88,7 +88,7 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
+            <div className="fixed inset-x-4 top-16 sm:absolute sm:top-auto sm:inset-auto sm:right-0 sm:mt-3 sm:w-96 bg-[var(--popover-bg,#121420)] group-data-[scheme=light]:bg-white backdrop-blur-2xl border border-white/15 group-data-[scheme=light]:border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden transform origin-top-right animate-in fade-in zoom-in-95 duration-200">
               <div className="flex items-center justify-between p-4 border-b border-white/10 group-data-[scheme=light]:border-gray-100">
                 <h3 className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">Notifications</h3>
                 <button className="text-xs font-bold text-[var(--accent)] hover:underline">Mark all as read</button>
