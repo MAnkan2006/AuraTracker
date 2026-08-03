@@ -484,7 +484,7 @@ const Attendance = () => {
       {/* TAB 2: ATTENDANCE REGISTER (Subject Select & Visual Calendar) */}
       {activeTab === 'register' && (
         <div className="space-y-6">
-          <div className={glassPanelClass}>
+          <div className={`${glassPanelClass} relative z-30`}>
             <div className="mb-2">
               <label className="block text-sm font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-3 uppercase tracking-wider">
                 Select Subject / Class Name
