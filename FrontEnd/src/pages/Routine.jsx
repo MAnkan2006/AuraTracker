@@ -8,7 +8,12 @@ import TimePickerModal from '../components/ui/TimePickerModal';
 import DatePickerModal from '../components/ui/DatePickerModal';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import Dropdown from '../components/ui/Dropdown';
-import api from '../services/api';
+const getLocalDateStr = (d = new Date()) => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 const Routine = () => {
   const { routine, addClass, importClasses, removeClass, removeMultipleClasses } = useRoutine();
