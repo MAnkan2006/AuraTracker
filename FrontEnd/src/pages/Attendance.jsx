@@ -375,8 +375,13 @@ const Attendance = () => {
                           <div>
                             <div className="flex items-start justify-between gap-2 mb-1.5">
                               <div>
-                                <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight">
-                                  {cls.title}
+                                <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight flex items-center gap-2 flex-wrap">
+                                  <span>{cls.title}</span>
+                                  {cls.code && (
+                                    <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold bg-purple-500/10 text-purple-400 group-data-[scheme=light]:text-purple-700 rounded border border-purple-500/20">
+                                      {cls.code}
+                                    </span>
+                                  )}
                                 </h4>
                                 {cls.isReplacement && (
                                   <span className="text-[10px] font-bold text-indigo-400 group-data-[scheme=light]:text-indigo-600 bg-indigo-500/10 px-2 py-0.5 rounded inline-block mt-1">
@@ -417,6 +422,7 @@ const Attendance = () => {
                                 onClick={() => setReplacementModalState({
                                   isOpen: true,
                                   subject: cls.title,
+                                  defaultCode: cls.code || '',
                                   cancelledDate: todayStr,
                                   defaultStart: cls.start || '09:00',
                                   defaultEnd: cls.end || '10:00',
@@ -619,6 +625,7 @@ const Attendance = () => {
         isOpen={replacementModalState.isOpen}
         onClose={() => setReplacementModalState(prev => ({ ...prev, isOpen: false }))}
         subject={replacementModalState.subject}
+        defaultCode={replacementModalState.defaultCode}
         cancelledDate={replacementModalState.cancelledDate}
         defaultStart={replacementModalState.defaultStart}
         defaultEnd={replacementModalState.defaultEnd}

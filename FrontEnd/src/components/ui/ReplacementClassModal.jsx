@@ -8,6 +8,7 @@ const ReplacementClassModal = ({
   isOpen,
   onClose,
   subject = '',
+  defaultCode = '',
   cancelledDate = '',
   defaultStart = '09:00',
   defaultEnd = '10:00',
@@ -29,6 +30,7 @@ const ReplacementClassModal = ({
   };
 
   const [title, setTitle] = useState(subject);
+  const [code, setCode] = useState(defaultCode);
   const [replacementDate, setReplacementDate] = useState(getTodayStr());
   const [startTime, setStartTime] = useState(defaultStart);
   const [endTime, setEndTime] = useState(defaultEnd);
@@ -37,17 +39,27 @@ const ReplacementClassModal = ({
 
   const handleSubjectChange = (newSubject) => {
     setTitle(newSubject);
+    if (!newSubject) return;
+
+    // Search routine to pre-fill subject code if available
+    const matchingClass = (routine || []).find(
+      c => c.title && c.title.trim().toLowerCase() === newSubject.trim().toLowerCase()
+    );
+    if (matchingClass && matchingClass.code) {
+      setCode(matchingClass.code);
+    }
   };
 
   useEffect(() => {
     if (isOpen) {
       setTitle(subject || '');
+      setCode(defaultCode || '');
       setStartTime(defaultStart || '09:00');
       setEndTime(defaultEnd || '10:00');
       setRoom(defaultRoom || '');
       setReplacementDate(getTodayStr());
     }
-  }, [isOpen, subject, cancelledDate, defaultStart, defaultEnd, defaultRoom]);
+  }, [isOpen, subject, defaultCode, cancelledDate, defaultStart, defaultEnd, defaultRoom]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -55,6 +67,7 @@ const ReplacementClassModal = ({
 
     onSave({
       title,
+      code: code.trim(),
       start: startTime,
       end: endTime,
       room: room.trim(),
@@ -84,35 +97,47 @@ const ReplacementClassModal = ({
             </div>
           </div>
 
-          {/* Subject Title */}
-          <div>
-            <label className={labelClass}>Replacement Subject / Class Title</label>
-            {existingSubjects.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2.5">
-                {existingSubjects.map((sub, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => handleSubjectChange(sub)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      title === sub 
-                        ? 'bg-[var(--accent)] text-white shadow-sm scale-105' 
-                        : 'bg-white/5 group-data-[scheme=light]:bg-gray-100 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:bg-white/10'
-                    }`}
-                  >
-                    {sub}
-                  </button>
-                ))}
-              </div>
-            )}
-            <input
-              type="text"
-              className={inputClass}
-              value={title}
-              onChange={(e) => handleSubjectChange(e.target.value)}
-              placeholder="Enter or select subject..."
-              required
-            />
+          {/* Subject Title & Code */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className={labelClass}>Replacement Subject / Class Title</label>
+              {existingSubjects.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mb-2.5">
+                  {existingSubjects.map((sub, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => handleSubjectChange(sub)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                        title === sub 
+                          ? 'bg-[var(--accent)] text-white shadow-sm scale-105' 
+                          : 'bg-white/5 group-data-[scheme=light]:bg-gray-100 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:bg-white/10'
+                      }`}
+                    >
+                      {sub}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <input
+                type="text"
+                className={inputClass}
+                value={title}
+                onChange={(e) => handleSubjectChange(e.target.value)}
+                placeholder="Enter or select subject..."
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Subject Code (Optional)</label>
+              <input
+                type="text"
+                className={inputClass}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="e.g. CS301"
+              />
+            </div>
           </div>
 
           {/* Replacement Date */}

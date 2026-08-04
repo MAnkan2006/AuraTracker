@@ -23,7 +23,7 @@ const Routine = () => {
   
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [newClass, setNewClass] = useState({
-    title: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: ''
+    title: '', code: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: ''
   });
   
   const [replacementModalState, setReplacementModalState] = useState({
@@ -271,7 +271,7 @@ const Routine = () => {
     
     setIsAddClassOpen(false);
     addToast("Class added successfully!", "success");
-    setNewClass({ title: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: '' });
+    setNewClass({ title: '', code: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: '' });
   };
 
   const inputClass = "w-full p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 rounded-2xl focus:ring-2 focus:ring-[var(--accent)] focus:border-[var(--accent)] outline-none transition-all placeholder-[var(--text-muted)] group-data-[scheme=light]:placeholder-gray-400";
@@ -431,8 +431,13 @@ const Routine = () => {
                                     />
                                   </div>
                                 )}
-                                <div className="font-bold text-xs xl:text-sm text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-snug mb-1 pr-5">
+                                <div className="font-bold text-xs xl:text-sm text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-snug mb-1 pr-5 flex items-center gap-1.5 flex-wrap">
                                   <span>{cls.title}</span>
+                                  {cls.code && (
+                                    <span className="px-1.5 py-0.5 text-[9px] font-mono font-extrabold bg-purple-500/10 text-purple-400 group-data-[scheme=light]:text-purple-700 rounded border border-purple-500/20">
+                                      {cls.code}
+                                    </span>
+                                  )}
                                   {isPast && <span className="ml-1 text-[9px] font-bold text-gray-400 bg-gray-500/20 px-1.5 py-0.5 rounded">Past</span>}
                                 </div>
                                 <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[10px] xl:text-[11px] font-semibold mb-1.5">{cls.start} &ndash; {cls.end}</div>
@@ -745,16 +750,36 @@ const Routine = () => {
 
       <Modal isOpen={isAddClassOpen} onClose={() => setIsAddClassOpen(false)} title="Add New Class">
         <form onSubmit={handleAddClass} className="space-y-5">
-          <div>
-            <label className={labelClass}>Class Title</label>
-            <input 
-              type="text" 
-              required
-              className={inputClass}
-              placeholder="e.g. Advanced Physics"
-              value={newClass.title}
-              onChange={(e) => setNewClass({...newClass, title: e.target.value})}
-            />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <label className={labelClass}>Class Title</label>
+              <input 
+                type="text" 
+                required
+                className={inputClass}
+                placeholder="e.g. Advanced Physics"
+                value={newClass.title}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const matchingClass = routine.find(c => c.title && c.title.trim().toLowerCase() === val.trim().toLowerCase());
+                  setNewClass(prev => ({
+                    ...prev,
+                    title: val,
+                    code: (matchingClass && matchingClass.code) ? matchingClass.code : prev.code
+                  }));
+                }}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Subject Code (Optional)</label>
+              <input 
+                type="text" 
+                className={inputClass}
+                placeholder="e.g. CS301"
+                value={newClass.code || ''}
+                onChange={(e) => setNewClass({...newClass, code: e.target.value})}
+              />
+            </div>
           </div>
           
           <div className="grid grid-cols-2 gap-4">
@@ -865,6 +890,7 @@ const Routine = () => {
         isOpen={replacementModalState.isOpen}
         onClose={() => setReplacementModalState(prev => ({ ...prev, isOpen: false }))}
         subject={replacementModalState.subject}
+        defaultCode={replacementModalState.code || ''}
         cancelledDate={replacementModalState.cancelledDate}
         defaultStart={replacementModalState.defaultStart}
         defaultEnd={replacementModalState.defaultEnd}
