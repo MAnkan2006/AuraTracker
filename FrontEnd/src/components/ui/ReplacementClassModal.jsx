@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from './Modal';
 import { Clock, Sparkles } from 'lucide-react';
 import TimePickerModal from './TimePickerModal';
+import { useRoutine } from '../../hooks/useRoutine';
 
 const ReplacementClassModal = ({
   isOpen,
@@ -13,6 +14,12 @@ const ReplacementClassModal = ({
   defaultRoom = '',
   onSave
 }) => {
+  const { routine } = useRoutine();
+  const existingSubjects = Array.from(new Set((routine || []).map(c => c.title).filter(Boolean)));
+  if (subject && !existingSubjects.includes(subject)) {
+    existingSubjects.unshift(subject);
+  }
+
   const getTodayStr = () => {
     const d = new Date();
     const year = d.getFullYear();
@@ -28,13 +35,28 @@ const ReplacementClassModal = ({
   const [room, setRoom] = useState(defaultRoom);
   const [activeTimePicker, setActiveTimePicker] = useState(null);
 
+  const handleSubjectChange = (newSubject) => {
+    setTitle(newSubject);
+    if (!newSubject) return;
+
+    // Search existing routine for a matching class to autofill start time, end time, and room
+    const matchingClass = (routine || []).find(
+      c => c.title && c.title.trim().toLowerCase() === newSubject.trim().toLowerCase()
+    );
+
+    if (matchingClass) {
+      if (matchingClass.start) setStartTime(matchingClass.start);
+      if (matchingClass.end) setEndTime(matchingClass.end);
+      if (matchingClass.room) setRoom(matchingClass.room);
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       setTitle(subject || '');
       setStartTime(defaultStart || '09:00');
       setEndTime(defaultEnd || '10:00');
       setRoom(defaultRoom || '');
-      // Default replacement date to today or tomorrow
       setReplacementDate(getTodayStr());
     }
   }, [isOpen, subject, cancelledDate, defaultStart, defaultEnd, defaultRoom]);
@@ -70,19 +92,37 @@ const ReplacementClassModal = ({
           <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-data-[scheme=light]:bg-purple-50 group-data-[scheme=light]:text-purple-700 group-data-[scheme=light]:border-purple-200 flex items-start gap-3">
             <Sparkles size={20} className="shrink-0 mt-0.5" />
             <div className="text-xs">
-              <span className="font-bold">Replacement Provision:</span> Scheduling a makeup class for <strong className="underline">{subject || 'Cancelled Class'}</strong> {cancelledDate ? `cancelled on ${cancelledDate}` : ''}. You can pick any date (sooner or later).
+              <span className="font-bold">Replacement Provision:</span> Scheduling a makeup class replacing <strong className="underline">{subject || 'Cancelled Class'}</strong> {cancelledDate ? `from ${cancelledDate}` : ''}. You can choose the same subject or another subject for this slot.
             </div>
           </div>
 
           {/* Subject Title */}
           <div>
-            <label className={labelClass}>Subject / Class Title</label>
+            <label className={labelClass}>Replacement Subject / Class Title</label>
+            {existingSubjects.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2.5">
+                {existingSubjects.map((sub, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => handleSubjectChange(sub)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                      title === sub 
+                        ? 'bg-[var(--accent)] text-white shadow-sm scale-105' 
+                        : 'bg-white/5 group-data-[scheme=light]:bg-gray-100 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:bg-white/10'
+                    }`}
+                  >
+                    {sub}
+                  </button>
+                ))}
+              </div>
+            )}
             <input
               type="text"
               className={inputClass}
               value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Mathematics"
+              onChange={(e) => handleSubjectChange(e.target.value)}
+              placeholder="Enter or select subject..."
               required
             />
           </div>
