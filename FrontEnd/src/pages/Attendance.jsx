@@ -65,14 +65,24 @@ const Attendance = () => {
     return timeA.localeCompare(timeB);
   });
 
+  const getSlotKey = (c) => c.id || `${c.start || '00:00'}_${c.end || '00:00'}`;
+
   // Unrecorded (pending) today classes vs Recorded today classes
   const pendingTodayClasses = sortedTodayClasses.filter(c => {
-    const status = attendance[c.title]?.[todayStr];
+    const slotKey = getSlotKey(c);
+    const specificDateKey = `${todayStr}_${slotKey}`;
+    const status = (attendance[c.title]?.[specificDateKey]) !== undefined 
+      ? attendance[c.title]?.[specificDateKey] 
+      : attendance[c.title]?.[todayStr];
     return !status;
   });
 
   const recordedTodayClasses = sortedTodayClasses.filter(c => {
-    const status = attendance[c.title]?.[todayStr];
+    const slotKey = getSlotKey(c);
+    const specificDateKey = `${todayStr}_${slotKey}`;
+    const status = (attendance[c.title]?.[specificDateKey]) !== undefined 
+      ? attendance[c.title]?.[specificDateKey] 
+      : attendance[c.title]?.[todayStr];
     return Boolean(status);
   });
 
@@ -137,7 +147,10 @@ const Attendance = () => {
       return;
     }
 
-    markAttendance(subject, todayStr, status);
+    const slotKey = clsObj ? (clsObj.id || `${clsObj.start || '00:00'}_${clsObj.end || '00:00'}`) : null;
+    const dateKeyToMark = slotKey ? `${todayStr}_${slotKey}` : todayStr;
+
+    markAttendance(subject, dateKeyToMark, status);
     setAlertMessage(`Marked ${subject} as ${status} for today (${todayStr})!`);
     setIsAlertOpen(true);
 
@@ -371,7 +384,7 @@ const Attendance = () => {
                       <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                         <button 
                           className="group flex flex-col items-center justify-center p-5 bg-green-500/10 group-data-[scheme=light]:bg-green-50 text-green-500 group-data-[scheme=light]:text-green-700 rounded-2xl border border-green-500/20 group-data-[scheme=light]:border-green-200 hover:bg-green-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Present')}
+                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Present', primaryPendingClass)}
                         >
                           <CheckCircle2 size={30} className="mb-2 transition-transform group-hover:scale-110" />
                           <span className="font-bold text-sm">Present</span>
@@ -379,7 +392,7 @@ const Attendance = () => {
                         
                         <button 
                           className="group flex flex-col items-center justify-center p-5 bg-red-500/10 group-data-[scheme=light]:bg-red-50 text-red-500 group-data-[scheme=light]:text-red-700 rounded-2xl border border-red-500/20 group-data-[scheme=light]:border-red-200 hover:bg-red-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Absent')}
+                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Absent', primaryPendingClass)}
                         >
                           <XCircle size={30} className="mb-2 transition-transform group-hover:scale-110" />
                           <span className="font-bold text-sm">Absent</span>
@@ -387,7 +400,7 @@ const Attendance = () => {
                         
                         <button 
                           className="group flex flex-col items-center justify-center p-5 bg-yellow-500/10 group-data-[scheme=light]:bg-yellow-50 text-yellow-400 group-data-[scheme=light]:text-yellow-700 rounded-2xl border border-yellow-500/20 group-data-[scheme=light]:border-yellow-200 hover:bg-yellow-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Late')}
+                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Late', primaryPendingClass)}
                         >
                           <Clock size={30} className="mb-2 transition-transform group-hover:scale-110" />
                           <span className="font-bold text-sm">Late</span>
@@ -395,7 +408,7 @@ const Attendance = () => {
                         
                         <button 
                           className="group flex flex-col items-center justify-center p-5 bg-blue-500/10 group-data-[scheme=light]:bg-blue-50 text-blue-500 group-data-[scheme=light]:text-blue-700 rounded-2xl border border-blue-500/20 group-data-[scheme=light]:border-blue-200 hover:bg-blue-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Excused')}
+                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Excused', primaryPendingClass)}
                         >
                           <FileWarning size={30} className="mb-2 transition-transform group-hover:scale-110" />
                           <span className="font-bold text-sm">Excused</span>
@@ -403,7 +416,7 @@ const Attendance = () => {
                         
                         <button 
                           className="group flex flex-col items-center justify-center p-5 bg-gray-500/10 group-data-[scheme=light]:bg-gray-100 text-gray-400 group-data-[scheme=light]:text-gray-600 rounded-2xl border border-gray-500/20 group-data-[scheme=light]:border-gray-300 hover:bg-gray-500/20 hover:scale-[1.02] transition-all"
-                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Cancelled')}
+                          onClick={() => handleMarkTodayClass(primaryPendingClass.title, 'Cancelled', primaryPendingClass)}
                         >
                           <Ban size={30} className="mb-2 transition-transform group-hover:scale-110" />
                           <span className="font-bold text-sm">Cancelled</span>

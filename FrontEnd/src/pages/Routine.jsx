@@ -164,7 +164,13 @@ const Routine = () => {
   };
 
   const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false, clsObj = null) => {
-    const currentStatus = attendance[subject]?.[targetDate];
+    const slotKey = clsObj ? (clsObj.id || `${clsObj.start || '00:00'}_${clsObj.end || '00:00'}`) : null;
+    const specificDateKey = slotKey ? `${targetDate}_${slotKey}` : targetDate;
+    
+    // Check specificDateKey first, fallback to targetDate for legacy records
+    const currentStatus = (attendance[subject]?.[specificDateKey]) !== undefined 
+      ? attendance[subject]?.[specificDateKey] 
+      : attendance[subject]?.[targetDate];
     
     const statuses = [
       { id: 'P', name: 'Present', color: 'text-green-500 hover:bg-green-500/20 group-data-[scheme=light]:text-green-600', activeBg: 'bg-green-500 text-white' },
@@ -200,7 +206,7 @@ const Routine = () => {
                 key={s.id}
                 title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
                 onClick={() => {
-                  markAttendance(subject, targetDate, isActive ? null : s.name);
+                  markAttendance(subject, specificDateKey, isActive ? null : s.name);
                   if (s.name === 'Cancelled' && !isActive) {
                     setReplacementModalState({
                       isOpen: true,
@@ -432,7 +438,7 @@ const Routine = () => {
                                 <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[10px] xl:text-[11px] font-semibold mb-1.5">{cls.start} &ndash; {cls.end}</div>
                                 <span className="inline-block px-2 py-0.5 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[9px] xl:text-[10px] uppercase font-bold tracking-wider rounded border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                                 
-                                {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(index + 1))}
+                                {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(index + 1), false, cls)}
                               </div>
                             );
                           })
@@ -510,7 +516,7 @@ const Routine = () => {
                               <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
                               <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                               
-                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(weekdayNum))}
+                              {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(weekdayNum), false, cls)}
                             </div>
                           );
                         })
@@ -572,7 +578,7 @@ const Routine = () => {
                             <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
                           </div>
                           
-                          {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
+                          {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr, cls)}
                         </div>
                       );
                     })}
@@ -727,7 +733,7 @@ const Routine = () => {
                         {cls.isSpecial && <span className="text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-3 py-1.5 rounded-lg">{cls.date}</span>}
                       </div>
                       
-                      {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(selectedDay))}
+                      {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(selectedDay), false, cls)}
                     </div>
                   );
                 })
