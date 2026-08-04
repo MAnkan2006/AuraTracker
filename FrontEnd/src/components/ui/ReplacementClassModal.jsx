@@ -37,18 +37,6 @@ const ReplacementClassModal = ({
 
   const handleSubjectChange = (newSubject) => {
     setTitle(newSubject);
-    if (!newSubject) return;
-
-    // Search existing routine for a matching class to autofill start time, end time, and room
-    const matchingClass = (routine || []).find(
-      c => c.title && c.title.trim().toLowerCase() === newSubject.trim().toLowerCase()
-    );
-
-    if (matchingClass) {
-      if (matchingClass.start) setStartTime(matchingClass.start);
-      if (matchingClass.end) setEndTime(matchingClass.end);
-      if (matchingClass.room) setRoom(matchingClass.room);
-    }
   };
 
   useEffect(() => {
