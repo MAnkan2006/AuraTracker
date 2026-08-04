@@ -13,8 +13,10 @@ export const AppProvider = ({ children }) => {
     routine: [],
     selectedTheme: 'classic-obsidian',
     selectedFont: 'font-modern',
+    clockStyle: localStorage.getItem('aura_clock_style') || 'stacked',
     routineView: 'daily',
     activeRoutineDay: 1,
+    readNotifIds: [],
   });
   const [loadingState, setLoadingState] = useState(true);
 
@@ -50,8 +52,10 @@ export const AppProvider = ({ children }) => {
               routine: Array.isArray(parsed.routine) ? parsed.routine : prev.routine,
               selectedTheme: parsed.selectedTheme || prev.selectedTheme,
               selectedFont: parsed.selectedFont || prev.selectedFont,
+              clockStyle: parsed.clockStyle || localStorage.getItem('aura_clock_style') || prev.clockStyle,
               routineView: parsed.routineView || prev.routineView,
               activeRoutineDay: parsed.activeRoutineDay !== undefined ? parsed.activeRoutineDay : prev.activeRoutineDay,
+              readNotifIds: Array.isArray(parsed.readNotifIds) ? parsed.readNotifIds : prev.readNotifIds,
             }));
           }
         }

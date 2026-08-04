@@ -39,7 +39,7 @@ const getHeatmapLabel = (status) => {
 };
 
 const Dashboard = () => {
-  const { getStats, getSubjectBreakdown, getRecentHistory, getStreak } = useAttendance();
+  const { getStats, getSubjectBreakdown, getRecentHistory, getStreak, attendance } = useAttendance();
   const { routine } = useRoutine();
   const { tasks } = useTasks();
   const { user } = useContext(UserContext);
@@ -80,10 +80,11 @@ const Dashboard = () => {
     .filter(c => c.isSpecial ? c.date === todayStr : Number(c.day) === todayDayNum)
     .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
 
-  // Today's remaining classes (end time > current HH:MM)
+  // Today's remaining un-logged classes (end time > current HH:MM AND not already marked)
   const remainingTodayClasses = todayClasses.filter(c => {
     const endTime = c.end || c.start || '23:59';
-    return endTime > nowHHMM;
+    const isMarked = Boolean(attendance?.[c.title]?.[todayStr]);
+    return endTime > nowHHMM && !isMarked;
   });
 
   // Tomorrow's classes sorted chronologically
@@ -99,7 +100,7 @@ const Dashboard = () => {
 
   const displayedUpNextClasses = showTomorrowUpNext 
     ? tomorrowClasses 
-    : (remainingTodayClasses.length > 0 ? remainingTodayClasses : todayClasses);
+    : remainingTodayClasses;
 
   const glassPanelClass = "group bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-[0_12px_40px_rgba(0,0,0,0.2)] group-data-[scheme=light]:hover:shadow-md cursor-pointer";
 
@@ -198,14 +199,25 @@ const Dashboard = () => {
               <div className="flex flex-col items-center justify-center h-40 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-black/[0.04]">
                 <CalendarClock size={32} className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-400 mb-3 opacity-50" />
                 <p className="text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 font-medium">
-                  {showTomorrowUpNext ? `No classes scheduled for tomorrow (${tomorrowDayName}).` : 'No classes scheduled.'}
+                  {showTomorrowUpNext 
+                    ? `No classes scheduled for tomorrow (${tomorrowDayName}).` 
+                    : (todayClasses.length > 0 && remainingTodayClasses.length === 0 
+                        ? 'All classes for today are completed or logged!' 
+                        : 'No classes scheduled.')}
                 </p>
               </div>
             ) : (
               displayedUpNextClasses.map((cls, idx) => (
                 <div key={idx} className="flex justify-between items-center p-4 bg-white/5 group-data-[scheme=light]:bg-gray-50 rounded-2xl border border-white/10 group-data-[scheme=light]:border-black/[0.08] hover:border-[var(--accent)]/50 group-data-[scheme=light]:hover:border-blue-200 transition-colors group/item">
                   <div className="flex flex-col">
-                    <h4 className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 group-hover/item:text-[var(--accent)] transition-colors">{cls.title}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 group-hover/item:text-[var(--accent)] transition-colors">{cls.title}</h4>
+                      {cls.isReplacement && (
+                        <span className="px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wider bg-purple-500/20 text-purple-400 group-data-[scheme=light]:bg-purple-100 group-data-[scheme=light]:text-purple-700 rounded-md">
+                          ✨ Replacement
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm font-medium text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500">{cls.start} - {cls.end}</p>
                   </div>
                   <span className="px-3 py-1.5 bg-white/10 group-data-[scheme=light]:bg-blue-100/50 text-[var(--text-secondary)] group-data-[scheme=light]:text-blue-700 text-xs font-bold uppercase tracking-wider rounded-lg border border-white/5 group-data-[scheme=light]:border-blue-200/50">

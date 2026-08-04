@@ -1,12 +1,13 @@
 import React, { useContext, useState, useRef, useEffect } from 'react';
 import { UserContext } from '../../context/UserContext';
+import { AppContext } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import { useAttendance } from '../../hooks/useAttendance';
 import { useTasks } from '../../hooks/useTasks';
 import { useRoutine } from '../../hooks/useRoutine';
 import { 
-  Bell, Search, Sun, Moon, ChevronDown, Menu, CheckCircle2, 
-  AlertCircle, Clock, Settings, User, LogOut, Palette, ChevronRight, 
+  Bell, Search, Sun, Moon, ChevronDown, Menu, 
+  AlertCircle, Settings, User, LogOut, Palette, ChevronRight, 
   Coffee, Flame, BookOpen, CheckSquare 
 } from 'lucide-react';
 import Dropdown from '../ui/Dropdown';
@@ -68,8 +69,8 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
     .filter(c => c.isSpecial ? c.date === todayStr : Number(c.day) === todayDayNum)
     .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
 
-  // State for read notifications
-  const [readNotifIds, setReadNotifIds] = useState([]);
+  const { appState, updateAppState } = useContext(AppContext);
+  const readNotifIds = Array.isArray(appState?.readNotifIds) ? appState.readNotifIds : [];
 
   // Generate real-time notifications list
   const generatedNotifications = [];
@@ -143,15 +144,16 @@ const Topbar = ({ isLightMode, setIsLightMode, setIsMobileMenuOpen, theme, setTh
   }, [unreadCount]);
 
   const handleMarkAllRead = () => {
-    setReadNotifIds(generatedNotifications.map(n => n.id));
+    const allIds = generatedNotifications.map(n => n.id);
+    const combined = Array.from(new Set([...readNotifIds, ...allIds]));
+    updateAppState({ readNotifIds: combined });
   };
 
   const handleToggleRead = (id) => {
-    if (readNotifIds.includes(id)) {
-      setReadNotifIds(readNotifIds.filter(i => i !== id));
-    } else {
-      setReadNotifIds([...readNotifIds, id]);
-    }
+    const updated = readNotifIds.includes(id)
+      ? readNotifIds.filter(i => i !== id)
+      : [...readNotifIds, id];
+    updateAppState({ readNotifIds: updated });
   };
 
   const getNotifIcon = (type) => {

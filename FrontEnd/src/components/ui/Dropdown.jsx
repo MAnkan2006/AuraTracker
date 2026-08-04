@@ -57,7 +57,7 @@ const Dropdown = ({
               <button
                 key={idx}
                 type="button"
-                data-font={optValue && optValue.startsWith('font-') ? optValue : undefined}
+                data-font={optValue && String(optValue).startsWith('font-') ? optValue : undefined}
                 onClick={() => {
                   onChange(optValue);
                   setIsOpen(false);

@@ -8,6 +8,7 @@ import TimePickerModal from '../components/ui/TimePickerModal';
 import DatePickerModal from '../components/ui/DatePickerModal';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import Dropdown from '../components/ui/Dropdown';
+import ReplacementClassModal from '../components/ui/ReplacementClassModal';
 const getLocalDateStr = (d = new Date()) => {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -23,6 +24,15 @@ const Routine = () => {
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [newClass, setNewClass] = useState({
     title: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: ''
+  });
+  
+  const [replacementModalState, setReplacementModalState] = useState({
+    isOpen: false,
+    subject: '',
+    cancelledDate: '',
+    defaultStart: '09:00',
+    defaultEnd: '10:00',
+    defaultRoom: ''
   });
   
   const [activeTimePicker, setActiveTimePicker] = useState(null); // 'start' | 'end' | null
@@ -153,7 +163,7 @@ const Routine = () => {
     return getLocalDateStr(d);
   };
 
-  const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false) => {
+  const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false, clsObj = null) => {
     const currentStatus = attendance[subject]?.[targetDate];
     
     const statuses = [
@@ -181,20 +191,51 @@ const Routine = () => {
     }
 
     return (
-      <div className="mt-2.5 pt-2.5 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex items-center justify-between gap-0.5">
-        {statuses.map(s => {
-          const isActive = currentStatus === s.name;
-          return (
-            <button
-              key={s.id}
-              title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
-              onClick={() => markAttendance(subject, targetDate, isActive ? null : s.name)}
-              className={`flex-1 h-7 max-w-[30px] rounded-md flex items-center justify-center text-[10px] font-black transition-all ${isActive ? s.activeBg + ' shadow-sm scale-105' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
-            >
-              {s.id}
-            </button>
-          );
-        })}
+      <div className="mt-2.5 pt-2.5 border-t border-[var(--accent)]/10 group-data-[scheme=light]:border-gray-200 flex flex-col gap-1.5">
+        <div className="flex items-center justify-between gap-0.5">
+          {statuses.map(s => {
+            const isActive = currentStatus === s.name;
+            return (
+              <button
+                key={s.id}
+                title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
+                onClick={() => {
+                  markAttendance(subject, targetDate, isActive ? null : s.name);
+                  if (s.name === 'Cancelled' && !isActive) {
+                    setReplacementModalState({
+                      isOpen: true,
+                      subject,
+                      cancelledDate: targetDate,
+                      defaultStart: clsObj?.start || '09:00',
+                      defaultEnd: clsObj?.end || '10:00',
+                      defaultRoom: clsObj?.room || ''
+                    });
+                  }
+                }}
+                className={`flex-1 h-7 max-w-[30px] rounded-md flex items-center justify-center text-[10px] font-black transition-all ${isActive ? s.activeBg + ' shadow-sm scale-105' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
+              >
+                {s.id}
+              </button>
+            );
+          })}
+        </div>
+
+        {currentStatus === 'Cancelled' && (
+          <button
+            type="button"
+            onClick={() => setReplacementModalState({
+              isOpen: true,
+              subject,
+              cancelledDate: targetDate,
+              defaultStart: clsObj?.start || '09:00',
+              defaultEnd: clsObj?.end || '10:00',
+              defaultRoom: clsObj?.room || ''
+            })}
+            className="w-full mt-1 py-1 px-2 text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-lg flex items-center justify-center gap-1 transition-all"
+          >
+            <span>+ Schedule Replacement</span>
+          </button>
+        )}
       </div>
     );
   };
@@ -812,6 +853,20 @@ const Routine = () => {
         message={itemToDelete ? `Are you sure you want to delete ${itemToDelete.title}?` : `Are you sure you want to delete ${selectedSlots.length} selected classes?`}
         type="danger"
         confirmText="Delete"
+      />
+
+      <ReplacementClassModal
+        isOpen={replacementModalState.isOpen}
+        onClose={() => setReplacementModalState(prev => ({ ...prev, isOpen: false }))}
+        subject={replacementModalState.subject}
+        cancelledDate={replacementModalState.cancelledDate}
+        defaultStart={replacementModalState.defaultStart}
+        defaultEnd={replacementModalState.defaultEnd}
+        defaultRoom={replacementModalState.defaultRoom}
+        onSave={(replacementData) => {
+          addClass(replacementData);
+          addToast(`Scheduled replacement class for ${replacementData.title} on ${replacementData.date}!`, "success");
+        }}
       />
     </div>
   );

@@ -1,10 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { AppContext } from '../../context/AppContext';
 
 const ClockWidget = () => {
   const [time, setTime] = useState(new Date());
+  const { appState, updateAppState } = useContext(AppContext) || {};
+
   // Styles: 'stacked', 'analog', 'digital'
-  const [styleIndex, setStyleIndex] = useState(0);
   const styles = ['stacked', 'analog', 'digital'];
+
+  const currentSavedStyle = appState?.clockStyle || localStorage.getItem('aura_clock_style') || 'stacked';
+  const initialIndex = Math.max(0, styles.indexOf(currentSavedStyle));
+
+  const [styleIndex, setStyleIndex] = useState(initialIndex);
+
+  useEffect(() => {
+    if (appState?.clockStyle) {
+      const idx = styles.indexOf(appState.clockStyle);
+      if (idx !== -1) {
+        setStyleIndex(prev => (prev === idx ? prev : idx));
+      }
+    }
+  }, [appState?.clockStyle]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -16,7 +32,13 @@ const ClockWidget = () => {
   const currentStyle = styles[styleIndex];
 
   const handleToggleStyle = () => {
-    setStyleIndex((prev) => (prev + 1) % styles.length);
+    const nextIdx = (styleIndex + 1) % styles.length;
+    const nextStyle = styles[nextIdx];
+    setStyleIndex(nextIdx);
+    localStorage.setItem('aura_clock_style', nextStyle);
+    if (updateAppState) {
+      updateAppState({ clockStyle: nextStyle });
+    }
   };
 
   const hoursStr = time.getHours().toString().padStart(2, '0');

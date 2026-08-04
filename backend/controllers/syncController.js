@@ -96,11 +96,13 @@ exports.saveState = async (req, res) => {
         $set: { 
           selectedTheme: state.selectedTheme,
           selectedFont: state.selectedFont,
+          clockStyle: state.clockStyle,
           routineView: state.routineView,
           activeRoutineDay: state.activeRoutineDay,
           todos: state.todos,
           attendance: state.attendance,
-          routine: state.routine
+          routine: state.routine,
+          readNotifIds: state.readNotifIds
         } 
       },
       { new: true, upsert: true }

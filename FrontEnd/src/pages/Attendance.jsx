@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
-import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Check, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Eye, EyeOff } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
+import ReplacementClassModal from '../components/ui/ReplacementClassModal';
 
 const Attendance = () => {
   const { attendance, markAttendance, getStats, sessionStartDateStr, isBeforeSessionStart } = useAttendance();
-  const { routine } = useRoutine();
+  const { routine, addClass } = useRoutine();
 
   // Sub-tab Navigation: 'mark' | 'register'
   const [activeTab, setActiveTab] = useState('mark');
@@ -23,6 +24,15 @@ const Attendance = () => {
   
   // Toggle to view recorded today classes in Mark Attendance tab
   const [showRecordedToday, setShowRecordedToday] = useState(false);
+
+  const [replacementModalState, setReplacementModalState] = useState({
+    isOpen: false,
+    subject: '',
+    cancelledDate: '',
+    defaultStart: '09:00',
+    defaultEnd: '10:00',
+    defaultRoom: ''
+  });
 
   const currentDate = new Date();
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
@@ -120,7 +130,7 @@ const Attendance = () => {
     });
   };
 
-  const handleMarkTodayClass = (subject, status) => {
+  const handleMarkTodayClass = (subject, status, clsObj = null) => {
     if (isBeforeSessionStart(todayStr)) {
       setAlertMessage(`Cannot mark attendance for today (${todayStr}) as it is prior to your Session Start Date (${sessionStartDateStr}). You can update your Session Start Date in Profile settings.`);
       setIsAlertOpen(true);
@@ -130,6 +140,17 @@ const Attendance = () => {
     markAttendance(subject, todayStr, status);
     setAlertMessage(`Marked ${subject} as ${status} for today (${todayStr})!`);
     setIsAlertOpen(true);
+
+    if (status === 'Cancelled') {
+      setReplacementModalState({
+        isOpen: true,
+        subject,
+        cancelledDate: todayStr,
+        defaultStart: clsObj?.start || '09:00',
+        defaultEnd: clsObj?.end || '10:00',
+        defaultRoom: clsObj?.room || ''
+      });
+    }
   };
 
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -667,6 +688,21 @@ const Attendance = () => {
           </div>
         </div>
       </Modal>
+
+      <ReplacementClassModal
+        isOpen={replacementModalState.isOpen}
+        onClose={() => setReplacementModalState(prev => ({ ...prev, isOpen: false }))}
+        subject={replacementModalState.subject}
+        cancelledDate={replacementModalState.cancelledDate}
+        defaultStart={replacementModalState.defaultStart}
+        defaultEnd={replacementModalState.defaultEnd}
+        defaultRoom={replacementModalState.defaultRoom}
+        onSave={(replacementData) => {
+          addClass(replacementData);
+          setAlertMessage(`Scheduled replacement class for ${replacementData.title} on ${replacementData.date}!`);
+          setIsAlertOpen(true);
+        }}
+      />
     </div>
   );
 };
