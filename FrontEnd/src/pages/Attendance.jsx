@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
-import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Eye, EyeOff } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
 import ReplacementClassModal from '../components/ui/ReplacementClassModal';
@@ -12,6 +12,9 @@ const Attendance = () => {
 
   // Sub-tab Navigation: 'mark' | 'register'
   const [activeTab, setActiveTab] = useState('mark');
+  
+  // Toggle to show/hide marked classes in 'mark' tab
+  const [showMarked, setShowMarked] = useState(false);
   
   // Register tab selected subject ('')
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -82,6 +85,9 @@ const Attendance = () => {
       : attendance[c.title]?.[todayStr];
     return Boolean(status);
   });
+
+  // Display pending classes by default, or all classes if showMarked is toggled on
+  const displayTodayClasses = showMarked ? sortedTodayClasses : pendingTodayClasses;
 
   // Default focus: first class in time-sorted order among pending today classes
   const primaryPendingClass = pendingTodayClasses[0] || null;
@@ -335,6 +341,7 @@ const Attendance = () => {
                 <>
                   {/* All Today Classes Completed Banner */}
                   {/* All Today Classes Header / Summary Banner */}
+                  {/* All Today Classes Header / Summary Banner */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-3xl shadow-sm">
                     <div className="flex items-center gap-3">
                       <div className={`p-3 rounded-2xl ${pendingTodayClasses.length === 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-[var(--accent)]/10 text-[var(--accent)]'}`}>
@@ -351,93 +358,126 @@ const Attendance = () => {
                         </p>
                       </div>
                     </div>
+
+                    {recordedTodayClasses.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMarked(prev => !prev)}
+                        className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-700 hover:text-[var(--text-primary)] hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 transition-all shrink-0 self-start sm:self-auto"
+                      >
+                        {showMarked ? <EyeOff size={15} /> : <Eye size={15} />}
+                        <span>{showMarked ? 'Hide Marked Classes' : `Show Marked (${recordedTodayClasses.length})`}</span>
+                      </button>
+                    )}
                   </div>
 
-                  {/* Cards Grid for All Today's Classes */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {sortedTodayClasses.map((cls, idx) => {
-                      const slotKey = cls.id || `${cls.start || '00:00'}_${cls.end || '00:00'}`;
-                      const specificDateKey = `${todayStr}_${slotKey}`;
-                      const currentStatus = (attendance[cls.title]?.[specificDateKey]) !== undefined 
-                        ? attendance[cls.title]?.[specificDateKey] 
-                        : attendance[cls.title]?.[todayStr];
+                  {/* Cards Grid for Today's Classes */}
+                  {displayTodayClasses.length === 0 && !showMarked && recordedTodayClasses.length > 0 ? (
+                    <div className={glassPanelClass}>
+                      <div className="p-8 text-center flex flex-col items-center justify-center">
+                        <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
+                        <h4 className="font-bold text-lg text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-1">
+                          All Scheduled Classes Marked!
+                        </h4>
+                        <p className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 max-w-md mb-4">
+                          Marked attendances are hidden. Click below if you need to review or update any recorded attendance.
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => setShowMarked(true)}
+                          className="flex items-center gap-2 px-4 py-2.5 bg-[var(--accent)]/10 text-[var(--accent)] font-bold text-xs rounded-xl hover:bg-[var(--accent)]/20 transition-all"
+                        >
+                          <Eye size={15} />
+                          <span>Show {recordedTodayClasses.length} Marked Class{recordedTodayClasses.length > 1 ? 'es' : ''}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                      {displayTodayClasses.map((cls, idx) => {
+                        const slotKey = cls.id || `${cls.start || '00:00'}_${cls.end || '00:00'}`;
+                        const specificDateKey = `${todayStr}_${slotKey}`;
+                        const currentStatus = (attendance[cls.title]?.[specificDateKey]) !== undefined 
+                          ? attendance[cls.title]?.[specificDateKey] 
+                          : attendance[cls.title]?.[todayStr];
 
-                      const statuses = [
-                        { id: 'P', name: 'Present', color: 'text-green-500 hover:bg-green-500/20 group-data-[scheme=light]:text-green-600', activeBg: 'bg-green-500 text-white shadow-sm' },
-                        { id: 'A', name: 'Absent', color: 'text-red-500 hover:bg-red-500/20 group-data-[scheme=light]:text-red-600', activeBg: 'bg-red-500 text-white shadow-sm' },
-                        { id: 'L', name: 'Late', color: 'text-yellow-500 hover:bg-yellow-500/20 group-data-[scheme=light]:text-yellow-600', activeBg: 'bg-yellow-500 text-white shadow-sm' },
-                        { id: 'E', name: 'Excused', color: 'text-blue-500 hover:bg-blue-500/20 group-data-[scheme=light]:text-blue-600', activeBg: 'bg-blue-500 text-white shadow-sm' },
-                        { id: 'C', name: 'Cancelled', color: 'text-gray-400 hover:bg-gray-500/20 group-data-[scheme=light]:text-gray-500', activeBg: 'bg-gray-500 text-white shadow-sm' }
-                      ];
+                        const statuses = [
+                          { id: 'P', name: 'Present', color: 'text-green-500 hover:bg-green-500/20 group-data-[scheme=light]:text-green-600', activeBg: 'bg-green-500 text-white shadow-sm' },
+                          { id: 'A', name: 'Absent', color: 'text-red-500 hover:bg-red-500/20 group-data-[scheme=light]:text-red-600', activeBg: 'bg-red-500 text-white shadow-sm' },
+                          { id: 'L', name: 'Late', color: 'text-yellow-500 hover:bg-yellow-500/20 group-data-[scheme=light]:text-yellow-600', activeBg: 'bg-yellow-500 text-white shadow-sm' },
+                          { id: 'E', name: 'Excused', color: 'text-blue-500 hover:bg-blue-500/20 group-data-[scheme=light]:text-blue-600', activeBg: 'bg-blue-500 text-white shadow-sm' },
+                          { id: 'C', name: 'Cancelled', color: 'text-gray-400 hover:bg-gray-500/20 group-data-[scheme=light]:text-gray-500', activeBg: 'bg-gray-500 text-white shadow-sm' }
+                        ];
 
-                      return (
-                        <div key={cls.id || idx} className={`${glassPanelClass} flex flex-col justify-between gap-4 relative ${cls.isReplacement ? 'border-indigo-500/30 bg-indigo-500/5' : ''}`}>
-                          <div>
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <div>
-                                <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight flex items-center gap-2 flex-wrap">
-                                  <span>{cls.title}</span>
-                                  {cls.code && (
-                                    <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold bg-purple-500/10 text-purple-400 group-data-[scheme=light]:text-purple-700 rounded border border-purple-500/20">
-                                      {cls.code}
+                        return (
+                          <div key={cls.id || idx} className={`${glassPanelClass} flex flex-col justify-between gap-4 relative ${cls.isReplacement ? 'border-indigo-500/30 bg-indigo-500/5' : ''}`}>
+                            <div>
+                              <div className="flex items-start justify-between gap-2 mb-1.5">
+                                <div>
+                                  <h4 className="text-lg font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 leading-tight flex items-center gap-2 flex-wrap">
+                                    <span>{cls.title}</span>
+                                    {cls.code && (
+                                      <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold bg-purple-500/10 text-purple-400 group-data-[scheme=light]:text-purple-700 rounded border border-purple-500/20">
+                                        {cls.code}
+                                      </span>
+                                    )}
+                                  </h4>
+                                  {cls.isReplacement && (
+                                    <span className="text-[10px] font-bold text-indigo-400 group-data-[scheme=light]:text-indigo-600 bg-indigo-500/10 px-2 py-0.5 rounded inline-block mt-1">
+                                      ✨ Replacement Class {cls.replacesDate ? `(${cls.replacesDate})` : ''}
                                     </span>
                                   )}
-                                </h4>
-                                {cls.isReplacement && (
-                                  <span className="text-[10px] font-bold text-indigo-400 group-data-[scheme=light]:text-indigo-600 bg-indigo-500/10 px-2 py-0.5 rounded inline-block mt-1">
-                                    ✨ Replacement Class {cls.replacesDate ? `(${cls.replacesDate})` : ''}
-                                  </span>
-                                )}
+                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-md text-[var(--text-muted)] group-data-[scheme=light]:text-gray-600 border border-white/5 group-data-[scheme=light]:border-gray-200 shrink-0">
+                                  {cls.room || 'Event'}
+                                </span>
                               </div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-md text-[var(--text-muted)] group-data-[scheme=light]:text-gray-600 border border-white/5 group-data-[scheme=light]:border-gray-200 shrink-0">
-                                {cls.room || 'Event'}
-                              </span>
-                            </div>
-                            <div className="text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 flex items-center gap-1.5 mt-2">
-                              <Clock size={14} className="text-[var(--accent)]" />
-                              <span>{cls.start} &ndash; {cls.end}</span>
-                            </div>
-                          </div>
-
-                          <div className="pt-3 border-t border-white/10 group-data-[scheme=light]:border-gray-100 flex flex-col gap-2">
-                            <div className="flex items-center justify-between gap-1">
-                              {statuses.map(s => {
-                                const isActive = currentStatus === s.name;
-                                return (
-                                  <button
-                                    key={s.id}
-                                    title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
-                                    onClick={() => handleMarkTodayClass(cls.title, isActive ? null : s.name, cls)}
-                                    className={`flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all ${isActive ? s.activeBg + ' scale-105' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
-                                  >
-                                    {s.id}
-                                  </button>
-                                );
-                              })}
+                              <div className="text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 flex items-center gap-1.5 mt-2">
+                                <Clock size={14} className="text-[var(--accent)]" />
+                                <span>{cls.start} &ndash; {cls.end}</span>
+                              </div>
                             </div>
 
-                            {currentStatus === 'Cancelled' && (
-                              <button
-                                type="button"
-                                onClick={() => setReplacementModalState({
-                                  isOpen: true,
-                                  subject: cls.title,
-                                  defaultCode: cls.code || '',
-                                  cancelledDate: todayStr,
-                                  defaultStart: cls.start || '09:00',
-                                  defaultEnd: cls.end || '10:00',
-                                  defaultRoom: cls.room || ''
+                            <div className="pt-3 border-t border-white/10 group-data-[scheme=light]:border-gray-100 flex flex-col gap-2">
+                              <div className="flex items-center justify-between gap-1">
+                                {statuses.map(s => {
+                                  const isActive = currentStatus === s.name;
+                                  return (
+                                    <button
+                                      key={s.id}
+                                      title={isActive ? `Clear ${s.name}` : `Mark ${s.name}`}
+                                      onClick={() => handleMarkTodayClass(cls.title, isActive ? null : s.name, cls)}
+                                      className={`flex-1 h-8 rounded-lg flex items-center justify-center text-xs font-black transition-all ${isActive ? s.activeBg + ' scale-105' : s.color + ' bg-white/5 group-data-[scheme=light]:bg-gray-100'}`}
+                                    >
+                                      {s.id}
+                                    </button>
+                                  );
                                 })}
-                                className="w-full py-1.5 px-3 text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl flex items-center justify-center gap-1.5 transition-all"
-                              >
-                                <span>+ Schedule Replacement</span>
-                              </button>
-                            )}
+                              </div>
+
+                              {currentStatus === 'Cancelled' && (
+                                <button
+                                  type="button"
+                                  onClick={() => setReplacementModalState({
+                                    isOpen: true,
+                                    subject: cls.title,
+                                    defaultCode: cls.code || '',
+                                    cancelledDate: todayStr,
+                                    defaultStart: cls.start || '09:00',
+                                    defaultEnd: cls.end || '10:00',
+                                    defaultRoom: cls.room || ''
+                                  })}
+                                  className="w-full py-1.5 px-3 text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                                >
+                                  <span>+ Schedule Replacement</span>
+                                </button>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </>
               )}
             </>
