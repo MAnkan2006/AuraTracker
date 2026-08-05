@@ -38,6 +38,26 @@ const getHeatmapLabel = (status) => {
   }
 };
 
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <div className="bg-[var(--popover-bg)] group-data-[scheme=light]:bg-white border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200 p-3.5 rounded-2xl shadow-xl backdrop-blur-xl">
+        <p className="text-sm font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-1.5 font-[var(--font-heading)]">
+          {data.subject}
+        </p>
+        <div className="flex items-center gap-2 text-xs font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">
+          <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: data.color }} />
+          <span>
+            Attendance : <strong className="text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-bold">{data.attendance}%</strong> ({data.present || 0} Present / {data.total || 0} Logs)
+          </span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
 const Dashboard = () => {
   const { getStats, getSubjectBreakdown, getRecentHistory, getStreak, attendance } = useAttendance();
   const { routine } = useRoutine();
@@ -304,8 +324,7 @@ const Dashboard = () => {
                   <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 11 }} axisLine={false} tickLine={false} domain={[0, 100]} />
                   <Tooltip 
                     cursor={{ fill: 'rgba(255,255,255,0.05)' }} 
-                    formatter={(value, name, item) => [`${value}% (${item.payload.present || 0} Present / ${item.payload.total || 0} Logs)`, 'Attendance']}
-                    contentStyle={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', borderRadius: '12px', color: 'var(--text-primary)', fontWeight: 'bold' }} 
+                    content={<CustomTooltip />}
                   />
                   <Bar dataKey="attendance" radius={[6, 6, 0, 0]}>
                     {performanceData.map((entry, index) => (
