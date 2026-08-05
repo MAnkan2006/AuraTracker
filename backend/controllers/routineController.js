@@ -2,7 +2,7 @@ const User = require('../models/User');
 const Routine = require('../models/Routine');
 const { extractText } = require('../services/pdfService');
 const { buildPrompt } = require('../services/promptBuilder');
-const { generateRoutine } = require('../services/geminiService');
+const { generateRoutine } = require('../services/groqService');
 const { validateRoutine } = require('../validators/routineValidator');
 const academicKnowledgeService = require('../services/academicKnowledgeService');
 

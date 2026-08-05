@@ -22,7 +22,7 @@ const generateRoutine = async (prompt) => {
 
   // Retry once with explicit JSON instruction
   console.log(
-    "[GeminiService] First parse failed, retrying with JSON instruction...",
+    "[GroqService] First parse failed, retrying with JSON instruction...",
   );
   const retryPrompt =
     prompt +

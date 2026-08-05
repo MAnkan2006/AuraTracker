@@ -90,21 +90,19 @@ exports.saveState = async (req, res) => {
 
     const userId = req.user.userId;
 
+    // Dynamically build setPayload to only include defined properties and prevent partial-sync data wipes
+    const fields = [
+      'selectedTheme', 'selectedFont', 'clockStyle', 'routineView',
+      'activeRoutineDay', 'todos', 'attendance', 'routine', 'readNotifIds'
+    ];
+    const setPayload = {};
+    fields.forEach(f => {
+      if (state[f] !== undefined) setPayload[f] = state[f];
+    });
+
     const updatedState = await AppState.findOneAndUpdate(
       { userId },
-      { 
-        $set: { 
-          selectedTheme: state.selectedTheme,
-          selectedFont: state.selectedFont,
-          clockStyle: state.clockStyle,
-          routineView: state.routineView,
-          activeRoutineDay: state.activeRoutineDay,
-          todos: state.todos,
-          attendance: state.attendance,
-          routine: state.routine,
-          readNotifIds: state.readNotifIds
-        } 
-      },
+      { $set: setPayload },
       { new: true, upsert: true }
     );
 

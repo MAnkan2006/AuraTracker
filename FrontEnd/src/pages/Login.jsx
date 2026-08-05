@@ -1,10 +1,12 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { UserContext } from '../context/UserContext';
+import { AppContext } from '../context/AppContext';
 import { Eye, EyeOff, Moon, Sun, ArrowLeft } from 'lucide-react';
 
 const Login = ({ defaultIsLogin = true }) => {
   const { isAuthenticated, login, loginWithCredentials, registerWithCredentials } = useContext(UserContext);
+  const { appState } = useContext(AppContext) || {};
   const [isLoginView, setIsLoginView] = useState(defaultIsLogin);
   const [isLightMode, setIsLightMode] = useState(() => {
     return localStorage.getItem('aura_isLightMode') === 'true';
@@ -61,7 +63,7 @@ const Login = ({ defaultIsLogin = true }) => {
     e.preventDefault();
     setError('');
     if (isLoginView) {
-      const result = await loginWithCredentials(username, password);
+      const result = await loginWithCredentials(username, password, appState);
       if (!result.success) {
         setError(result.message);
       }

@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { NavLink } from 'react-router-dom';
 import { UserContext } from '../../context/UserContext';
-import { LayoutDashboard, ClipboardCheck, CalendarRange, CheckSquare, User, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, CalendarRange, CheckSquare, MapPin, User, Settings, LogOut } from 'lucide-react';
 
 const Sidebar = ({ isLightMode, isOpen, setIsOpen }) => {
   const { user, logout } = useContext(UserContext);
@@ -11,6 +11,7 @@ const Sidebar = ({ isLightMode, isOpen, setIsOpen }) => {
     { name: 'Attendance', path: '/app/attendance', icon: <ClipboardCheck size={20} /> },
     { name: 'Routine', path: '/app/routine', icon: <CalendarRange size={20} /> },
     { name: 'Tasks', path: '/app/tasks', icon: <CheckSquare size={20} /> },
+    { name: 'Campus Map', path: '/app/map', icon: <MapPin size={20} /> },
   ];
 
   return (

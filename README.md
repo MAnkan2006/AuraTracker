@@ -51,8 +51,9 @@ AuraTracker employs a multi-layered security model to ensure user data integrity
 AuraTracker is built on a modern, scalable JavaScript ecosystem utilizing a clean Model-View-Controller (MVC) architectural pattern.
 
 ### Frontend Layer
-- **Core**: HTML5, CSS3, Vanilla JavaScript
-- **Data Visualization**: Chart.js
+- **Framework & Build Tool**: React 19, Vite
+- **Styling**: Tailwind CSS v4, Vanilla CSS
+- **Data Visualization**: Recharts
 - **Iconography**: Lucide Icons
 
 ### Backend Layer
@@ -75,25 +76,30 @@ AuraTracker is built on a modern, scalable JavaScript ecosystem utilizing a clea
 
 ```text
 AuraTracker/
-├── frontend/                 # Client-side application assets
-│   ├── assets/images/        # Branding and iconography assets
-│   ├── css/                  # Application stylesheets
-│   ├── js/                   # Application logic and scripts
-│   ├── index.html            # Landing page and marketing site
-│   └── app.html              # Main application dashboard
+├── FrontEnd/                 # Active client-side application (React + Vite)
+│   ├── src/
+│   │   ├── components/       # UI & layout components (Sidebar, Topbar, Modals, etc.)
+│   │   ├── context/          # React Context providers (AppContext, UserContext)
+│   │   ├── hooks/            # Custom React hooks (useAttendance, useRoutine, useTasks)
+│   │   ├── pages/            # Page views (Dashboard, Attendance, Routine, Tasks, Map, Profile, Login, Landing)
+│   │   └── services/         # API client & services
+│   ├── index.html            # Vite HTML entry point
+│   ├── package.json          # Frontend dependencies & scripts
+│   └── vite.config.js        # Vite configuration
 │
 ├── backend/                  # Node.js Express server
 │   ├── controllers/          # Request handlers and business logic
 │   ├── middleware/           # Custom Express middleware (e.g., Auth)
 │   ├── models/               # Mongoose database schemas
 │   ├── routes/               # API endpoint definitions
-│   ├── services/             # Third-party integrations (Groq, OAuth)
+│   ├── services/             # Third-party integrations (Groq AI, OAuth, PDF processing)
 │   ├── utils/                # Helper functions and utilities
 │   ├── validators/           # Request validation schemas
 │   ├── server.js             # Application entry point
 │   ├── package.json          # Server dependencies and scripts
 │   └── .env                  # Environment configuration
 │
+├── frontend-legacy/          # Deprecated legacy frontend (Vanilla JS — kept for reference only)
 └── README.md                 # Project documentation
 ```
 
@@ -144,8 +150,8 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
 
-# Frontend Redirection (Defaults to localhost:5500 if unset)
-FRONTEND_URL=http://127.0.0.1:5500/app.html
+# Frontend Redirection (Defaults to http://localhost:5173 if unset)
+FRONTEND_URL=http://localhost:5173
 ```
 
 ### 3. Server Initialization
@@ -157,12 +163,23 @@ npm start
 
 ### 4. Frontend Execution
 
-To launch the frontend locally, utilize a local development server (such as VS Code's Live Server) to serve the `frontend` directory. Ensure it runs on the port specified in your `FRONTEND_URL`.
+To launch the primary React + Vite frontend locally:
 
-- Landing Page: `index.html`
-- Application Dashboard: `app.html`
+```bash
+cd FrontEnd
+npm install
+npm run dev
+```
 
-> **Note on Deployment**: When deploying to production environments (e.g., Render, Netlify), ensure that the `FRONTEND_URL` environment variable on the backend points to the deployed frontend domain, and the frontend API endpoints are updated to reflect the deployed backend URL.
+*The Vite development server will initialize on `http://localhost:5173`.*
+
+For production builds:
+```bash
+npm run build
+npm run preview
+```
+
+> **Note on Deployment**: When deploying to production environments (e.g., Render, Vercel, Netlify), ensure that the `FRONTEND_URL` environment variable on the backend points to the deployed frontend domain, and the frontend `VITE_API_BASE_URL` environment variable points to the deployed backend URL.
 
 ---
 

@@ -64,14 +64,14 @@ export const UserProvider = ({ children }) => {
     window.location.href = '/app';
   };
 
-  const loginWithCredentials = async (username, password) => {
+  const loginWithCredentials = async (username, password, appState) => {
     try {
       const response = await api.post('/login', { username, password });
       if (response.data.success && response.data.token) {
         localStorage.setItem('token', response.data.token);
         setIsAuthenticated(true);
         // Sync local guest state to new backend account
-        await api.post('/sync', { state: {} }); // Basic sync ping
+        await api.post('/sync', { state: appState || {} });
         
         window.location.href = '/app';
         return { success: true };
