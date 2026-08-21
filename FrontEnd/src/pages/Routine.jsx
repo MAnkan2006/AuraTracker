@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useRoutine } from '../hooks/useRoutine';
 import { useAttendance } from '../hooks/useAttendance';
 import { useToast } from '../context/ToastContext';
+import api from '../services/api';
 import { CalendarRange, Plus, UploadCloud, ListChecks, Trash2, Clock, CheckCircle2, XCircle, FileWarning, Ban, Loader2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import TimePickerModal from '../components/ui/TimePickerModal';
