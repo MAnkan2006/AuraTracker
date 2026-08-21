@@ -2,7 +2,7 @@ const Groq = require("groq-sdk");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const MODEL_NAME = "llama3-70b-8192";
+const MODEL_NAME = "openai/gpt-oss-120b";
 
 /**
  * Send a prompt to the LLM and parse the response as JSON.
