@@ -2,18 +2,19 @@ const Groq = require("groq-sdk");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-const MODEL_NAME = "openai/gpt-oss-120b";
+const MODEL_NAME = "llama3-70b-8192";
 
 /**
  * Send a prompt to the LLM and parse the response as JSON.
  * Retries once on JSON parse failure with an appended instruction.
  *
  * @param {string} prompt - The full prompt string
+ * @param {string[]} [base64Images=[]] - Array of base64 images for OCR fallback
  * @returns {Promise<Object>} - Parsed JSON object with { classes: [] }
  */
-const generateRoutine = async (prompt) => {
+const generateRoutine = async (prompt, base64Images = []) => {
   // First attempt
-  let responseText = await callGroq(prompt);
+  let responseText = await callGroq(prompt, base64Images);
   let parsed = tryParseJSON(responseText);
 
   if (parsed) {
@@ -28,7 +29,7 @@ const generateRoutine = async (prompt) => {
     prompt +
     "\n\nIMPORTANT: Your previous response was not valid JSON. Please output valid JSON only. No markdown, no code fences, no explanations. Just the raw JSON object.";
 
-  responseText = await callGroq(retryPrompt);
+  responseText = await callGroq(retryPrompt, base64Images);
   parsed = tryParseJSON(responseText);
 
   if (parsed) {
@@ -43,12 +44,31 @@ const generateRoutine = async (prompt) => {
 /**
  * Call the Groq model and return raw response text.
  * @param {string} prompt - Prompt string
+ * @param {string[]} base64Images - Array of base64 images
  * @returns {Promise<string>} - Raw response text
  */
-const callGroq = async (prompt) => {
+const callGroq = async (prompt, base64Images = []) => {
+  let messages;
+  let modelToUse = MODEL_NAME;
+
+  if (base64Images.length > 0) {
+    const content = [{ type: 'text', text: prompt }];
+    for (const dataUri of base64Images) {
+      // Groq Vision expects a URL or a base64 data URI
+      content.push({
+        type: 'image_url',
+        image_url: { url: dataUri }
+      });
+    }
+    messages = [{ role: 'user', content }];
+    modelToUse = "llama-3.2-11b-vision-preview"; // Or llama-3.2-90b-vision-preview
+  } else {
+    messages = [{ role: 'user', content: prompt }];
+  }
+
   const result = await groq.chat.completions.create({
-    messages: [{ role: 'user', content: prompt }],
-    model: MODEL_NAME,
+    messages,
+    model: modelToUse,
     temperature: 0.2
   });
   return result.choices[0].message.content;

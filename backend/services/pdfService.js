@@ -5,7 +5,7 @@ const { PDFParse } = require('pdf-parse');
  * @param {Buffer} buffer - The PDF file buffer
  * @returns {Promise<string>} - Cleaned text content
  */
-const extractText = async (buffer) => {
+const extractData = async (buffer) => {
   if (!buffer || buffer.length === 0) {
     throw new Error('Empty PDF buffer provided');
   }
@@ -14,11 +14,26 @@ const extractText = async (buffer) => {
   const result = await parser.getText();
   await parser.destroy();
 
-  if (!result.text || result.text.trim().length === 0) {
-    throw new Error('No text content could be extracted from the PDF. The file may be image-based or empty.');
+  const cleaned = cleanText(result.text || "");
+
+  // If text is meaningful, return it
+  if (cleaned.length > 50) {
+    return { type: 'text', text: cleaned };
   }
 
-  return cleanText(result.text);
+  // Otherwise, fallback to OCR/Vision by returning images
+  console.log("[PDFService] Low text detected. Falling back to extracting images...");
+  try {
+    const { pdf } = await import('pdf-to-img');
+    const document = await pdf(buffer, { scale: 2 });
+    const base64Images = [];
+    for await (const imageBuffer of document) {
+      base64Images.push(`data:image/png;base64,${imageBuffer.toString('base64')}`);
+    }
+    return { type: 'images', images: base64Images };
+  } catch (err) {
+    throw new Error('No text content could be extracted from the PDF, and image extraction failed.');
+  }
 };
 
 /**
@@ -92,4 +107,4 @@ const removeRepeatedHeadersFooters = (text) => {
     .join('\n');
 };
 
-module.exports = { extractText };
+module.exports = { extractData };

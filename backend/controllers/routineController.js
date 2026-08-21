@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Routine = require('../models/Routine');
-const { extractText } = require('../services/pdfService');
+const { extractData } = require('../services/pdfService');
 const { buildPrompt } = require('../services/promptBuilder');
 const { generateRoutine } = require('../services/groqService');
 const { validateRoutine } = require('../validators/routineValidator');
@@ -17,26 +17,40 @@ exports.importRoutine = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No PDF file uploaded. Please upload a routine PDF.'
+        message: 'No file uploaded. Please upload a routine PDF or Image.'
       });
     }
 
-    // Extract text from PDF
-    let pdfText;
-    try {
-      pdfText = await extractText(req.file.buffer);
-    } catch (err) {
-      return res.status(422).json({
-        success: false,
-        message: `Failed to extract text from PDF: ${err.message}`
-      });
-    }
+    const isDirectImage = req.file.mimetype.startsWith('image/');
+    let pdfText = '';
+    let base64Images = [];
+    let isImage = false;
 
-    if (!pdfText || pdfText.length < 20) {
-      return res.status(422).json({
-        success: false,
-        message: 'The PDF does not contain enough text content to extract a routine.'
-      });
+    if (isDirectImage) {
+      // Direct image upload
+      const base64 = req.file.buffer.toString('base64');
+      const dataUri = `data:${req.file.mimetype};base64,${base64}`;
+      base64Images.push(dataUri);
+      pdfText = '[Image uploaded. Please parse the image for the schedule.]';
+      isImage = true;
+    } else {
+      // PDF upload
+      try {
+        const pdfData = await extractData(req.file.buffer);
+        if (pdfData.type === 'images') {
+          base64Images = pdfData.images;
+          pdfText = '[Image-based PDF attached. Please parse the images for the schedule.]';
+          isImage = true;
+        } else {
+          pdfText = pdfData.text;
+          isImage = false;
+        }
+      } catch (err) {
+        return res.status(422).json({
+          success: false,
+          message: `Failed to extract data from PDF: ${err.message}`
+        });
+      }
     }
 
     // Load user's academic profile
@@ -62,7 +76,7 @@ exports.importRoutine = async (req, res) => {
       console.warn('[RoutineController] Failed to fetch academic knowledge:', err.message);
     }
 
-    // Build prompt and call Gemini
+    // Build prompt and call Gemini (Groq)
     const prompt = buildPrompt({
       college: college || '',
       department: department || '',
@@ -70,12 +84,13 @@ exports.importRoutine = async (req, res) => {
       semester: semester || '',
       section: section || '',
       subjects,
-      pdfText
+      pdfText,
+      isImage
     });
 
     let geminiResult;
     try {
-      geminiResult = await generateRoutine(prompt);
+      geminiResult = await generateRoutine(prompt, base64Images);
     } catch (err) {
       return res.status(502).json({
         success: false,

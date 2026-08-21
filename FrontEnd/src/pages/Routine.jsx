@@ -21,12 +21,12 @@ const Routine = () => {
   const { routine, addClass, importClasses, removeClass, removeMultipleClasses } = useRoutine();
   const { attendance, markAttendance, isBeforeSessionStart, sessionStartDateStr } = useAttendance();
   const { addToast } = useToast();
-  
+
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [newClass, setNewClass] = useState({
     title: '', code: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: ''
   });
-  
+
   const [replacementModalState, setReplacementModalState] = useState({
     isOpen: false,
     subject: '',
@@ -35,7 +35,7 @@ const Routine = () => {
     defaultEnd: '10:00',
     defaultRoom: ''
   });
-  
+
   const [activeTimePicker, setActiveTimePicker] = useState(null); // 'start' | 'end' | null
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -44,7 +44,7 @@ const Routine = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (file.type !== "application/pdf") {
       addToast("Please select a valid PDF file.", "error");
       return;
@@ -58,7 +58,7 @@ const Routine = () => {
       const response = await api.post('/routine/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      
+
       const newClasses = response.data.classes || response.data;
       if (newClasses && newClasses.length > 0) {
         importClasses(newClasses);
@@ -82,7 +82,7 @@ const Routine = () => {
   const [expandedDays, setExpandedDays] = useState([todayDayNum]);
 
   const toggleExpandDay = (dayKey) => {
-    setExpandedDays(prev => 
+    setExpandedDays(prev =>
       prev.includes(dayKey) ? prev.filter(d => d !== dayKey) : [...prev, dayKey]
     );
   };
@@ -102,7 +102,7 @@ const Routine = () => {
 
   const [isManageMode, setIsManageMode] = useState(false);
   const [selectedSlots, setSelectedSlots] = useState([]);
-  
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null); // null means bulk delete
 
@@ -123,7 +123,7 @@ const Routine = () => {
     setItemToDelete(cls);
     setIsDeleteModalOpen(true);
   };
-  
+
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
   const todayStr = new Date().toISOString().split('T')[0];
   const glassPanelClass = "bg-[var(--card-bg)] backdrop-blur-xl border border-[var(--card-border)] group-data-[scheme=light]:border-black/[0.08] rounded-3xl p-6 shadow-[0_8px_32px_rgba(0,0,0,0.12)] group-data-[scheme=light]:shadow-sm transition-all duration-300";
@@ -167,12 +167,12 @@ const Routine = () => {
   const renderInlineAttendance = (subject, targetDate = todayStr, disabled = false, clsObj = null) => {
     const slotKey = clsObj ? (clsObj.id || `${clsObj.start || '00:00'}_${clsObj.end || '00:00'}`) : null;
     const specificDateKey = slotKey ? `${targetDate}_${slotKey}` : targetDate;
-    
+
     // Check specificDateKey first, fallback to targetDate for legacy records
-    const currentStatus = (attendance[subject]?.[specificDateKey]) !== undefined 
-      ? attendance[subject]?.[specificDateKey] 
+    const currentStatus = (attendance[subject]?.[specificDateKey]) !== undefined
+      ? attendance[subject]?.[specificDateKey]
       : attendance[subject]?.[targetDate];
-    
+
     const statuses = [
       { id: 'P', name: 'Present', color: 'text-green-500 hover:bg-green-500/20 group-data-[scheme=light]:text-green-600', activeBg: 'bg-green-500 text-white' },
       { id: 'A', name: 'Absent', color: 'text-red-500 hover:bg-red-500/20 group-data-[scheme=light]:text-red-600', activeBg: 'bg-red-500 text-white' },
@@ -249,27 +249,27 @@ const Routine = () => {
 
   const handleAddClass = (e) => {
     e.preventDefault();
-    
+
     if (!newClass.title || !newClass.start || !newClass.end) {
       addToast("Please enter a Title, Start Time, and End Time.", "error");
       return;
     }
-    
+
     if (newClass.day === 'special' && !newClass.date) {
       addToast("Please select a date for your special class.", "error");
       return;
     }
 
-    const uniqueId = (typeof crypto !== 'undefined' && crypto.randomUUID) 
-      ? crypto.randomUUID() 
+    const uniqueId = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    
+
     if (newClass.day === 'special') {
       addClass({ ...newClass, id: uniqueId, isSpecial: true, day: null });
     } else {
       addClass({ ...newClass, id: uniqueId, isSpecial: false, day: parseInt(newClass.day) });
     }
-    
+
     setIsAddClassOpen(false);
     addToast("Class added successfully!", "success");
     setNewClass({ title: '', code: '', start: '09:00', end: '10:00', room: '', day: 1, isSpecial: false, date: '' });
@@ -306,16 +306,16 @@ const Routine = () => {
           <h2 className="text-3xl font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 font-[var(--font-heading)]">Weekly Routine</h2>
           <p className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 mt-1">Manage your schedule and daily habits.</p>
         </div>
-        
+
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded-xl p-1 border border-white/10 group-data-[scheme=light]:border-gray-200">
-            <button 
+            <button
               className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'daily' ? 'bg-[var(--card-bg)] group-data-[scheme=light]:bg-white text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 shadow-sm' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-700'}`}
               onClick={() => setViewMode('daily')}
             >
               Daily
             </button>
-            <button 
+            <button
               className={`px-4 py-1.5 rounded-lg text-sm font-bold transition-all ${viewMode === 'weekly' ? 'bg-[var(--card-bg)] group-data-[scheme=light]:bg-white text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 shadow-sm' : 'text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:text-[var(--text-primary)] group-data-[scheme=light]:hover:text-gray-700'}`}
               onClick={() => setViewMode('weekly')}
             >
@@ -323,14 +323,14 @@ const Routine = () => {
             </button>
           </div>
 
-          <input 
-            type="file" 
-            accept="application/pdf" 
-            ref={fileInputRef} 
-            onChange={handleFileUpload} 
-            className="hidden" 
+          <input
+            type="file"
+            accept="application/pdf"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+            className="hidden"
           />
-          <button 
+          <button
             onClick={() => fileInputRef.current.click()}
             disabled={isImporting}
             className="flex items-center gap-2 px-4 py-2 bg-white/5 group-data-[scheme=light]:bg-white border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-700 rounded-xl hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50 transition-colors font-bold text-sm shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
@@ -338,8 +338,8 @@ const Routine = () => {
             {isImporting ? <Loader2 size={18} className="animate-spin" /> : <UploadCloud size={18} />}
             <span className="hidden sm:inline">{isImporting ? "Importing..." : "Import PDF"}</span>
           </button>
-          
-          <button 
+
+          <button
             className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors font-bold text-sm shadow-sm ${isManageMode ? 'bg-red-500/10 border-red-500/20 text-red-500 group-data-[scheme=light]:text-red-600 hover:bg-red-500/20' : 'bg-white/5 group-data-[scheme=light]:bg-white border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-700 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-50'}`}
             onClick={() => {
               setIsManageMode(!isManageMode);
@@ -350,7 +350,7 @@ const Routine = () => {
             <span className="hidden sm:inline">{isManageMode ? 'Cancel Manage' : 'Manage'}</span>
           </button>
 
-          <button 
+          <button
             onClick={() => setIsAddClassOpen(true)}
             className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] text-white rounded-xl hover:-translate-y-0.5 active:scale-95 transition-all shadow-[0_4px_15px_var(--accent-glow)] font-bold text-sm border border-[var(--card-border)] group"
           >
@@ -369,7 +369,7 @@ const Routine = () => {
             <button className="text-sm font-bold text-[var(--accent)] hover:underline" onClick={() => setSelectedSlots(routine.map(r => r.id || r.title))}>
               Select All
             </button>
-            <button 
+            <button
               className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold text-sm transition-all ${selectedSlots.length > 0 ? 'bg-red-500 hover:bg-red-600 text-white shadow-md' : 'bg-red-500/50 text-white/50 cursor-not-allowed'}`}
               disabled={selectedSlots.length === 0}
               onClick={() => {
@@ -393,8 +393,8 @@ const Routine = () => {
                 {days.map((day, index) => {
                   const dayClasses = getWeeklySlotClasses(index + 1);
                   return (
-                    <div 
-                      key={day} 
+                    <div
+                      key={day}
                       className="animate-fade-in-up bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-inner flex flex-col h-[520px]"
                       style={{ animationDelay: `${index * 0.05}s` }}
                     >
@@ -415,14 +415,14 @@ const Routine = () => {
                               <div key={cls.id || idx} className={`relative group p-3 border rounded-xl hover:bg-white/5 transition-colors shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
                                 {isManageMode && (
                                   <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                                    <button 
+                                    <button
                                       onClick={() => handleSingleDelete(cls)}
                                       className="text-red-500 hover:text-red-600 transition-colors"
                                     >
                                       <Trash2 size={13} />
                                     </button>
-                                    <input 
-                                      type="checkbox" 
+                                    <input
+                                      type="checkbox"
                                       className="w-3.5 h-3.5 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
                                       checked={selectedSlots.includes(classKey)}
                                       onChange={(e) => {
@@ -443,7 +443,7 @@ const Routine = () => {
                                 </div>
                                 <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[10px] xl:text-[11px] font-semibold mb-1.5">{cls.start} &ndash; {cls.end}</div>
                                 <span className="inline-block px-2 py-0.5 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[9px] xl:text-[10px] uppercase font-bold tracking-wider rounded border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                                
+
                                 {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(index + 1), false, cls)}
                               </div>
                             );
@@ -465,8 +465,8 @@ const Routine = () => {
                 const dayClasses = getWeeklySlotClasses(weekdayNum);
 
                 return (
-                  <div 
-                    key={day} 
+                  <div
+                    key={day}
                     className="bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 rounded-2xl overflow-hidden shadow-sm transition-all duration-300"
                   >
                     <button
@@ -498,14 +498,14 @@ const Routine = () => {
                             <div key={cls.id || idx} className={`relative group p-4 border rounded-xl hover:bg-white/5 transition-colors shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
                               {isManageMode && (
                                 <div className="absolute top-2 right-2 flex items-center gap-2">
-                                  <button 
+                                  <button
                                     onClick={() => handleSingleDelete(cls)}
                                     className="text-red-500 hover:text-red-600 transition-colors"
                                   >
                                     <Trash2 size={14} />
                                   </button>
-                                  <input 
-                                    type="checkbox" 
+                                  <input
+                                    type="checkbox"
                                     className="w-4 h-4 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
                                     checked={selectedSlots.includes(classKey)}
                                     onChange={(e) => {
@@ -521,7 +521,7 @@ const Routine = () => {
                               </div>
                               <div className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 text-[11px] font-semibold mb-2">{cls.start} - {cls.end}</div>
                               <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
-                              
+
                               {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(weekdayNum), false, cls)}
                             </div>
                           );
@@ -557,14 +557,14 @@ const Routine = () => {
                         <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-100/50 border border-purple-500/20 rounded-xl shadow-sm ${isPast ? 'opacity-65' : ''}`}>
                           {isManageMode && (
                             <div className="absolute top-2 right-2 flex items-center gap-2">
-                              <button 
+                              <button
                                 onClick={() => handleSingleDelete(cls)}
                                 className="text-red-500 hover:text-red-600 transition-colors"
                               >
                                 <Trash2 size={14} />
                               </button>
-                              <input 
-                                type="checkbox" 
+                              <input
+                                type="checkbox"
                                 className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
                                 checked={selectedSlots.includes(classKey)}
                                 onChange={(e) => {
@@ -583,7 +583,7 @@ const Routine = () => {
                             <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                             <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
                           </div>
-                          
+
                           {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr, cls)}
                         </div>
                       );
@@ -592,7 +592,7 @@ const Routine = () => {
                 </div>
               )}
             </div>
-          
+
             {routine.some(c => c.isSpecial) && (
               <div className="hidden md:block mt-8 pt-8 border-t border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">
                 <h3 className="text-xl font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-4 flex items-center gap-2">
@@ -607,14 +607,14 @@ const Routine = () => {
                       <div key={cls.id || idx} className={`relative group p-4 bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 border border-purple-500/20 group-data-[scheme=light]:border-purple-200 rounded-xl shadow-[0_2px_10px_rgba(168,85,247,0.15)] group-data-[scheme=light]:shadow-sm ${isPast ? 'opacity-65' : ''}`}>
                         {isManageMode && (
                           <div className="absolute top-2 right-2 flex items-center gap-2">
-                            <button 
+                            <button
                               onClick={() => handleSingleDelete(cls)}
                               className="text-red-500 hover:text-red-600 transition-colors"
                             >
                               <Trash2 size={14} />
                             </button>
-                            <input 
-                              type="checkbox" 
+                            <input
+                              type="checkbox"
                               className="w-4 h-4 rounded border-gray-300 text-purple-500 focus:ring-purple-500 cursor-pointer"
                               checked={selectedSlots.includes(classKey)}
                               onChange={(e) => {
@@ -633,7 +633,7 @@ const Routine = () => {
                           <span className="inline-block px-2 py-1 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-[10px] uppercase font-bold tracking-wider rounded-md border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                           <span className="text-[10px] font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-2 py-1 rounded-md">{cls.date}</span>
                         </div>
-                        
+
                         {!isManageMode && renderInlineAttendance(cls.title, cls.date, cls.date !== todayStr)}
                       </div>
                     );
@@ -647,7 +647,7 @@ const Routine = () => {
             {/* Desktop Tabs */}
             <div className="hidden md:flex justify-start overflow-x-auto gap-2 mb-6 pb-2 hide-scrollbar">
               {days.map((day, idx) => (
-                <button 
+                <button
                   key={day}
                   onClick={() => setSelectedDay(idx + 1)}
                   className={`flex-shrink-0 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${selectedDay === idx + 1 ? 'bg-[var(--accent)] text-white shadow-md' : 'bg-white/5 group-data-[scheme=light]:bg-gray-100 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-200'}`}
@@ -655,7 +655,7 @@ const Routine = () => {
                   {day}
                 </button>
               ))}
-              <button 
+              <button
                 onClick={() => setSelectedDay('special')}
                 className={`flex-shrink-0 px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${selectedDay === 'special' ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20' : 'bg-purple-500/10 group-data-[scheme=light]:bg-purple-50 text-purple-400 group-data-[scheme=light]:text-purple-600 hover:bg-purple-500/20 border border-purple-500/20'}`}
               >
@@ -665,7 +665,7 @@ const Routine = () => {
 
             {/* Mobile Arrow Switcher */}
             <div className="md:hidden flex items-center justify-between bg-white/5 group-data-[scheme=light]:bg-gray-100 p-3 rounded-2xl border border-white/10 group-data-[scheme=light]:border-gray-200 mb-6 shadow-sm">
-              <button 
+              <button
                 onClick={handlePrevDay}
                 className="p-2.5 rounded-xl bg-white/10 group-data-[scheme=light]:bg-white hover:bg-white/20 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 transition-all active:scale-95 shadow-sm"
                 aria-label="Previous Day"
@@ -687,7 +687,7 @@ const Routine = () => {
                 </div>
               </div>
 
-              <button 
+              <button
                 onClick={handleNextDay}
                 className="p-2.5 rounded-xl bg-white/10 group-data-[scheme=light]:bg-white hover:bg-white/20 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-800 transition-all active:scale-95 shadow-sm"
                 aria-label="Next Day"
@@ -709,14 +709,14 @@ const Routine = () => {
                     <div key={cls.id || idx} className={`relative group p-6 border rounded-2xl transition-colors shadow-[0_2px_10px_var(--accent-glow)] group-data-[scheme=light]:shadow-sm ${cls.isSpecial ? 'bg-purple-500/10 border-purple-500/20 hover:bg-purple-500/20' : 'bg-[var(--accent)]/10 border-[var(--accent)]/20 group-data-[scheme=light]:bg-blue-50 group-data-[scheme=light]:border-blue-100 hover:bg-[var(--accent)]/20 group-data-[scheme=light]:hover:bg-blue-100'} ${isPast ? 'opacity-65' : ''}`}>
                       {isManageMode && (
                         <div className="absolute top-4 right-4 flex items-center gap-2">
-                          <button 
+                          <button
                             onClick={() => handleSingleDelete(cls)}
                             className="text-red-500 hover:text-red-600 transition-colors"
                           >
                             <Trash2 size={16} />
                           </button>
-                          <input 
-                            type="checkbox" 
+                          <input
+                            type="checkbox"
                             className="w-5 h-5 rounded border-gray-300 text-[var(--accent)] focus:ring-[var(--accent)] cursor-pointer"
                             checked={selectedSlots.includes(classKey)}
                             onChange={(e) => {
@@ -738,7 +738,7 @@ const Routine = () => {
                         <span className="inline-block px-3 py-1.5 bg-[var(--bg-base)] group-data-[scheme=light]:bg-white text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 text-xs uppercase font-bold tracking-wider rounded-lg border border-[var(--card-border)] group-data-[scheme=light]:border-gray-200">{cls.room || 'Event'}</span>
                         {cls.isSpecial && <span className="text-xs font-bold text-purple-400 group-data-[scheme=light]:text-purple-600 bg-purple-500/10 px-3 py-1.5 rounded-lg">{cls.date}</span>}
                       </div>
-                      
+
                       {!isManageMode && renderInlineAttendance(cls.title, cls.isSpecial ? cls.date : getDateForWeekdayOfCurrentWeek(selectedDay), false, cls)}
                     </div>
                   );
@@ -754,8 +754,8 @@ const Routine = () => {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="md:col-span-2">
               <label className={labelClass}>Class Title</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 required
                 className={inputClass}
                 placeholder="e.g. Advanced Physics"
@@ -773,16 +773,16 @@ const Routine = () => {
             </div>
             <div>
               <label className={labelClass}>Subject Code (Optional)</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={inputClass}
                 placeholder="e.g. CS301"
                 value={newClass.code || ''}
-                onChange={(e) => setNewClass({...newClass, code: e.target.value})}
+                onChange={(e) => setNewClass({ ...newClass, code: e.target.value })}
               />
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Start Time</label>
@@ -807,13 +807,13 @@ const Routine = () => {
               </button>
             </div>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className={labelClass}>Day of Week</label>
               <Dropdown
                 value={newClass.day}
-                onChange={(val) => setNewClass({...newClass, day: val})}
+                onChange={(val) => setNewClass({ ...newClass, day: val })}
                 options={[
                   ...days.map((day, index) => ({ value: index + 1, label: day })),
                   { value: 'special', label: 'Special Date', className: 'text-[var(--accent)] font-bold' }
@@ -822,16 +822,16 @@ const Routine = () => {
             </div>
             <div>
               <label className={labelClass}>Room / Location</label>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 className={inputClass}
                 placeholder="e.g. Room 101"
                 value={newClass.room}
-                onChange={(e) => setNewClass({...newClass, room: e.target.value})}
+                onChange={(e) => setNewClass({ ...newClass, room: e.target.value })}
               />
             </div>
           </div>
-          
+
           {newClass.day === 'special' && (
             <div>
               <label className={labelClass}>Special Class Date</label>
@@ -845,8 +845,8 @@ const Routine = () => {
               </button>
             </div>
           )}
-          
-          <button 
+
+          <button
             type="submit"
             className="w-full mt-2 py-4 bg-gradient-to-r from-[var(--accent)] to-[var(--accent-hover)] text-white font-bold rounded-2xl hover:-translate-y-0.5 transition-all shadow-[0_4px_15px_var(--accent-glow)]"
           >
@@ -855,29 +855,29 @@ const Routine = () => {
         </form>
       </Modal>
 
-      <TimePickerModal 
+      <TimePickerModal
         isOpen={activeTimePicker !== null}
         onClose={() => setActiveTimePicker(null)}
         initialTime={activeTimePicker === 'start' ? (newClass.start || '09:00') : (newClass.end || '10:00')}
         title={activeTimePicker === 'start' ? "Select Start Time" : "Select End Time"}
         onConfirm={(timeStr) => {
-          if (activeTimePicker === 'start') setNewClass({...newClass, start: timeStr});
-          if (activeTimePicker === 'end') setNewClass({...newClass, end: timeStr});
+          if (activeTimePicker === 'start') setNewClass({ ...newClass, start: timeStr });
+          if (activeTimePicker === 'end') setNewClass({ ...newClass, end: timeStr });
           setActiveTimePicker(null);
         }}
       />
 
-      <DatePickerModal 
+      <DatePickerModal
         isOpen={isDatePickerOpen}
         onClose={() => setIsDatePickerOpen(false)}
         initialDate={newClass.date}
         onConfirm={(dateStr) => {
-          setNewClass({...newClass, date: dateStr});
+          setNewClass({ ...newClass, date: dateStr });
           setIsDatePickerOpen(false);
         }}
       />
 
-      <ConfirmModal 
+      <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleConfirmDelete}
