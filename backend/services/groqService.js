@@ -69,7 +69,8 @@ const callGroq = async (prompt, base64Images = []) => {
   const result = await groq.chat.completions.create({
     messages,
     model: modelToUse,
-    temperature: 0.2
+    temperature: 0.2,
+    response_format: { type: "json_object" }
   });
   return result.choices[0].message.content;
 };
