@@ -79,7 +79,17 @@ const generateRoutine = async (prompt, file = null) => {
         responseSchema: ROUTINE_SCHEMA
       }
     });
-    responseText = response.text();
+
+    // response.text is a property/getter, NOT a method — no parentheses
+    responseText = response.text;
+
+    if (!responseText) {
+      // Log full response for diagnosing safety filtering or empty outputs
+      console.error('[GeminiService] Empty response from Gemini. Full response object:', JSON.stringify({
+        candidates:     response.candidates,
+        promptFeedback: response.promptFeedback
+      }, null, 2));
+    }
   } catch (err) {
     // Surface Gemini API errors (auth, quota, model not found) clearly
     throw new Error(`Gemini API call failed: ${err.message}`);
