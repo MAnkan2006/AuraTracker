@@ -1,25 +1,22 @@
 /**
- * Extract images from a PDF buffer.
- * @param {Buffer} buffer - The PDF file buffer
- * @returns {Promise<Object>} - Object containing base64 images
+ * Prepare an uploaded file (PDF or image) for the Gemini API.
+ * Returns a plain object with the base64-encoded data and MIME type —
+ * no rasterization, no text extraction.  Gemini's native PDF support
+ * handles the file directly.
+ *
+ * @param {Buffer} buffer   - Raw file buffer from multer
+ * @param {string} mimetype - MIME type reported by multer (e.g. 'application/pdf')
+ * @returns {{ mimeType: string, data: string }} - Ready-to-use inlineData object
  */
-const extractData = async (buffer) => {
+const prepareFileForGemini = (buffer, mimetype) => {
   if (!buffer || buffer.length === 0) {
-    throw new Error('Empty PDF buffer provided');
+    throw new Error('Empty file buffer provided');
   }
 
-  console.log("[PDFService] Extracting images from PDF...");
-  try {
-    const { pdf } = await import('pdf-to-img');
-    const document = await pdf(buffer, { scale: 2 });
-    const base64Images = [];
-    for await (const imageBuffer of document) {
-      base64Images.push(`data:image/png;base64,${imageBuffer.toString('base64')}`);
-    }
-    return { type: 'images', images: base64Images };
-  } catch (err) {
-    throw new Error('Image extraction failed: ' + err.message);
-  }
+  return {
+    mimeType: mimetype,
+    data: buffer.toString('base64')
+  };
 };
 
-module.exports = { extractData };
+module.exports = { prepareFileForGemini };

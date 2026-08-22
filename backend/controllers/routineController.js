@@ -1,15 +1,16 @@
 const User = require('../models/User');
 const Routine = require('../models/Routine');
-const { extractData } = require('../services/pdfService');
+const { prepareFileForGemini } = require('../services/pdfService');
 const { buildPrompt } = require('../services/promptBuilder');
-const { generateRoutine } = require('../services/groqService');
+const { generateRoutine } = require('../services/geminiService');
 const { validateRoutine } = require('../validators/routineValidator');
 const academicKnowledgeService = require('../services/academicKnowledgeService');
 
 /**
  * POST /import
- * Upload a PDF routine, extract text, call Groq AI to parse it,
- * validate the output, and return structured classes for confirmation.
+ * Upload a PDF or image routine, send it to Gemini AI to extract the
+ * schedule, validate the output, and return structured classes for
+ * confirmation.
  */
 exports.importRoutine = async (req, res) => {
   try {
@@ -17,40 +18,19 @@ exports.importRoutine = async (req, res) => {
     if (!req.file) {
       return res.status(400).json({
         success: false,
-        message: 'No file uploaded. Please upload a routine PDF or Image.'
+        message: 'No file uploaded. Please upload a routine PDF or image.'
       });
     }
 
-    const isDirectImage = req.file.mimetype.startsWith('image/');
-    let pdfText = '';
-    let base64Images = [];
-    let isImage = false;
-
-    if (isDirectImage) {
-      // Direct image upload
-      const base64 = req.file.buffer.toString('base64');
-      const dataUri = `data:${req.file.mimetype};base64,${base64}`;
-      base64Images.push(dataUri);
-      pdfText = '[Image uploaded. Please parse the image for the schedule.]';
-      isImage = true;
-    } else {
-      // PDF upload
-      try {
-        const pdfData = await extractData(req.file.buffer);
-        if (pdfData.type === 'images') {
-          base64Images = pdfData.images;
-          pdfText = '[Image-based PDF attached. Please parse the images for the schedule.]';
-          isImage = true;
-        } else {
-          pdfText = pdfData.text;
-          isImage = false;
-        }
-      } catch (err) {
-        return res.status(422).json({
-          success: false,
-          message: `Failed to extract data from PDF: ${err.message}`
-        });
-      }
+    // Prepare the file for Gemini (base64 encode — no rasterization needed)
+    let file;
+    try {
+      file = prepareFileForGemini(req.file.buffer, req.file.mimetype);
+    } catch (err) {
+      return res.status(422).json({
+        success: false,
+        message: `Failed to prepare file: ${err.message}`
+      });
     }
 
     // Load user's academic profile
@@ -62,7 +42,7 @@ exports.importRoutine = async (req, res) => {
     const profile = user.academicProfile || {};
     const { college, department, program, semester, university, section } = profile;
 
-    // Fetch academic knowledge (subjects list) for context
+    // Fetch academic knowledge (subjects list) for context — non-fatal
     let subjects = [];
     try {
       const knowledge = await academicKnowledgeService.getOrFetch(
@@ -72,29 +52,36 @@ exports.importRoutine = async (req, res) => {
         subjects = knowledge.subjects;
       }
     } catch (err) {
-      // Non-fatal: proceed without subject context
       console.warn('[RoutineController] Failed to fetch academic knowledge:', err.message);
     }
 
-    // Build prompt and call Groq AI model
+    // Build prompt and call Gemini
     const prompt = buildPrompt({
-      college: college || '',
-      department: department || '',
-      program: program || '',
-      semester: semester || '',
-      section: section || '',
-      subjects,
-      pdfText,
-      isImage
+      college:     college     || '',
+      department:  department  || '',
+      program:     program     || '',
+      semester:    semester    || '',
+      section:     section     || '',
+      subjects
     });
 
     let geminiResult;
     try {
-      geminiResult = await generateRoutine(prompt, base64Images);
+      geminiResult = await generateRoutine(prompt, file);
     } catch (err) {
-      return res.status(502).json({
+      // Detect payload-too-large / quota errors from Gemini and return 413
+      const msg = err.message || '';
+      const isPayloadError =
+        msg.includes('Request payload size exceeds') ||
+        msg.includes('too large') ||
+        msg.includes('RESOURCE_EXHAUSTED') ||
+        msg.includes('quota');
+
+      return res.status(isPayloadError ? 413 : 502).json({
         success: false,
-        message: `AI processing failed: ${err.message}`
+        message: isPayloadError
+          ? 'Your file is too large for the AI to process. Try uploading a single-page or lower-resolution PDF.'
+          : `AI processing failed: ${msg}`
       });
     }
 
@@ -104,7 +91,7 @@ exports.importRoutine = async (req, res) => {
     if (!validation.valid) {
       return res.status(422).json({
         success: false,
-        message: 'Could not extract a valid routine from the PDF.',
+        message: 'Could not extract a valid routine from the file.',
         errors: validation.errors,
         warnings: validation.warnings
       });

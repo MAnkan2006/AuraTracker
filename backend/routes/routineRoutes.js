@@ -25,10 +25,10 @@ router.use((err, req, res, next) => {
     });
   }
 
-  if (err.message === 'Only PDF files are allowed') {
+  if (err.message && err.message.includes('Only PDF and image files')) {
     return res.status(415).json({
       success: false,
-      message: 'Only PDF files are allowed.'
+      message: 'Only PDF and image files (JPEG, PNG, WebP) are allowed.'
     });
   }
 

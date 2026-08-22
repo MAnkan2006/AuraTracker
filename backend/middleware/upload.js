@@ -3,14 +3,18 @@ const path = require('path');
 
 const storage = multer.memoryStorage();
 
+const ALLOWED_MIMES = [
+  'application/pdf',
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp'
+];
+
 const fileFilter = (req, file, cb) => {
-  const ext = path.extname(file.originalname).toLowerCase();
-  const allowedMimes = ['application/pdf'];
-
-  if (ext !== '.pdf' || !allowedMimes.includes(file.mimetype)) {
-    return cb(new Error('Only PDF files are allowed'), false);
+  if (!ALLOWED_MIMES.includes(file.mimetype)) {
+    return cb(new Error('Only PDF and image files (JPEG, PNG, WebP) are allowed'), false);
   }
-
   cb(null, true);
 };
 
@@ -18,7 +22,7 @@ const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB
+    fileSize: 10 * 1024 * 1024 // 10 MB
   }
 });
 

@@ -34,10 +34,10 @@ app.get("/", (req, res) => {
 });
 
 // ── Startup checks ────────────────────────────────────────────────────
-if (!process.env.GROQ_API_KEY) {
-  console.error("[Startup] WARNING: GROQ_API_KEY is not set. Routine import will fail.");
+if (!process.env.GEMINI_API_KEY) {
+  console.error("[Startup] WARNING: GEMINI_API_KEY is not set. Routine import will fail.");
 } else {
-  console.log("[Startup] GROQ_API_KEY is present.");
+  console.log("[Startup] GEMINI_API_KEY is present.");
 }
 
 const verifyToken = require("./middleware/auth");
