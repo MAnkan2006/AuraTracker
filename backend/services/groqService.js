@@ -69,8 +69,7 @@ const callGroq = async (prompt, base64Images = []) => {
   const result = await groq.chat.completions.create({
     messages,
     model: modelToUse,
-    temperature: 0.2,
-    response_format: { type: "json_object" }
+    temperature: 0.2
   });
   return result.choices[0].message.content;
 };
@@ -85,6 +84,9 @@ const tryParseJSON = (text) => {
   if (!text || text.trim().length === 0) return null;
 
   let cleaned = text.trim();
+
+  // Strip Qwen <think> reasoning blocks
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
 
   // Strip markdown code fences if present (```json ... ``` or ``` ... ```)
   const codeFenceRegex = /^```(?:json)?\s*\n?([\s\S]*?)\n?\s*```$/;
