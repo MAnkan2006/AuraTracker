@@ -61,7 +61,7 @@ const callGroq = async (prompt, base64Images = []) => {
       });
     }
     messages = [{ role: 'user', content }];
-    modelToUse = "llama-3.2-11b-vision-preview"; // Or llama-3.2-90b-vision-preview
+    modelToUse = "qwen/qwen3.6-27b";
   } else {
     messages = [{ role: 'user', content: prompt }];
   }
