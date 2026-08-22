@@ -10,6 +10,7 @@ import DatePickerModal from '../components/ui/DatePickerModal';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import Dropdown from '../components/ui/Dropdown';
 import ReplacementClassModal from '../components/ui/ReplacementClassModal';
+import ImportPreviewModal from '../components/ui/ImportPreviewModal';
 const getLocalDateStr = (d = new Date()) => {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -39,40 +40,63 @@ const Routine = () => {
   const [activeTimePicker, setActiveTimePicker] = useState(null); // 'start' | 'end' | null
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [pendingImport, setPendingImport] = useState(null); // { classes, warnings } | null
+  const [isConfirming, setIsConfirming] = useState(false);
   const fileInputRef = useRef(null);
 
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
-      addToast("Please select a valid PDF file.", "error");
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      addToast('Please select a PDF or image file (JPEG, PNG, WebP).', 'error');
       return;
     }
 
     setIsImporting(true);
     const formData = new FormData();
-    formData.append("pdf", file);
+    formData.append('pdf', file);
 
     try {
       const response = await api.post('/routine/import', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const newClasses = response.data.classes || response.data;
-      if (newClasses && newClasses.length > 0) {
-        importClasses(newClasses);
-        addToast(`Successfully imported ${newClasses.length} classes!`, "success");
-      } else {
-        addToast("No classes could be extracted from the PDF.", "error");
+      const { classes: extractedClasses = [], warnings = [] } = response.data;
+
+      if (!extractedClasses || extractedClasses.length === 0) {
+        addToast('No classes could be extracted from the file.', 'error');
+        return;
       }
+
+      // Show the review modal instead of saving immediately
+      setPendingImport({ classes: extractedClasses, warnings });
     } catch (error) {
-      console.error("Import Error:", error);
-      const errorMsg = error.response?.data?.message || error.message || "Failed to extract timetable.";
-      addToast(`Extraction failed: ${errorMsg}`, "error");
+      console.error('Import Error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to extract timetable.';
+      addToast(`Extraction failed: ${errorMsg}`, 'error');
     } finally {
       setIsImporting(false);
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleConfirmImport = async (finalClasses) => {
+    setIsConfirming(true);
+    try {
+      // Persist to the backend
+      await api.post('/routine/confirm', { classes: finalClasses });
+      // Sync to local app state
+      importClasses(finalClasses);
+      setPendingImport(null);
+      addToast(`Successfully imported ${finalClasses.length} class${finalClasses.length !== 1 ? 'es' : ''}!`, 'success');
+    } catch (error) {
+      console.error('Confirm Import Error:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Failed to save routine.';
+      addToast(`Save failed: ${errorMsg}`, 'error');
+    } finally {
+      setIsConfirming(false);
     }
   };
 
@@ -748,6 +772,16 @@ const Routine = () => {
           </div>
         )}
       </div>
+
+      {/* Import Preview / Review Modal */}
+      <ImportPreviewModal
+        isOpen={!!pendingImport}
+        classes={pendingImport?.classes || []}
+        warnings={pendingImport?.warnings || []}
+        onConfirm={handleConfirmImport}
+        onClose={() => setPendingImport(null)}
+        isLoading={isConfirming}
+      />
 
       <Modal isOpen={isAddClassOpen} onClose={() => setIsAddClassOpen(false)} title="Add New Class">
         <form onSubmit={handleAddClass} className="space-y-5">
