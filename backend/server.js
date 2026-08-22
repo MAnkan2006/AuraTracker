@@ -33,6 +33,13 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
+// ── Startup checks ────────────────────────────────────────────────────
+if (!process.env.GROQ_API_KEY) {
+  console.error("[Startup] WARNING: GROQ_API_KEY is not set. Routine import will fail.");
+} else {
+  console.log("[Startup] GROQ_API_KEY is present.");
+}
+
 const verifyToken = require("./middleware/auth");
 const User = require("./models/User");
 

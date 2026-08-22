@@ -8,7 +8,7 @@ const academicKnowledgeService = require('../services/academicKnowledgeService')
 
 /**
  * POST /import
- * Upload a PDF routine, extract text, call Gemini AI to parse it,
+ * Upload a PDF routine, extract text, call Groq AI to parse it,
  * validate the output, and return structured classes for confirmation.
  */
 exports.importRoutine = async (req, res) => {
@@ -76,7 +76,7 @@ exports.importRoutine = async (req, res) => {
       console.warn('[RoutineController] Failed to fetch academic knowledge:', err.message);
     }
 
-    // Build prompt and call Gemini (Groq)
+    // Build prompt and call Groq AI model
     const prompt = buildPrompt({
       college: college || '',
       department: department || '',
