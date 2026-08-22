@@ -1,6 +1,6 @@
 const { GoogleGenAI } = require('@google/genai');
 
-const MODEL_NAME = 'gemini-2.5-flash'; // change to 'gemini-3-flash' when available
+const MODEL_NAME = 'gemini-3.6-flash'; // update this constant to change the model globally
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
