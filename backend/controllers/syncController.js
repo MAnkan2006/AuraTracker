@@ -57,9 +57,11 @@ exports.getState = async (req, res) => {
     }
 
     const stateObj = state.toObject ? state.toObject() : { ...state };
-    if (stateObj.attendance) {
-      stateObj.attendance = normalizeAttendance(stateObj.attendance);
-    }
+    // NOTE: normalizeAttendance() is intentionally NOT called here.
+    // Attendance keys are stored per-class-slot (e.g. "2025-08-31_09:00_10:00")
+    // so that multiple classes on the same day are counted individually.
+    // Collapsing them to one date key per day would cause the stats to count
+    // two classes on the same day as a single attendance record.
 
     res.json({
       success: true,

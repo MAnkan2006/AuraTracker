@@ -25,6 +25,12 @@ const Attendance = () => {
   const [editingDate, setEditingDate] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Class-picker modal (shown when a calendar day has multiple class slots)
+  const [isClassPickerOpen, setIsClassPickerOpen] = useState(false);
+  const [classPickerClasses, setClassPickerClasses] = useState([]);
+  // The specific routine class slot currently being edited in the status modal
+  const [editingClass, setEditingClass] = useState(null);
+
   const [replacementModalState, setReplacementModalState] = useState({
     isOpen: false,
     subject: '',
@@ -143,6 +149,20 @@ const Attendance = () => {
     });
   };
 
+  // Returns all routine class objects for `subj` scheduled on `dateStr`, sorted by start time.
+  const getClassesForSubjectOnDate = (subj, dateStr) => {
+    if (!subj || !dateStr) return [];
+    const d = new Date(dateStr + 'T12:00:00');
+    const dayOfWeek = d.getDay() === 0 ? 7 : d.getDay();
+    return routine
+      .filter(c => {
+        if (c.title !== subj) return false;
+        if (c.isSpecial) return c.date === dateStr;
+        return Number(c.day) === dayOfWeek;
+      })
+      .sort((a, b) => (a.start || '00:00').localeCompare(b.start || '00:00'));
+  };
+
   const handleMarkTodayClass = (subject, status, clsObj = null) => {
     if (isBeforeSessionStart(todayStr)) {
       setAlertMessage(`Cannot mark attendance for today (${todayStr}) as it is prior to your Session Start Date (${sessionStartDateStr}). You can update your Session Start Date in Profile settings.`);
@@ -191,7 +211,18 @@ const Attendance = () => {
       
       const hasClassToday = isClassDayForSubject(selectedSubject, dateKey);
       const isPriorToSessionStart = isBeforeSessionStart(dateKey);
-      const status = selectedSubject && attendance[selectedSubject] ? attendance[selectedSubject][dateKey] : null;
+      // Collect all slot-specific entries for this date (e.g. "2025-08-31_09:00_10:00")
+      // and also check the plain date key for legacy records.
+      const subjectRecords = (selectedSubject && attendance[selectedSubject]) ? attendance[selectedSubject] : {};
+      const STATUS_PRIORITY = { Absent: 5, a: 5, Late: 4, l: 4, Present: 3, p: 3, Excused: 2, e: 2, Cancelled: 1, c: 1 };
+      let status = subjectRecords[dateKey] || null; // plain date key (legacy / calendar edits)
+      let statusPriority = status ? (STATUS_PRIORITY[status] || 0) : 0;
+      Object.entries(subjectRecords).forEach(([key, val]) => {
+        if (key.startsWith(`${dateKey}_`)) {
+          const p = STATUS_PRIORITY[val] || 0;
+          if (p > statusPriority) { status = val; statusPriority = p; }
+        }
+      });
       
       let statusClass = "bg-white/5 group-data-[scheme=light]:bg-gray-50 border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900";
       
@@ -227,8 +258,18 @@ const Attendance = () => {
           <div 
             key={`day-${i}`} 
             onClick={() => {
+              const classesOnDay = getClassesForSubjectOnDate(selectedSubject, dateKey);
               setEditingDate(dateKey);
-              setIsEditModalOpen(true);
+              if (classesOnDay.length > 1) {
+                // Multiple slots → show class picker first
+                setClassPickerClasses(classesOnDay);
+                setEditingClass(null);
+                setIsClassPickerOpen(true);
+              } else {
+                // Single slot (or fallback) → go straight to status modal
+                setEditingClass(classesOnDay[0] || null);
+                setIsEditModalOpen(true);
+              }
             }}
             title={`Click to edit attendance for ${selectedSubject} on ${dateKey}`}
             className={`p-2 md:p-4 rounded-xl border flex items-center justify-center transition-all hover:scale-105 cursor-pointer ${statusClass} ${isToday ? 'ring-2 ring-[var(--accent)] shadow-md' : ''}`}
@@ -618,48 +659,168 @@ const Attendance = () => {
         </div>
       </Modal>
 
-      {/* Edit Attendance Modal for Calendar */}
-      <Modal isOpen={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} title={`Edit Attendance: ${editingDate}`}>
+      {/* Class-Picker Modal — shown when a calendar day has multiple class slots */}
+      <Modal
+        isOpen={isClassPickerOpen}
+        onClose={() => setIsClassPickerOpen(false)}
+        title={`Choose a Class Slot — ${editingDate}`}
+      >
         <div className="flex flex-col gap-3 py-2">
-          <p className="text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 mb-2 font-medium">
-            Select new status for <span className="font-bold text-[var(--accent)]">{selectedSubject}</span> on {editingDate}:
+          <p className="text-sm text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 mb-1 font-medium">
+            <span className="font-bold text-[var(--accent)]">{selectedSubject}</span> has{' '}
+            <span className="font-bold">{classPickerClasses.length} classes</span> on this day.
+            Select the slot you want to mark:
           </p>
-          
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { id: 'Present', color: 'text-green-500 group-data-[scheme=light]:text-green-700 bg-green-500/10 border-green-500/20 hover:bg-green-500/20' },
-              { id: 'Absent', color: 'text-red-500 group-data-[scheme=light]:text-red-700 bg-red-500/10 border-red-500/20 hover:bg-red-500/20' },
-              { id: 'Late', color: 'text-yellow-500 group-data-[scheme=light]:text-yellow-700 bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20' },
-              { id: 'Excused', color: 'text-blue-500 group-data-[scheme=light]:text-blue-700 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20' },
-              { id: 'Cancelled', color: 'text-gray-400 group-data-[scheme=light]:text-gray-600 bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20' },
-            ].map(status => (
-              <button
-                key={status.id}
-                onClick={() => {
-                  markAttendance(selectedSubject, editingDate, status.id);
-                  setIsEditModalOpen(false);
-                  setAlertMessage(`Updated ${editingDate} to ${status.id}`);
-                  setIsAlertOpen(true);
-                }}
-                className={`p-4 border rounded-xl font-bold transition-all ${status.color}`}
-              >
-                {status.id}
-              </button>
-            ))}
-            <button
-              onClick={() => {
-                markAttendance(selectedSubject, editingDate, null);
-                setIsEditModalOpen(false);
-                setAlertMessage(`Cleared attendance for ${editingDate}`);
-                setIsAlertOpen(true);
-              }}
-              className="p-4 border border-white/10 group-data-[scheme=light]:border-gray-300 rounded-xl font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-100 transition-all"
-            >
-              Clear
-            </button>
+
+          <div className="flex flex-col gap-3">
+            {classPickerClasses.map((cls, idx) => {
+              const slotKey = cls.id || `${cls.start || '00:00'}_${cls.end || '00:00'}`;
+              const specificKey = `${editingDate}_${slotKey}`;
+              const subjectRecords = attendance[selectedSubject] || {};
+              // current status for this specific slot
+              const currentSlotStatus = subjectRecords[specificKey] ?? subjectRecords[editingDate] ?? null;
+
+              const statusColors = {
+                Present: 'text-green-500',
+                Absent: 'text-red-500',
+                Late: 'text-yellow-500',
+                Excused: 'text-blue-500',
+                Cancelled: 'text-gray-400',
+              };
+              const statusColor = currentSlotStatus ? (statusColors[currentSlotStatus] || 'text-[var(--text-muted)]') : 'text-[var(--text-muted)]';
+
+              return (
+                <button
+                  key={cls.id || idx}
+                  onClick={() => {
+                    setEditingClass(cls);
+                    setIsClassPickerOpen(false);
+                    setIsEditModalOpen(true);
+                  }}
+                  className="flex items-center justify-between gap-4 px-4 py-4 rounded-2xl bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200 hover:bg-[var(--accent)]/10 hover:border-[var(--accent)]/30 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-3">
+                    {/* Slot number badge */}
+                    <span className="w-8 h-8 rounded-xl bg-[var(--accent)]/10 text-[var(--accent)] font-extrabold text-sm flex items-center justify-center shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2 font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900">
+                        <Clock size={14} className="text-[var(--accent)]" />
+                        <span>{cls.start} – {cls.end}</span>
+                      </div>
+                      {cls.room && (
+                        <div className="text-xs text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 mt-0.5">
+                          Room: <span className="font-semibold">{cls.room}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={`text-xs font-bold ${statusColor}`}>
+                      {currentSlotStatus || 'Not marked'}
+                    </span>
+                    <ChevronRight size={16} className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" />
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </Modal>
+
+      {/* Edit Attendance Modal for Calendar */}
+      {(() => {
+        // Compute the key to write to — slot-specific if a class slot was picked, else plain date
+        const slotKey = editingClass
+          ? (editingClass.id || `${editingClass.start || '00:00'}_${editingClass.end || '00:00'}`)
+          : null;
+        const dateKeyToWrite = slotKey ? `${editingDate}_${slotKey}` : editingDate;
+
+        // Derive the current status for this slot so we can highlight the active button
+        const subjectRecords = (selectedSubject && attendance[selectedSubject]) ? attendance[selectedSubject] : {};
+        const currentStatus = subjectRecords[dateKeyToWrite] ?? null;
+
+        const STATUS_PRIORITY = { Absent: 5, a: 5, Late: 4, l: 4, Present: 3, p: 3, Excused: 2, e: 2, Cancelled: 1, c: 1 };
+        const statusOptions = [
+          { id: 'Present', color: 'text-green-500 group-data-[scheme=light]:text-green-700 bg-green-500/10 border-green-500/20 hover:bg-green-500/20', activeClass: 'bg-green-500 text-white border-green-500 scale-105 shadow-sm' },
+          { id: 'Absent', color: 'text-red-500 group-data-[scheme=light]:text-red-700 bg-red-500/10 border-red-500/20 hover:bg-red-500/20', activeClass: 'bg-red-500 text-white border-red-500 scale-105 shadow-sm' },
+          { id: 'Late', color: 'text-yellow-500 group-data-[scheme=light]:text-yellow-700 bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20', activeClass: 'bg-yellow-500 text-white border-yellow-500 scale-105 shadow-sm' },
+          { id: 'Excused', color: 'text-blue-500 group-data-[scheme=light]:text-blue-700 bg-blue-500/10 border-blue-500/20 hover:bg-blue-500/20', activeClass: 'bg-blue-500 text-white border-blue-500 scale-105 shadow-sm' },
+          { id: 'Cancelled', color: 'text-gray-400 group-data-[scheme=light]:text-gray-600 bg-gray-500/10 border-gray-500/20 hover:bg-gray-500/20', activeClass: 'bg-gray-500 text-white border-gray-500 scale-105 shadow-sm' },
+        ];
+
+        return (
+          <Modal
+            isOpen={isEditModalOpen}
+            onClose={() => { setIsEditModalOpen(false); setEditingClass(null); }}
+            title={`Mark Attendance — ${editingDate}`}
+          >
+            <div className="flex flex-col gap-4 py-2">
+              {/* Context chip showing which slot is being edited */}
+              <div className="flex flex-col gap-1.5 p-3 rounded-xl bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200">
+                <div className="flex items-center gap-2 text-xs font-bold text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500 uppercase tracking-wider">
+                  <BookOpen size={13} />
+                  <span>{selectedSubject}</span>
+                </div>
+                {editingClass && (
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">
+                    <Clock size={14} className="text-[var(--accent)]" />
+                    <span>{editingClass.start} – {editingClass.end}</span>
+                    {editingClass.room && (
+                      <span className="text-xs px-2 py-0.5 bg-white/5 group-data-[scheme=light]:bg-gray-100 rounded border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-muted)] group-data-[scheme=light]:text-gray-500">
+                        {editingClass.room}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <p className="text-sm text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 font-medium">
+                Select attendance status:
+              </p>
+
+              <div className="grid grid-cols-2 gap-3">
+                {statusOptions.map(status => {
+                  const isActive = currentStatus === status.id;
+                  return (
+                    <button
+                      key={status.id}
+                      onClick={() => {
+                        // Toggle off if already active, otherwise set
+                        markAttendance(selectedSubject, dateKeyToWrite, isActive ? null : status.id);
+                        setIsEditModalOpen(false);
+                        setEditingClass(null);
+                        setAlertMessage(
+                          isActive
+                            ? `Cleared attendance for ${editingDate}${editingClass ? ` (${editingClass.start}–${editingClass.end})` : ''}`
+                            : `Marked ${selectedSubject} as ${status.id} on ${editingDate}${editingClass ? ` (${editingClass.start}–${editingClass.end})` : ''}`
+                        );
+                        setIsAlertOpen(true);
+                      }}
+                      className={`p-4 border rounded-xl font-bold transition-all ${isActive ? status.activeClass : status.color}`}
+                    >
+                      {status.id}
+                    </button>
+                  );
+                })}
+                <button
+                  onClick={() => {
+                    markAttendance(selectedSubject, dateKeyToWrite, null);
+                    setIsEditModalOpen(false);
+                    setEditingClass(null);
+                    setAlertMessage(`Cleared attendance for ${editingDate}${editingClass ? ` (${editingClass.start}–${editingClass.end})` : ''}`);
+                    setIsAlertOpen(true);
+                  }}
+                  className="p-4 border border-white/10 group-data-[scheme=light]:border-gray-300 rounded-xl font-bold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-500 hover:bg-white/5 group-data-[scheme=light]:hover:bg-gray-100 transition-all"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          </Modal>
+        );
+      })()}
 
       <ReplacementClassModal
         isOpen={replacementModalState.isOpen}
