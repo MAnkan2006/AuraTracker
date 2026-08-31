@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useAttendance } from '../hooks/useAttendance';
 import { useRoutine } from '../hooks/useRoutine';
-import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Eye, EyeOff } from 'lucide-react';
+import { CheckCircle2, XCircle, Clock, FileWarning, AlertCircle, ChevronLeft, ChevronRight, Info, Ban, Sparkles, Calendar, BookOpen, Eye, EyeOff, Trash2 } from 'lucide-react';
 import Modal from '../components/ui/Modal';
 import Dropdown from '../components/ui/Dropdown';
 import ReplacementClassModal from '../components/ui/ReplacementClassModal';
 
 const Attendance = () => {
-  const { attendance, markAttendance, getStats, sessionStartDateStr, isBeforeSessionStart } = useAttendance();
-  const { routine, addClass } = useRoutine();
+  const { attendance, markAttendance, deleteSubject, getStats, sessionStartDateStr, isBeforeSessionStart } = useAttendance();
+  const { routine, addClass, removeMultipleClasses } = useRoutine();
 
   // Sub-tab Navigation: 'mark' | 'register'
   const [activeTab, setActiveTab] = useState('mark');
@@ -30,6 +30,9 @@ const Attendance = () => {
   const [classPickerClasses, setClassPickerClasses] = useState([]);
   // The specific routine class slot currently being edited in the status modal
   const [editingClass, setEditingClass] = useState(null);
+
+  // Delete-subject confirmation modal
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const [replacementModalState, setReplacementModalState] = useState({
     isOpen: false,
@@ -534,13 +537,27 @@ const Attendance = () => {
               <label className="block text-sm font-bold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 mb-3 uppercase tracking-wider">
                 Select Subject / Class Name
               </label>
-              <Dropdown
-                className="w-full md:w-1/2"
-                value={selectedSubject}
-                onChange={setSelectedSubject}
-                options={subjects}
-                placeholder="-- Choose Subject / Class --"
-              />
+              {/* Dropdown + Delete button row */}
+              <div className="flex items-center gap-3">
+                <Dropdown
+                  className="flex-1 md:max-w-[50%]"
+                  value={selectedSubject}
+                  onChange={setSelectedSubject}
+                  options={subjects}
+                  placeholder="-- Choose Subject / Class --"
+                />
+                {selectedSubject && (
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteConfirmOpen(true)}
+                    title={`Delete all records for "${selectedSubject}"`}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-sm bg-red-500/10 text-red-500 group-data-[scheme=light]:text-red-600 border border-red-500/20 hover:bg-red-500/20 transition-all shrink-0"
+                  >
+                    <Trash2 size={16} />
+                    <span className="hidden sm:inline">Delete Subject</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {!selectedSubject && (
@@ -821,6 +838,80 @@ const Attendance = () => {
           </Modal>
         );
       })()}
+
+      {/* Delete Subject Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteConfirmOpen}
+        onClose={() => setIsDeleteConfirmOpen(false)}
+        title="Delete Subject — Are you sure?"
+      >
+        <div className="flex flex-col gap-5 py-2">
+          {/* Warning banner */}
+          <div className="flex items-start gap-3 p-4 bg-red-500/10 border border-red-500/20 group-data-[scheme=light]:bg-red-50 group-data-[scheme=light]:border-red-200 rounded-2xl">
+            <Trash2 size={22} className="text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-extrabold text-red-500 group-data-[scheme=light]:text-red-600 text-sm mb-1">
+                This action cannot be undone.
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 leading-relaxed">
+                The following will be <span className="font-bold text-red-500 group-data-[scheme=light]:text-red-600">permanently deleted</span>:
+              </p>
+            </div>
+          </div>
+
+          {/* What will be deleted */}
+          {(() => {
+            const recordCount = Object.keys(attendance[selectedSubject] || {}).length;
+            const routineSlots = routine.filter(c => c.title === selectedSubject);
+            return (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-white/5 group-data-[scheme=light]:bg-gray-50 border border-white/10 group-data-[scheme=light]:border-gray-200">
+                  <span className="text-sm font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">Subject</span>
+                  <span className="font-extrabold text-[var(--text-primary)] group-data-[scheme=light]:text-gray-900 text-sm">{selectedSubject}</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-red-500/5 border border-red-500/10">
+                  <span className="text-sm font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">Attendance records</span>
+                  <span className="font-extrabold text-red-500 text-sm">{recordCount} record{recordCount !== 1 ? 's' : ''}</span>
+                </div>
+                <div className="flex items-center justify-between px-4 py-3 rounded-xl bg-red-500/5 border border-red-500/10">
+                  <span className="text-sm font-semibold text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600">Routine class slots</span>
+                  <span className="font-extrabold text-red-500 text-sm">{routineSlots.length} slot{routineSlots.length !== 1 ? 's' : ''}</span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Action buttons */}
+          <div className="flex gap-3 pt-1">
+            <button
+              onClick={() => setIsDeleteConfirmOpen(false)}
+              className="flex-1 px-4 py-3 rounded-xl font-bold text-sm bg-white/5 group-data-[scheme=light]:bg-gray-100 border border-white/10 group-data-[scheme=light]:border-gray-200 text-[var(--text-secondary)] group-data-[scheme=light]:text-gray-600 hover:bg-white/10 group-data-[scheme=light]:hover:bg-gray-200 transition-all"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => {
+                // 1. Remove all attendance records for this subject
+                deleteSubject(selectedSubject);
+                // 2. Remove all routine slots for this subject
+                const slotIds = routine
+                  .filter(c => c.title === selectedSubject)
+                  .map(c => c.id || c.title);
+                if (slotIds.length > 0) removeMultipleClasses(slotIds);
+                // 3. Reset UI
+                setIsDeleteConfirmOpen(false);
+                setSelectedSubject('');
+                setAlertMessage(`"${selectedSubject}" and all its attendance records have been deleted.`);
+                setIsAlertOpen(true);
+              }}
+              className="flex-1 px-4 py-3 rounded-xl font-extrabold text-sm bg-red-500 hover:bg-red-600 text-white border border-red-600 transition-all shadow-sm flex items-center justify-center gap-2"
+            >
+              <Trash2 size={16} />
+              Yes, Delete Everything
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       <ReplacementClassModal
         isOpen={replacementModalState.isOpen}

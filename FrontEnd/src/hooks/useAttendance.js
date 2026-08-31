@@ -53,6 +53,15 @@ export const useAttendance = () => {
     return { success: true };
   };
 
+  /** Deletes ALL attendance records for a subject. */
+  const deleteSubject = (subject) => {
+    if (!subject) return;
+    const updatedAttendance = { ...attendance };
+    delete updatedAttendance[subject];
+    updateAppState({ attendance: updatedAttendance });
+  };
+
+
   const getStats = () => {
     let present = 0, absent = 0, late = 0, excused = 0, cancelled = 0;
     
@@ -189,6 +198,7 @@ export const useAttendance = () => {
   return { 
     attendance, 
     markAttendance, 
+    deleteSubject,
     getStats, 
     getSubjectBreakdown, 
     getRecentHistory, 
